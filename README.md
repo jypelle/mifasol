@@ -23,8 +23,8 @@ Lyra is a free and open source project distributed under the permissive Apache 2
 - [Lyra server](#lyra-server)
   - [Installation](#installation)
   - [Usage](#usage)
-  - [Where is my data stored ?](#where-is-my-data-stored)
-  - [Auto-start lyra server with systemd on linux](#auto-start-lyra-server-with-systemd-on-linux)
+  - [Where is my data stored ?](#where-is-my-data-stored-)
+  - [Auto start and stop lyra server with systemd on linux](#auto-start-and-stop-lyra-server-with-systemd-on-linux)
 - [Lyra client](#lyra-client)
   - [Installation](#installation-1)
   - [Usage](#usage-1)
@@ -111,7 +111,7 @@ Configuration file, embedded database, song and cover files are all saved into *
 - Replace **lyrasrv** config folder with content from your last backup
 - Start lyra server
 
-### Auto-start and stop lyra server with systemd on linux
+### Auto start and stop lyra server with systemd on linux
 
 - Copy `lyrasrv` to `/usr/bin`
 - Create systemd service file
