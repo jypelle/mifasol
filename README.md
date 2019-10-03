@@ -1,6 +1,6 @@
-# Lyra
+# 💿 Lyra
 
-⚠ Right now Lyra is in an alpha stage.
+⚠ *Right now Lyra is in an alpha stage.*
 
 Lyra is a self-hosted *opinionated* music server.
 
@@ -130,7 +130,7 @@ Configuration file, embedded database, song and cover files are all saved into *
     [Service]
     Type=simple
     Restart=on-failure
-    ExecStart=/usr/bin/lyrasrv
+    ExecStart=/usr/bin/lyrasrv run
     User=myuser
     Group=myuser
     
@@ -190,23 +190,25 @@ lyracli import [Location of music folder to import]
 
 #### Sync local music folder content with lyra server
 
-Prepare local music folder (one-time)
+Prepare local music folder (one-time):
 ```
 lyracli filesync init [Location of folder to synchronize]
 ```
 
-Launch synchronization
+Launch synchronization:
 ```
 lyracli filesync sync [Location of folder to synchronize]
 ```
 
 #### Console user interface
 
-Run console user interface to manage and listen lyra server content
+Run console user interface to manage and listen lyra server content:
 
 ```
 lyracli ui
 ```
+
+Press `H` to display available shortcuts to navigate through the interface.
 
 NB: After a fresh server installation, use the console user interface to change your default username/password.
 
@@ -220,4 +222,4 @@ lyracli <COMMAND> --help
 lyracli <COMMAND> <SUBCOMMAND> --help
 ```
 
-for more informations
+for more informations.
