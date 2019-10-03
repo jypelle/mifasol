@@ -4,6 +4,8 @@
 
 Lyra is a self-hosted *opinionated* music server.
 
+![lyracli console user interface](docs/lyracli-ui-screenshot.png)
+
 Its main purpose is to meet these objectives :
 
 1. To manage songs and playlists on a self-hosted server.
