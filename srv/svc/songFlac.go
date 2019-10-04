@@ -155,6 +155,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 		SongMeta: restApiV1.SongMeta{
 			Name:            title,
 			Format:          restApiV1.SongFormatFlac,
+			Size:            int64(len(content)),
 			BitDepth:        bitDepth,
 			PublicationYear: publicationYear,
 			AlbumId:         albumId,

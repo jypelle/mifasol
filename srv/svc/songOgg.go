@@ -23,6 +23,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content [
 		SongMeta: restApiV1.SongMeta{
 			Name:            "Unknown",
 			Format:          restApiV1.SongFormatOgg,
+			Size:            int64(len(content)),
 			PublicationYear: nil,
 			AlbumId:         nil,
 			TrackNumber:     nil,
