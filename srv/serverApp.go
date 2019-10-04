@@ -106,7 +106,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	// Open database connection
 	options := badger.DefaultOptions(app.ServerConfig.GetCompleteConfigDbDirName())
 	options.SyncWrites = true
-	options.Truncate = true
+	options.Truncate = false
 
 	dbLogger := logrus.New()
 	dbLogger.SetLevel(logrus.GetLevel())
