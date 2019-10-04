@@ -5,7 +5,7 @@ import (
 	"lyra/restApiV1"
 )
 
-func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content []byte) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	// TODO

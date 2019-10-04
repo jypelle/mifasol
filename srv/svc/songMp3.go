@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content []byte) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	reader := bytes.NewReader(content)
@@ -45,7 +45,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content [
 	albumName := normalizeString(tag.Album())
 
 	// Find Album Id
-	albumId, err = s.getAlbumIdFromAlbumName(txn, albumName)
+	albumId, err = s.getAlbumIdFromAlbumName(txn, albumName, lastAlbumId)
 	if err != nil {
 		return nil, err
 	}

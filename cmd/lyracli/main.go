@@ -60,7 +60,7 @@ func main() {
 	configServerSelfSignedCertificateRefused := configCmd.Bool("refuse-sscrt", false, "Refuse Self-signed server certificate")
 
 	configCmd.Usage = func() {
-		fmt.Printf("\nUsage: %s config\n", mainCommand)
+		fmt.Printf("\nUsage: %s config [OPTIONS]\n", mainCommand)
 		fmt.Printf("\nConfigure the lyra client\n")
 		fmt.Printf("\nOptions:\n")
 		configCmd.PrintDefaults()
@@ -76,10 +76,13 @@ func main() {
 
 	// import command
 	importCmd := flag.NewFlagSet("import", flag.ExitOnError)
+	importOneFolderPerAlbumDisabled := importCmd.Bool("disable-one-folder-per-album", false, "Don't use folder name changes to differentiate homonym albums")
 
 	importCmd.Usage = func() {
-		fmt.Printf("\nUsage: %s import [Location of music folder to import]\n", mainCommand)
+		fmt.Printf("\nUsage: %s import [OPTIONS] [Location of music folder to import]\n", mainCommand)
 		fmt.Printf("\nImport flac, mp3 and ogg files to lyra server\n")
+		fmt.Printf("\nOptions:\n")
+		configCmd.PrintDefaults()
 	}
 
 	// filesync command
@@ -234,7 +237,7 @@ func main() {
 
 		if importCmd.Parsed() {
 			// Import songs
-			clientApp.Import(importCmd.Arg(0))
+			clientApp.Import(importCmd.Arg(0), *importOneFolderPerAlbumDisabled)
 		}
 
 		if fileSyncCmd.Parsed() {

@@ -58,6 +58,8 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 	restServer.subRooter.HandleFunc("/songs/{id}", restServer.readSong).Methods("GET")
 	restServer.subRooter.HandleFunc("/songContents/{id}", restServer.readSongContent).Methods("GET")
 	restServer.subRooter.HandleFunc("/songContents", restServer.createSongContent).Methods("POST")
+	restServer.subRooter.HandleFunc("/songContentsForAlbum/{id}", restServer.createSongContentForAlbum).Methods("POST")
+	restServer.subRooter.HandleFunc("/songContentsForAlbum/", restServer.createSongContentForAlbum).Methods("POST")
 	restServer.subRooter.HandleFunc("/songWithContents", restServer.createSongWithContent).Methods("POST")
 	restServer.subRooter.HandleFunc("/songs/{id}", restServer.updateSong).Methods("PUT")
 	restServer.subRooter.HandleFunc("/songs/{id}", restServer.deleteSong).Methods("DELETE")

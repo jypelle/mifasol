@@ -20,21 +20,23 @@ type ImpApp struct {
 	config.ClientConfig
 	restClient *restClientV1.RestClient
 
-	importDir string
+	importDir                       string
+	importOneFolderPerAlbumDisabled bool
 
 	doneChannel             chan bool
 	interruptChannel        chan os.Signal
 	interruptRequestChannel chan bool
 }
 
-func NewImpApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, importDir string) *ImpApp {
+func NewImpApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, importDir string, importOneFolderPerAlbumDisabled bool) *ImpApp {
 	impApp := &ImpApp{
-		ClientConfig:            clientConfig,
-		restClient:              restClient,
-		importDir:               importDir,
-		doneChannel:             make(chan bool),
-		interruptChannel:        make(chan os.Signal),
-		interruptRequestChannel: make(chan bool),
+		ClientConfig:                    clientConfig,
+		restClient:                      restClient,
+		importDir:                       importDir,
+		importOneFolderPerAlbumDisabled: importOneFolderPerAlbumDisabled,
+		doneChannel:                     make(chan bool),
+		interruptChannel:                make(chan os.Signal),
+		interruptRequestChannel:         make(chan bool),
 	}
 
 	return impApp
@@ -121,6 +123,9 @@ func (a *ImpApp) start() {
 		),
 	)
 
+	var lastFolder string
+	var lastAlbumId *string
+
 	for key, fileName := range filesNameToImport {
 		if impAborded {
 			break
@@ -135,6 +140,13 @@ func (a *ImpApp) start() {
 				}
 			}()
 
+			indexLastSeparator := strings.LastIndex(fileName, "/")
+
+			// Reset last album id on new folder
+			if lastFolder != fileName[:indexLastSeparator] {
+				lastAlbumId = nil
+			}
+
 			songFormat := filesSongFormatToImport[key]
 
 			var err error
@@ -143,7 +155,6 @@ func (a *ImpApp) start() {
 			if err == nil {
 				defer reader.Close()
 
-				indexLastSeparator := strings.LastIndex(fileName, "/")
 				truncatedFilePath := tool.CharacterTruncate(fileName[indexLastSeparator+1:], 23)
 
 				songBar := progressContainer.AddBar(filesSize[key],
@@ -160,13 +171,26 @@ func (a *ImpApp) start() {
 
 				proxyReader := songBar.ProxyReader(reader)
 
-				_, apiErr := a.restClient.CreateSongContent(songFormat, proxyReader)
+				var apiErr restClientV1.ClientError
+				var song *restApiV1.Song
+
+				if a.importOneFolderPerAlbumDisabled {
+					song, apiErr = a.restClient.CreateSongContent(songFormat, proxyReader)
+				} else {
+					song, apiErr = a.restClient.CreateSongContentForAlbum(songFormat, proxyReader, lastAlbumId)
+				}
 				if apiErr == nil {
 					importedSongs++
+					lastAlbumId = song.AlbumId
+				} else {
+					songBar.Abort(true)
+					logrus.Warnf("Unable to import file %s: %v", fileName, apiErr)
 				}
 			} else {
-				logrus.Warnf("Unable to import file %s: %v", fileName, err)
+				logrus.Warnf("Unable to upload file %s: %v", fileName, err)
 			}
+
+			lastFolder = fileName[:indexLastSeparator]
 			bar.Increment()
 
 		}()

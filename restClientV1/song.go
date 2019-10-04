@@ -33,6 +33,27 @@ func (c *RestClient) CreateSongContent(format restApiV1.SongFormat, readerSource
 	return song, nil
 }
 
+func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, readerSource io.Reader, albumId *string) (*restApiV1.Song, ClientError) {
+	var song *restApiV1.Song
+
+	var albumIdStr string
+	if albumId != nil {
+		albumIdStr = *albumId
+	}
+
+	response, cliErr := c.doPostRequest("/songContentsForAlbum/"+albumIdStr, format.MimeType(), readerSource)
+	if cliErr != nil {
+		return nil, cliErr
+	}
+	defer response.Body.Close()
+
+	if err := json.NewDecoder(response.Body).Decode(&song); err != nil {
+		return nil, NewClientError(err)
+	}
+
+	return song, nil
+}
+
 func (c *RestClient) UpdateSong(songId string, songMeta *restApiV1.SongMeta) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 

@@ -75,7 +75,23 @@ func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) createSongContent(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Create song from raw content")
 
-	song, err := s.service.CreateSongFromRawContent(nil, r.Body)
+	song, err := s.service.CreateSongFromRawContent(nil, r.Body, nil)
+
+	if err != nil {
+		logrus.Panicf("Unable to create the song: %v", err)
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	tool.WriteJsonResponse(w, song)
+}
+
+func (s *RestServer) createSongContentForAlbum(w http.ResponseWriter, r *http.Request) {
+	logrus.Debugf("Create song from raw content and try to link it to a specific albumId")
+
+	vars := mux.Vars(r)
+	albumId := vars["id"]
+
+	song, err := s.service.CreateSongFromRawContent(nil, r.Body, &albumId)
 
 	if err != nil {
 		logrus.Panicf("Unable to create the song: %v", err)

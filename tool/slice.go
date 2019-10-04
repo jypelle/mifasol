@@ -11,3 +11,12 @@ func Deduplicate(slice []string) []string {
 	}
 	return list
 }
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

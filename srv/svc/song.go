@@ -236,7 +236,7 @@ func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew
 	return song, nil
 }
 
-func (s *Service) CreateSongFromRawContent(externalTrn *badger.Txn, raw io.ReadCloser) (*restApiV1.Song, error) {
+func (s *Service) CreateSongFromRawContent(externalTrn *badger.Txn, raw io.ReadCloser, lastAlbumId *string) (*restApiV1.Song, error) {
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
@@ -256,11 +256,11 @@ func (s *Service) CreateSongFromRawContent(externalTrn *badger.Txn, raw io.ReadC
 	// Extract song meta from tags
 	switch string(prefix) {
 	case "fLaC":
-		songNew, err = s.createSongNewFromFlacContent(txn, content)
+		songNew, err = s.createSongNewFromFlacContent(txn, content, lastAlbumId)
 	case "OggS":
-		songNew, err = s.createSongNewFromOggContent(txn, content)
+		songNew, err = s.createSongNewFromOggContent(txn, content, lastAlbumId)
 	default:
-		songNew, err = s.createSongNewFromMp3Content(txn, content)
+		songNew, err = s.createSongNewFromMp3Content(txn, content, lastAlbumId)
 	}
 
 	if err != nil {
@@ -696,7 +696,7 @@ func (s *Service) UpdateSongContentTag(externalTrn *badger.Txn, song *restApiV1.
 	return nil
 }
 
-func (s *Service) getAlbumIdFromAlbumName(externalTrn *badger.Txn, albumName string) (*string, error) {
+func (s *Service) getAlbumIdFromAlbumName(externalTrn *badger.Txn, albumName string, lastAlbumId *string) (*string, error) {
 	var albumId *string
 
 	if albumName != "" {
@@ -714,7 +714,20 @@ func (s *Service) getAlbumIdFromAlbumName(externalTrn *badger.Txn, albumName str
 		}
 		if len(albumIds) > 0 {
 			// Link the song to an existing album
-			albumId = &albumIds[0]
+			if lastAlbumId == nil {
+				albumId = &albumIds[0]
+			} else {
+				if tool.Contains(albumIds, *lastAlbumId) {
+					albumId = lastAlbumId
+				} else {
+					// Create the album before linking it to the song
+					album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
+					if err != nil {
+						return nil, err
+					}
+					albumId = &album.Id
+				}
+			}
 		} else {
 			// Create the album before linking it to the song
 			album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})

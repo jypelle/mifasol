@@ -15,7 +15,7 @@ type LyraMetaDataBlockVorbisComment struct {
 	flacvorbis.MetaDataBlockVorbisComment
 }
 
-func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content []byte) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	flacFile, err := flac.ParseMetadata(bytes.NewBuffer(content))
@@ -87,7 +87,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	}
 
 	// Find Album Id
-	albumId, err = s.getAlbumIdFromAlbumName(txn, albumName)
+	albumId, err = s.getAlbumIdFromAlbumName(txn, albumName, lastAlbumId)
 	if err != nil {
 		return nil, err
 	}
