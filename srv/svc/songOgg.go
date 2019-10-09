@@ -1,11 +1,11 @@
 package svc
 
 import (
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 	"lyra/restApiV1"
 )
 
-func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	// TODO
@@ -14,9 +14,13 @@ func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content [
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	songNew := &restApiV1.SongNew{
@@ -25,7 +29,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content [
 			Format:          restApiV1.SongFormatOgg,
 			Size:            int64(len(content)),
 			PublicationYear: nil,
-			AlbumId:         nil,
+			AlbumId:         "",
 			TrackNumber:     nil,
 			ArtistIds:       artistIds,
 		},
@@ -40,7 +44,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn *badger.Txn, content [
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentOggTag(externalTrn *badger.Txn, song *restApiV1.Song) error {
+func (s *Service) updateSongContentOggTag(externalTrn storm.Node, song *restApiV1.Song) error {
 	// TODO
 	return nil
 }

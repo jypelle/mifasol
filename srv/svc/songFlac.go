@@ -2,7 +2,7 @@ package svc
 
 import (
 	"bytes"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
 	"github.com/sirupsen/logrus"
@@ -15,7 +15,7 @@ type LyraMetaDataBlockVorbisComment struct {
 	flacvorbis.MetaDataBlockVorbisComment
 }
 
-func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	flacFile, err := flac.ParseMetadata(bytes.NewBuffer(content))
@@ -40,7 +40,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
-	var albumId *string = nil
+	var albumId string = ""
 	var trackNumber *int64 = nil
 	var publicationYear *int64 = nil
 	var artistIds []string
@@ -48,8 +48,11 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Extract bit depth
@@ -95,7 +98,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	logrus.Debugf("Album: %s", albumName)
 
 	// Extract track number
-	if albumId != nil {
+	if albumId != "" {
 		trackNumbers, err := cmt.Get(flacvorbis.FIELD_TRACKNUMBER)
 		if err != nil {
 			return nil, err
@@ -173,7 +176,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentFlacTag(externalTrn *badger.Txn, song *restApiV1.Song) error {
+func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, song *restApiV1.Song) error {
 
 	// region Extract tags
 	flacFile, err := flac.ParseFile(s.GetSongFileName(song))
@@ -209,15 +212,18 @@ func (s *Service) updateSongContentFlacTag(externalTrn *badger.Txn, song *restAp
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return err
+		}
+		defer txn.Rollback()
 	}
 
 	// Set album & track number
 	vorbisClean(cmt, flacvorbis.FIELD_ALBUM)
 	vorbisClean(cmt, flacvorbis.FIELD_TRACKNUMBER)
-	if song.AlbumId != nil {
-		album, err := s.ReadAlbum(txn, *song.AlbumId)
+	if song.AlbumId != "" {
+		album, err := s.ReadAlbum(txn, song.AlbumId)
 		if err != nil {
 			return err
 		}

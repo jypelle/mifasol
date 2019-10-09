@@ -3,7 +3,8 @@ package srv
 import (
 	"context"
 	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ import (
 
 type ServerApp struct {
 	config.ServerConfig
-	db         *badger.DB
+	db         *storm.DB
 	service    *svc.Service
 	restApiV1  *restSrvV1.RestServer
 	httpServer *http.Server
@@ -104,21 +105,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	}
 
 	// Open database connection
-	options := badger.DefaultOptions(app.ServerConfig.GetCompleteConfigDbDirName())
-	options.SyncWrites = true
-	options.Truncate = false
-
-	dbLogger := logrus.New()
-	dbLogger.SetLevel(logrus.GetLevel())
-
-	if debugMode {
-		dbLogger.SetFormatter(&logrus.TextFormatter{ForceColors: true, FullTimestamp: true, TimestampFormat: time.RFC3339Nano})
-	} else {
-		dbLogger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
-	}
-	options.Logger = dbLogger
-
-	app.db, err = badger.Open(options)
+	app.db, err = storm.Open(app.ServerConfig.GetCompleteConfigDbFilename(), storm.Codec(gob.Codec))
 	if err != nil {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}

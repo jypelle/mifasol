@@ -1,115 +1,93 @@
 package svc
 
 import (
-	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
 	"lyra/tool"
 	"sort"
-	"strings"
 	"time"
 )
 
-func (s *Service) ReadAlbums(externalTrn *badger.Txn, filter *restApiV1.AlbumFilter) ([]*restApiV1.Album, error) {
-	albums := []*restApiV1.Album{}
-
-	opts := badger.DefaultIteratorOptions
-	switch filter.Order {
-	case restApiV1.AlbumOrderByAlbumName:
-		opts.Prefix = []byte(albumNameAlbumIdPrefix)
-		opts.PrefetchValues = false
-	case restApiV1.AlbumOrderByUpdateTs:
-		opts.Prefix = []byte(albumUpdateTsAlbumIdPrefix)
-		opts.PrefetchValues = false
-	default:
-		opts.Prefix = []byte(albumIdPrefix)
-	}
+func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilter) ([]restApiV1.Album, error) {
+	albums := []restApiV1.Album{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
-	}
-
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	if filter.Order == restApiV1.AlbumOrderByUpdateTs {
-		it.Seek([]byte(albumUpdateTsAlbumIdPrefix + indexTs(filter.FromTs)))
-	} else {
-		it.Rewind()
-	}
-
-	for ; it.Valid(); it.Next() {
-		var album *restApiV1.Album
-
-		switch filter.Order {
-		case restApiV1.AlbumOrderByAlbumName,
-			restApiV1.AlbumOrderByUpdateTs:
-			key := it.Item().KeyCopy(nil)
-
-			albumId := strings.Split(string(key), ":")[2]
-			var e error
-			album, e = s.ReadAlbum(txn, albumId)
-			if e != nil {
-				return nil, e
-			}
-		default:
-			encodedAlbum, e := it.Item().ValueCopy(nil)
-			if e != nil {
-				return nil, e
-			}
-			e = json.Unmarshal(encodedAlbum, &album)
-			if e != nil {
-				return nil, e
-			}
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
 		}
+		defer txn.Rollback()
+	}
 
-		albums = append(albums, album)
+	var matchers []q.Matcher
 
+	if filter.FromTs != nil {
+		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
+	}
+	if filter.Name != nil {
+		matchers = append(matchers, q.Gte("Name", *filter.Name))
+	}
+
+	query := txn.Select(matchers...)
+
+	switch filter.Order {
+	case restApiV1.AlbumOrderByAlbumName:
+		query = query.OrderBy("Name")
+	case restApiV1.AlbumOrderByUpdateTs:
+		query = query.OrderBy("UpdateTs")
+	default:
+		query = query.OrderBy("Id")
+	}
+
+	err = query.Find(&albums)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
 	}
 
 	return albums, nil
 }
 
-func (s *Service) ReadAlbum(externalTrn *badger.Txn, albumId string) (*restApiV1.Album, error) {
-	var album *restApiV1.Album
+func (s *Service) ReadAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
+	var album restApiV1.Album
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	item, e := txn.Get(getAlbumIdKey(albumId))
+	e := txn.One("Id", albumId, &album)
 	if e != nil {
-		if e == badger.ErrKeyNotFound {
+		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
 		}
 		return nil, e
 	}
-	encodedAlbum, e := item.ValueCopy(nil)
-	if e != nil {
-		return nil, e
-	}
-	e = json.Unmarshal(encodedAlbum, &album)
-	if e != nil {
-		return nil, e
-	}
 
-	return album, nil
+	return &album, nil
 }
 
-func (s *Service) CreateAlbum(externalTrn *badger.Txn, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
+func (s *Service) CreateAlbum(externalTrn storm.Node, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
 	var album *restApiV1.Album
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Store album
@@ -122,19 +100,7 @@ func (s *Service) CreateAlbum(externalTrn *badger.Txn, albumMeta *restApiV1.Albu
 		AlbumMeta:  *albumMeta,
 	}
 
-	encodedAlbum, _ := json.Marshal(album)
-	e := txn.Set(getAlbumIdKey(album.Id), encodedAlbum)
-	if e != nil {
-		return nil, e
-	}
-	// Store albumName Index
-	e = txn.Set(getAlbumNameAlbumIdKey(album.Name, album.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Store updateTs Index
-	e = txn.Set(getAlbumUpdateTsAlbumIdKey(album.UpdateTs, album.Id), nil)
+	e := txn.Save(album)
 	if e != nil {
 		return nil, e
 	}
@@ -147,12 +113,16 @@ func (s *Service) CreateAlbum(externalTrn *badger.Txn, albumMeta *restApiV1.Albu
 	return album, nil
 }
 
-func (s *Service) UpdateAlbum(externalTrn *badger.Txn, albumId string, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
+func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	album, err := s.ReadAlbum(txn, albumId)
@@ -160,35 +130,12 @@ func (s *Service) UpdateAlbum(externalTrn *badger.Txn, albumId string, albumMeta
 		return nil, err
 	}
 
-	albumOldName := album.Name
-	albumOldUpdateTs := album.UpdateTs
 	album.AlbumMeta = *albumMeta
 
 	// Update album
 	album.UpdateTs = time.Now().UnixNano()
-	encodedAlbum, _ := json.Marshal(album)
-	e := txn.Set(getAlbumIdKey(album.Id), encodedAlbum)
-	if e != nil {
-		return nil, e
-	}
 
-	// Update album name Index
-	e = txn.Delete(getAlbumNameAlbumIdKey(albumOldName, album.Id))
-	if e != nil {
-		return nil, e
-	}
-	e = txn.Set(getAlbumNameAlbumIdKey(album.Name, album.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Update updateTs Index
-	e = txn.Delete(getAlbumUpdateTsAlbumIdKey(albumOldUpdateTs, album.Id))
-	if e != nil {
-		return nil, e
-	}
-
-	e = txn.Set(getAlbumUpdateTsAlbumIdKey(album.UpdateTs, album.Id), nil)
+	e := txn.Update(album)
 	if e != nil {
 		return nil, e
 	}
@@ -211,12 +158,16 @@ func (s *Service) UpdateAlbum(externalTrn *badger.Txn, albumId string, albumMeta
 	return album, nil
 }
 
-func (s *Service) refreshAlbumArtistIds(externalTrn *badger.Txn, albumId string, updateArtistMetaArtistId *string) error {
+func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, updateArtistMetaArtistId *string) error {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return err
+		}
+		defer txn.Rollback()
 	}
 
 	album, e := s.ReadAlbum(txn, albumId)
@@ -229,7 +180,6 @@ func (s *Service) refreshAlbumArtistIds(externalTrn *badger.Txn, albumId string,
 		return e
 	}
 
-	albumOldUpdateTs := album.UpdateTs
 	albumOldArtistIds := album.ArtistIds
 
 	// Update AlbumArtists
@@ -284,19 +234,8 @@ func (s *Service) refreshAlbumArtistIds(externalTrn *badger.Txn, albumId string,
 
 		// Update album
 		album.UpdateTs = time.Now().UnixNano()
-		encodedAlbum, _ := json.Marshal(album)
-		e = txn.Set(getAlbumIdKey(album.Id), encodedAlbum)
-		if e != nil {
-			return e
-		}
 
-		// Update updateTs Index
-		e = txn.Delete(getAlbumUpdateTsAlbumIdKey(albumOldUpdateTs, album.Id))
-		if e != nil {
-			return e
-		}
-
-		e = txn.Set(getAlbumUpdateTsAlbumIdKey(album.UpdateTs, album.Id), nil)
+		e := txn.Update(album)
 		if e != nil {
 			return e
 		}
@@ -310,12 +249,16 @@ func (s *Service) refreshAlbumArtistIds(externalTrn *badger.Txn, albumId string,
 	return nil
 }
 
-func (s *Service) DeleteAlbum(externalTrn *badger.Txn, albumId string) (*restApiV1.Album, error) {
+func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
@@ -335,26 +278,14 @@ func (s *Service) DeleteAlbum(externalTrn *badger.Txn, albumId string) (*restApi
 		return nil, ErrDeleteAlbumWithSongs
 	}
 
-	// Delete album name index
-	e = txn.Delete(getAlbumNameAlbumIdKey(album.Name, albumId))
-	if e != nil {
-		return nil, e
-	}
-
-	// Delete album updateTs index
-	e = txn.Delete(getAlbumUpdateTsAlbumIdKey(album.UpdateTs, albumId))
-	if e != nil {
-		return nil, e
-	}
-
 	// Delete album
-	e = txn.Delete(getAlbumIdKey(albumId))
+	e = txn.DeleteStruct(album)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive albumId
-	e = txn.Set(getAlbumDeleteTsAlbumIdKey(deleteTs, album.Id), nil)
+	e = txn.Save(&restApiV1.DeletedAlbum{Id: album.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -367,63 +298,90 @@ func (s *Service) DeleteAlbum(externalTrn *badger.Txn, albumId string) (*restApi
 	return album, nil
 }
 
-func (s *Service) GetDeletedAlbumIds(externalTrn *badger.Txn, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
 
 	albumIds := []string{}
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(albumDeleteTsAlbumIdPrefix)
-	opts.PrefetchValues = false
+	deletedAlbums := []restApiV1.DeletedAlbum{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	for it.Seek([]byte(albumDeleteTsAlbumIdPrefix + indexTs(fromTs))); it.Valid(); it.Next() {
+	err = query.Find(&deletedAlbums)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		albumId := strings.Split(string(key), ":")[2]
-
-		albumIds = append(albumIds, albumId)
-
+	for _, deletedAlbum := range deletedAlbums {
+		albumIds = append(albumIds, deletedAlbum.Id)
 	}
 
 	return albumIds, nil
 }
 
-func (s *Service) GetAlbumIdsByName(externalTrn *badger.Txn, albumName string) ([]string, error) {
-	var albumIds []string
+func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId *string) (string, error) {
+	var albumId string
 
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(albumNameAlbumIdPrefix + indexString(albumName) + ":")
-	opts.PrefetchValues = false
+	if albumName != "" {
 
-	// Check available transaction
-	txn := externalTrn
-	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		// Check available transaction
+		txn := externalTrn
+		var err error
+		if txn == nil {
+			txn, err = s.Db.Begin(true)
+			if err != nil {
+				return "", err
+			}
+			defer txn.Rollback()
+		}
+
+		albums, err := s.ReadAlbums(txn, &restApiV1.AlbumFilter{Name: &albumName})
+		if err != nil {
+			return "", err
+		}
+		if len(albums) > 0 {
+			// Link the song to an existing album
+			if lastAlbumId == nil {
+				albumId = albums[0].Id
+			} else {
+				for _, album := range albums {
+					if album.Id == *lastAlbumId {
+						albumId = *lastAlbumId
+					}
+				}
+				if albumId == "" {
+					// Create the album before linking it to the song
+					album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
+					if err != nil {
+						return "", err
+					}
+					albumId = album.Id
+				}
+			}
+		} else {
+			// Create the album before linking it to the song
+			album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
+			if err != nil {
+				return "", err
+			}
+			albumId = album.Id
+		}
+
+		// Commit transaction
+		if externalTrn == nil {
+			txn.Commit()
+		}
+
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	for it.Rewind(); it.Valid(); it.Next() {
-
-		key := it.Item().KeyCopy(nil)
-
-		albumId := strings.Split(string(key), ":")[2]
-
-		albumIds = append(albumIds, albumId)
-
-	}
-
-	return albumIds, nil
+	return albumId, nil
 }

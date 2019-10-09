@@ -1,116 +1,90 @@
 package svc
 
 import (
-	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
 	"lyra/tool"
-	"strings"
 	"time"
 )
 
 const DefaultUserName = "lyra"
 const DefaultUserPassword = "lyra"
 
-func (s *Service) ReadUsers(externalTrn *badger.Txn, filter *restApiV1.UserFilter) ([]*restApiV1.User, error) {
-	users := []*restApiV1.User{}
-
-	opts := badger.DefaultIteratorOptions
-	switch filter.Order {
-	case restApiV1.UserOrderByUserName:
-		opts.Prefix = []byte(userNameUserIdPrefix)
-		opts.PrefetchValues = false
-	case restApiV1.UserOrderByUpdateTs:
-		opts.Prefix = []byte(userUpdateTsUserIdPrefix)
-		opts.PrefetchValues = false
-	default:
-		opts.Prefix = []byte(userIdPrefix)
-	}
+func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter) ([]restApiV1.User, error) {
+	users := []restApiV1.User{}
+	userCompletes := []restApiV1.UserComplete{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	var matchers []q.Matcher
+
+	if filter.AdminFg != nil {
+		matchers = append(matchers, q.Eq("AdminFg", *filter.AdminFg))
+	}
 
 	if filter.Order == restApiV1.UserOrderByUpdateTs {
-		it.Seek([]byte(userUpdateTsUserIdPrefix + indexTs(filter.FromTs)))
-	} else {
-		it.Rewind()
+		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
 	}
 
-	for ; it.Valid(); it.Next() {
-		var user *restApiV1.UserComplete
+	query := txn.Select(matchers...)
 
-		switch filter.Order {
-		case restApiV1.UserOrderByUserName,
-			restApiV1.UserOrderByUpdateTs:
-			key := it.Item().KeyCopy(nil)
+	switch filter.Order {
+	case restApiV1.UserOrderByUserName:
+		query = query.OrderBy("Name")
+	case restApiV1.UserOrderByUpdateTs:
+		query = query.OrderBy("UpdateTs")
+	default:
+		query = query.OrderBy("Id")
+	}
 
-			userId := strings.Split(string(key), ":")[2]
-			var e error
-			user, e = s.ReadUserComplete(txn, userId)
-			if e != nil {
-				return nil, e
-			}
-		default:
-			encodedUser, e := it.Item().ValueCopy(nil)
-			if e != nil {
-				return nil, e
-			}
-			e = json.Unmarshal(encodedUser, &user)
-			if e != nil {
-				return nil, e
-			}
-		}
+	err = query.Find(&userCompletes)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		if filter.AdminFg != nil {
-			if user.AdminFg != *filter.AdminFg {
-				continue
-			}
-		}
-
-		users = append(users, &user.User)
-
+	for _, userComplete := range userCompletes {
+		users = append(users, userComplete.User)
 	}
 
 	return users, nil
 }
 
-func (s *Service) ReadUserComplete(externalTrn *badger.Txn, userId string) (*restApiV1.UserComplete, error) {
-	var userComplete *restApiV1.UserComplete
+func (s *Service) ReadUserComplete(externalTrn storm.Node, userId string) (*restApiV1.UserComplete, error) {
+	var userComplete restApiV1.UserComplete
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	item, e := txn.Get(getUserIdKey(userId))
+	e := txn.One("Id", userId, &userComplete)
 	if e != nil {
-		if e == badger.ErrKeyNotFound {
+		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
 		}
 		return nil, e
 	}
-	encodedUser, e := item.ValueCopy(nil)
-	if e != nil {
-		return nil, e
-	}
-	e = json.Unmarshal(encodedUser, &userComplete)
-	if e != nil {
-		return nil, e
-	}
 
-	return userComplete, nil
+	return &userComplete, nil
 }
 
-func (s *Service) ReadUser(externalTrn *badger.Txn, userId string) (*restApiV1.User, error) {
+func (s *Service) ReadUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
 	userComplete, err := s.ReadUserComplete(externalTrn, userId)
 	if err != nil {
 		return nil, err
@@ -119,41 +93,42 @@ func (s *Service) ReadUser(externalTrn *badger.Txn, userId string) (*restApiV1.U
 	}
 }
 
-func (s *Service) ReadUserCompleteByUserName(externalTrn *badger.Txn, login string) (*restApiV1.UserComplete, error) {
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(userNameUserIdPrefix + indexString(login) + ":")
-	opts.PrefetchValues = false
+func (s *Service) ReadUserCompleteByUserName(externalTrn storm.Node, userName string) (*restApiV1.UserComplete, error) {
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	for it.Rewind(); it.Valid(); it.Next() {
-
-		key := it.Item().KeyCopy(nil)
-
-		userId := strings.Split(string(key), ":")[2]
-
-		return s.ReadUserComplete(externalTrn, userId)
+	var userComplete restApiV1.UserComplete
+	e := txn.One("Name", userName, &userComplete)
+	if e != nil {
+		if e == storm.ErrNotFound {
+			return nil, ErrNotFound
+		}
+		return nil, e
 	}
 
-	return nil, ErrNotFound
+	return &userComplete, nil
 }
 
-func (s *Service) CreateUser(externalTrn *badger.Txn, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
+func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Store user
@@ -169,19 +144,7 @@ func (s *Service) CreateUser(externalTrn *badger.Txn, userMetaComplete *restApiV
 		Password: userMetaComplete.Password,
 	}
 
-	encodedUser, _ := json.Marshal(userComplete)
-	e := txn.Set(getUserIdKey(userComplete.Id), encodedUser)
-	if e != nil {
-		return nil, e
-	}
-	// Store user login Index
-	e = txn.Set(getUserNameUserIdKey(userComplete.Name, userComplete.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Store updateTs Index
-	e = txn.Set(getUserUpdateTsUserIdKey(userComplete.UpdateTs, userComplete.Id), nil)
+	e := txn.Save(userComplete)
 	if e != nil {
 		return nil, e
 	}
@@ -194,12 +157,16 @@ func (s *Service) CreateUser(externalTrn *badger.Txn, userMetaComplete *restApiV
 	return &userComplete.User, nil
 }
 
-func (s *Service) UpdateUser(externalTrn *badger.Txn, userId string, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
+func (s *Service) UpdateUser(externalTrn storm.Node, userId string, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	userComplete, err := s.ReadUserComplete(txn, userId)
@@ -207,8 +174,6 @@ func (s *Service) UpdateUser(externalTrn *badger.Txn, userId string, userMetaCom
 		return nil, err
 	}
 
-	userOldName := userComplete.Name
-	userOldUpdateTs := userComplete.UpdateTs
 	userComplete.UserMeta = userMetaComplete.UserMeta
 
 	// Update only non void password
@@ -218,29 +183,8 @@ func (s *Service) UpdateUser(externalTrn *badger.Txn, userId string, userMetaCom
 
 	// Update user
 	userComplete.UpdateTs = time.Now().UnixNano()
-	encodedUser, _ := json.Marshal(userComplete)
-	e := txn.Set(getUserIdKey(userComplete.Id), encodedUser)
-	if e != nil {
-		return nil, e
-	}
 
-	// Update user name Index
-	e = txn.Delete(getUserNameUserIdKey(userOldName, userComplete.Id))
-	if e != nil {
-		return nil, e
-	}
-	e = txn.Set(getUserNameUserIdKey(userComplete.Name, userComplete.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Update updateTs Index
-	e = txn.Delete(getUserUpdateTsUserIdKey(userOldUpdateTs, userComplete.Id))
-	if e != nil {
-		return nil, e
-	}
-
-	e = txn.Set(getUserUpdateTsUserIdKey(userComplete.UpdateTs, userComplete.Id), nil)
+	e := txn.Update(userComplete)
 	if e != nil {
 		return nil, e
 	}
@@ -253,12 +197,16 @@ func (s *Service) UpdateUser(externalTrn *badger.Txn, userId string, userMetaCom
 	return &userComplete.User, nil
 }
 
-func (s *Service) DeleteUser(externalTrn *badger.Txn, userId string) (*restApiV1.User, error) {
+func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
@@ -292,26 +240,14 @@ func (s *Service) DeleteUser(externalTrn *badger.Txn, userId string) (*restApiV1
 		}
 	}
 
-	// Delete user name index
-	e = txn.Delete(getUserNameUserIdKey(user.Name, userId))
-	if e != nil {
-		return nil, e
-	}
-
-	// Delete user updateTs index
-	e = txn.Delete(getUserUpdateTsUserIdKey(user.UpdateTs, userId))
-	if e != nil {
-		return nil, e
-	}
-
 	// Delete user
-	e = txn.Delete(getUserIdKey(userId))
+	e = txn.DeleteStruct(user)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive userId
-	e = txn.Set(getUserDeleteTsUserIdKey(deleteTs, user.Id), nil)
+	e = txn.Save(&restApiV1.DeletedUser{Id: user.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -324,32 +260,30 @@ func (s *Service) DeleteUser(externalTrn *badger.Txn, userId string) (*restApiV1
 	return &user.User, nil
 }
 
-func (s *Service) GetDeletedUserIds(externalTrn *badger.Txn, fromTs int64) ([]string, error) {
-
+func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
 	userIds := []string{}
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(userDeleteTsUserIdPrefix)
-	opts.PrefetchValues = false
+	deletedUsers := []restApiV1.DeletedUser{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	for it.Seek([]byte(userDeleteTsUserIdPrefix + indexTs(fromTs))); it.Valid(); it.Next() {
+	err = query.Find(&deletedUsers)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		userId := strings.Split(string(key), ":")[2]
-
-		userIds = append(userIds, userId)
-
+	for _, deletedUser := range deletedUsers {
+		userIds = append(userIds, deletedUser.Id)
 	}
 
 	return userIds, nil

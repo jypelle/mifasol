@@ -82,7 +82,7 @@ func main() {
 		fmt.Printf("\nUsage: %s import [OPTIONS] [Location of music folder to import]\n", mainCommand)
 		fmt.Printf("\nImport flac, mp3 and ogg files to lyra server\n")
 		fmt.Printf("\nOptions:\n")
-		configCmd.PrintDefaults()
+		importCmd.PrintDefaults()
 	}
 
 	// filesync command

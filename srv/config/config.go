@@ -8,6 +8,7 @@ import (
 )
 
 const configFilename = "config.json"
+const configDbFilename = "lyra.db"
 const configDbDirName = "db"
 const configDataDirName = "data"
 const configSongsDirName = "songs"
@@ -37,6 +38,10 @@ type ServerEditableConfig struct {
 
 func (sc ServerConfig) GetCompleteConfigFilename() string {
 	return filepath.Join(sc.ConfigDir, configFilename)
+}
+
+func (sc ServerConfig) GetCompleteConfigDbFilename() string {
+	return filepath.Join(sc.ConfigDir, configDbFilename)
 }
 
 func (sc ServerConfig) GetCompleteConfigDbDirName() string {

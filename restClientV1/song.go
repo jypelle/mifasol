@@ -33,15 +33,10 @@ func (c *RestClient) CreateSongContent(format restApiV1.SongFormat, readerSource
 	return song, nil
 }
 
-func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, readerSource io.Reader, albumId *string) (*restApiV1.Song, ClientError) {
+func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, readerSource io.Reader, albumId string) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 
-	var albumIdStr string
-	if albumId != nil {
-		albumIdStr = *albumId
-	}
-
-	response, cliErr := c.doPostRequest("/songContentsForAlbum/"+albumIdStr, format.MimeType(), readerSource)
+	response, cliErr := c.doPostRequest("/songContentsForAlbum/"+albumId, format.MimeType(), readerSource)
 	if cliErr != nil {
 		return nil, cliErr
 	}

@@ -70,24 +70,29 @@ func (s SongFormat) Decode() func(rc io.ReadCloser) (s beep.StreamSeekCloser, fo
 }
 
 type Song struct {
-	Id         string `json:"id"`
+	Id         string `json:"id" storm:"id"`
 	CreationTs int64  `json:"creationTs"`
-	UpdateTs   int64  `json:"updateTs"`
-	SongMeta
+	UpdateTs   int64  `json:"updateTs" storm:"index"`
+	SongMeta   `storm:"inline"`
 }
 
 type SongMeta struct {
-	Name            string       `json:"name"`
+	Name            string       `json:"name" storm:"index"`
 	Format          SongFormat   `json:"format"`
 	Size            int64        `json:"size"`
 	BitDepth        SongBitDepth `json:"bitDepth"`
 	PublicationYear *int64       `json:"publicationYear"`
-	AlbumId         *string      `json:"albumId"`
+	AlbumId         string       `json:"albumId" storm:"index"`
 	TrackNumber     *int64       `json:"trackNumber"`
 	ArtistIds       []string     `json:"artistIds"`
 }
 
 type SongNew struct {
-	SongMeta
-	Content []byte `json:"content"`
+	SongMeta `storm:"inline"`
+	Content  []byte `json:"content"`
+}
+
+type DeletedSong struct {
+	Id       string `json:"id" storm:"id"`
+	DeleteTs int64  `json:"deleteTs" storm:"index"`
 }

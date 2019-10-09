@@ -1,8 +1,8 @@
 package svc
 
 import (
-	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"io"
 	"io/ioutil"
 	"lyra/restApiV1"
@@ -10,100 +10,75 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 )
 
-func (s *Service) ReadSongs(externalTrn *badger.Txn, filter *restApiV1.SongFilter) ([]*restApiV1.Song, error) {
-	songs := []*restApiV1.Song{}
-
-	opts := badger.DefaultIteratorOptions
-	switch filter.Order {
-	case restApiV1.SongOrderBySongName:
-		opts.Prefix = []byte(songNameSongIdPrefix)
-		opts.PrefetchValues = false
-	case restApiV1.SongOrderByUpdateTs:
-		opts.Prefix = []byte(songUpdateTsSongIdPrefix)
-		opts.PrefetchValues = false
-	default:
-		opts.Prefix = []byte(songIdPrefix)
-	}
+func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter) ([]restApiV1.Song, error) {
+	songs := []restApiV1.Song{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
-	}
-
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	if filter.Order == restApiV1.SongOrderByUpdateTs {
-		it.Seek([]byte(songUpdateTsSongIdPrefix + indexTs(filter.FromTs)))
-	} else {
-		it.Rewind()
-	}
-
-	for ; it.Valid(); it.Next() {
-		var song *restApiV1.Song
-
-		switch filter.Order {
-		case restApiV1.SongOrderBySongName,
-			restApiV1.SongOrderByUpdateTs:
-			key := it.Item().KeyCopy(nil)
-
-			songId := strings.Split(string(key), ":")[2]
-			var e error
-			song, e = s.ReadSong(txn, songId)
-			if e != nil {
-				return nil, e
-			}
-		default:
-			encodedSong, e := it.Item().ValueCopy(nil)
-			if e != nil {
-				return nil, e
-			}
-			e = json.Unmarshal(encodedSong, &song)
-			if e != nil {
-				return nil, e
-			}
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
 		}
+		defer txn.Rollback()
+	}
 
-		songs = append(songs, song)
+	var matchers []q.Matcher
 
+	if filter.FromTs != nil {
+		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
+	}
+
+	if filter.AlbumId != nil {
+		matchers = append(matchers, q.Eq("AlbumId", *filter.AlbumId))
+	}
+
+	query := txn.Select(matchers...)
+
+	switch filter.Order {
+	case restApiV1.SongOrderBySongName:
+		query = query.OrderBy("Name")
+	case restApiV1.SongOrderByUpdateTs:
+		query = query.OrderBy("UpdateTs")
+	default:
+		query = query.OrderBy("Id")
+	}
+
+	err = query.Find(&songs)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
 	}
 
 	return songs, nil
 }
 
-func (s *Service) ReadSong(externalTrn *badger.Txn, songId string) (*restApiV1.Song, error) {
-	var song *restApiV1.Song
+func (s *Service) ReadSong(externalTrn storm.Node, songId string) (*restApiV1.Song, error) {
+	var song restApiV1.Song
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	item, e := txn.Get(getSongIdKey(songId))
+	e := txn.One("Id", songId, &song)
 	if e != nil {
-		if e == badger.ErrKeyNotFound {
+		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
 		}
 		return nil, e
 	}
-	encodedSong, e := item.ValueCopy(nil)
-	if e != nil {
-		return nil, e
-	}
-	e = json.Unmarshal(encodedSong, &song)
-	if e != nil {
-		return nil, e
-	}
 
-	return song, nil
+	return &song, nil
 }
 
 func (s *Service) ReadSongContent(song *restApiV1.Song) ([]byte, error) {
@@ -124,14 +99,18 @@ func (s *Service) GetSongFileName(song *restApiV1.Song) string {
 	return filepath.Join(s.GetSongDirName(song.Id), song.Id+song.Format.Extension())
 }
 
-func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew) (*restApiV1.Song, error) {
+func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew) (*restApiV1.Song, error) {
 	var song *restApiV1.Song
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Create song
@@ -152,28 +131,11 @@ func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew
 		return artistI.Name < artistJ.Name
 	})
 
-	// Create song name index
-	e := txn.Set(getSongNameSongIdKey(song.Name, song.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Create updateTs Index
-	e = txn.Set(getSongUpdateTsSongIdKey(song.UpdateTs, song.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
 	// Create album link
-	if song.AlbumId != nil {
+	if song.AlbumId != "" {
 		// Check album id
-		_, e := txn.Get(getAlbumIdKey(*song.AlbumId))
-		if e != nil {
-			return nil, e
-		}
-
-		// Store album songs
-		e = txn.Set(getAlbumIdSongIdKey(*song.AlbumId, song.Id), nil)
+		var album restApiV1.Album
+		e := txn.One("Id", song.AlbumId, &album)
 		if e != nil {
 			return nil, e
 		}
@@ -182,21 +144,22 @@ func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew
 	// Create artists link
 	for _, artistId := range songNew.ArtistIds {
 		// Check artist id
-		_, e := txn.Get(getArtistIdKey(artistId))
+		var artist restApiV1.Artist
+		e := txn.One("Id", artistId, &artist)
 		if e != nil {
 			return nil, e
 		}
 
 		// Store artist songs
-		e = txn.Set(getArtistIdSongIdKey(artistId, song.Id), nil)
+		e = txn.Save(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
 		if e != nil {
 			return nil, e
 		}
+
 	}
 
 	// Create song
-	encodedSong, _ := json.Marshal(song)
-	e = txn.Set(getSongIdKey(song.Id), encodedSong)
+	e := txn.Save(song)
 	if e != nil {
 		return nil, e
 	}
@@ -221,8 +184,8 @@ func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew
 	}
 
 	// Refresh album artists
-	if song.AlbumId != nil {
-		e = s.refreshAlbumArtistIds(txn, *song.AlbumId, nil)
+	if song.AlbumId != "" {
+		e = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
 		if e != nil {
 			return nil, e
 		}
@@ -236,12 +199,16 @@ func (s *Service) CreateSong(externalTrn *badger.Txn, songNew *restApiV1.SongNew
 	return song, nil
 }
 
-func (s *Service) CreateSongFromRawContent(externalTrn *badger.Txn, raw io.ReadCloser, lastAlbumId *string) (*restApiV1.Song, error) {
+func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCloser, lastAlbumId *string) (*restApiV1.Song, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	content, err := ioutil.ReadAll(raw)
@@ -288,12 +255,16 @@ func (s *Service) CreateSongFromRawContent(externalTrn *badger.Txn, raw io.ReadC
 	return song, nil
 }
 
-func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *string) (*restApiV1.Song, error) {
+func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *string) (*restApiV1.Song, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	song, err := s.ReadSong(txn, songId)
@@ -302,8 +273,6 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 		return nil, err
 	}
 
-	songOldName := song.Name
-	songOldUpdateTs := song.UpdateTs
 	songOldArtistIds := song.ArtistIds
 	songOldAlbumId := song.AlbumId
 
@@ -323,45 +292,12 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 
 	song.UpdateTs = time.Now().UnixNano()
 
-	// Update updateTs Index
-	e := txn.Delete(getSongUpdateTsSongIdKey(songOldUpdateTs, song.Id))
-	if e != nil {
-		return nil, e
-	}
-	e = txn.Set(getSongUpdateTsSongIdKey(song.UpdateTs, song.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Update song name index
-	if songOldName != song.Name {
-		e = txn.Delete(getSongNameSongIdKey(songOldName, song.Id))
-		if e != nil {
-			return nil, e
-		}
-		e = txn.Set(getSongNameSongIdKey(song.Name, song.Id), nil)
-		if e != nil {
-			return nil, e
-		}
-	}
-
 	// Update album link
 	if songOldAlbumId != song.AlbumId {
-		if songOldAlbumId != nil {
-			e = txn.Delete(getAlbumIdSongIdKey(*songOldAlbumId, songId))
-			if e != nil {
-				return nil, e
-			}
-		}
-		if song.AlbumId != nil {
+		if song.AlbumId != "" {
 			// Check album id
-			_, e := txn.Get(getAlbumIdKey(*song.AlbumId))
-			if e != nil {
-				return nil, e
-			}
-
-			// Store album song
-			e = txn.Set(getAlbumIdSongIdKey(*song.AlbumId, song.Id), nil)
+			var album restApiV1.Album
+			e := txn.One("Id", song.AlbumId, &album)
 			if e != nil {
 				return nil, e
 			}
@@ -373,20 +309,21 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 	// Update artists link
 	if songMeta != nil && artistIdsChanged {
 		for _, artistId := range songOldArtistIds {
-			e = txn.Delete(getArtistIdSongIdKey(artistId, songId))
+			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
 			if e != nil {
 				return nil, e
 			}
 		}
 		for _, artistId := range song.ArtistIds {
 			// Check artist id
-			_, e := txn.Get(getArtistIdKey(artistId))
+			var artist restApiV1.Artist
+			e := txn.One("Id", artistId, &artist)
 			if e != nil {
 				return nil, e
 			}
 
 			// Store artist song
-			e = txn.Set(getArtistIdSongIdKey(artistId, song.Id), nil)
+			e = txn.Save(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
 			if e != nil {
 				return nil, e
 			}
@@ -394,8 +331,7 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 	}
 
 	// Update song
-	encodedSong, _ := json.Marshal(song)
-	e = txn.Set(getSongIdKey(song.Id), encodedSong)
+	e := txn.Update(song)
 	if e != nil {
 		return nil, e
 	}
@@ -420,13 +356,13 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 	}
 
 	// Refresh album artists
-	if song.AlbumId != nil && (artistIdsChanged || updateArtistMetaArtistId != nil || songOldAlbumId == nil || (songOldAlbumId != nil && *song.AlbumId != *songOldAlbumId)) {
-		e = s.refreshAlbumArtistIds(txn, *song.AlbumId, updateArtistMetaArtistId)
+	if song.AlbumId != "" && (artistIdsChanged || updateArtistMetaArtistId != nil || songOldAlbumId == "" || (songOldAlbumId != "" && song.AlbumId != songOldAlbumId)) {
+		e = s.refreshAlbumArtistIds(txn, song.AlbumId, updateArtistMetaArtistId)
 		if e != nil {
 			return nil, e
 		}
-		if songOldAlbumId != nil && *song.AlbumId != *songOldAlbumId {
-			e = s.refreshAlbumArtistIds(txn, *songOldAlbumId, updateArtistMetaArtistId)
+		if songOldAlbumId != "" && song.AlbumId != songOldAlbumId {
+			e = s.refreshAlbumArtistIds(txn, songOldAlbumId, updateArtistMetaArtistId)
 			if e != nil {
 				return nil, e
 			}
@@ -441,39 +377,30 @@ func (s *Service) UpdateSong(externalTrn *badger.Txn, songId string, songMeta *r
 	return song, nil
 }
 
-func (s *Service) updateSongAlbumArtists(externalTrn *badger.Txn, songId string, artistIds []string) error {
+func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId string, artistIds []string) error {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return err
+		}
+		defer txn.Rollback()
 	}
 
-	song, e := s.ReadSong(txn, songId)
+	song, err := s.ReadSong(txn, songId)
 
-	if e != nil {
-		return e
+	if err != nil {
+		return err
 	}
-
-	songOldUpdateTs := song.UpdateTs
 
 	song.UpdateTs = time.Now().UnixNano()
 
-	// Update updateTs Index
-	e = txn.Delete(getSongUpdateTsSongIdKey(songOldUpdateTs, song.Id))
-	if e != nil {
-		return e
-	}
-	e = txn.Set(getSongUpdateTsSongIdKey(song.UpdateTs, song.Id), nil)
-	if e != nil {
-		return e
-	}
-
 	// Update song
-	encodedSong, _ := json.Marshal(song)
-	e = txn.Set(getSongIdKey(song.Id), encodedSong)
-	if e != nil {
-		return e
+	err = txn.Update(song)
+	if err != nil {
+		return err
 	}
 
 	// Commit transaction
@@ -484,12 +411,16 @@ func (s *Service) updateSongAlbumArtists(externalTrn *badger.Txn, songId string,
 	return nil
 }
 
-func (s *Service) DeleteSong(externalTrn *badger.Txn, songId string) (*restApiV1.Song, error) {
+func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.Song, error) {
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
@@ -525,35 +456,14 @@ func (s *Service) DeleteSong(externalTrn *badger.Txn, songId string) (*restApiV1
 	}
 
 	// Delete artists link
-	for _, artistId := range song.ArtistIds {
-		e = txn.Delete(getArtistIdSongIdKey(artistId, songId))
-		if e != nil {
-			return nil, e
-		}
-	}
-
-	// Delete album link
-	if song.AlbumId != nil {
-		e = txn.Delete(getAlbumIdSongIdKey(*song.AlbumId, songId))
-		if e != nil {
-			return nil, e
-		}
-	}
-
-	// Delete song updateTs index
-	e = txn.Delete(getSongUpdateTsSongIdKey(song.UpdateTs, song.Id))
-	if e != nil {
-		return nil, e
-	}
-
-	// Delete song name index
-	e = txn.Delete(getSongNameSongIdKey(song.Name, songId))
+	query := txn.Select(q.Eq("SongId", song.Id))
+	e = query.Delete(new(restApiV1.ArtistSong))
 	if e != nil {
 		return nil, e
 	}
 
 	// Delete song
-	e = txn.Delete(getSongIdKey(songId))
+	e = txn.DeleteStruct(song)
 	if e != nil {
 		return nil, e
 	}
@@ -565,14 +475,14 @@ func (s *Service) DeleteSong(externalTrn *badger.Txn, songId string) (*restApiV1
 	}
 
 	// Archive songId
-	e = txn.Set(getSongDeleteTsSongIdKey(deleteTs, song.Id), nil)
+	e = txn.Save(&restApiV1.DeletedSong{Id: song.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
 
 	// Refresh album artists
-	if song.AlbumId != nil {
-		e = s.refreshAlbumArtistIds(txn, *song.AlbumId, nil)
+	if song.AlbumId != "" {
+		e = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
 		if e != nil {
 			return nil, e
 		}
@@ -586,103 +496,98 @@ func (s *Service) DeleteSong(externalTrn *badger.Txn, songId string) (*restApiV1
 	return song, nil
 }
 
-func (s *Service) GetDeletedSongIds(externalTrn *badger.Txn, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
 
 	songIds := []string{}
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(songDeleteTsSongIdPrefix)
-	opts.PrefetchValues = false
+	deletedSongs := []restApiV1.DeletedSong{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	for it.Seek([]byte(songDeleteTsSongIdPrefix + indexTs(fromTs))); it.Valid(); it.Next() {
+	err = query.Find(&deletedSongs)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		songId := strings.Split(string(key), ":")[2]
-
-		songIds = append(songIds, songId)
-
+	for _, deletedSong := range deletedSongs {
+		songIds = append(songIds, deletedSong.Id)
 	}
 
 	return songIds, nil
 }
 
-func (s *Service) GetSongIdsFromArtistId(externalTrn *badger.Txn, artistId string) ([]string, error) {
+func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId string) ([]string, error) {
 
 	var songIds []string
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(artistIdSongIdPrefix + artistId + ":")
-	opts.PrefetchValues = false
+	artistSongs := []restApiV1.ArtistSong{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Eq("ArtistId", artistId))
 
-	for it.Rewind(); it.Valid(); it.Next() {
+	err = query.Find(&artistSongs)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		songId := strings.Split(string(key), ":")[2]
-
-		songIds = append(songIds, songId)
-
+	for _, artistSong := range artistSongs {
+		songIds = append(songIds, artistSong.SongId)
 	}
 
 	return songIds, nil
-
 }
 
-func (s *Service) GetSongIdsFromAlbumId(externalTrn *badger.Txn, albumId string) ([]string, error) {
+func (s *Service) GetSongIdsFromAlbumId(externalTrn storm.Node, albumId string) ([]string, error) {
 
 	var songIds []string
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(albumIdSongIdPrefix + albumId + ":")
-	opts.PrefetchValues = false
+	songs := []restApiV1.Song{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Eq("AlbumId", albumId))
 
-	for it.Rewind(); it.Valid(); it.Next() {
+	err = query.Find(&songs)
+	if err != nil && err != storm.ErrNotFound {
+		return nil, err
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		songId := strings.Split(string(key), ":")[2]
-
-		songIds = append(songIds, songId)
-
+	for _, song := range songs {
+		songIds = append(songIds, song.Id)
 	}
 
 	return songIds, nil
-
 }
 
 // UpdateSongContentTag update tags in song content
-func (s *Service) UpdateSongContentTag(externalTrn *badger.Txn, song *restApiV1.Song) error {
+func (s *Service) UpdateSongContentTag(externalTrn storm.Node, song *restApiV1.Song) error {
 
 	switch song.Format {
 	case restApiV1.SongFormatFlac:
@@ -694,55 +599,4 @@ func (s *Service) UpdateSongContentTag(externalTrn *badger.Txn, song *restApiV1.
 
 	}
 	return nil
-}
-
-func (s *Service) getAlbumIdFromAlbumName(externalTrn *badger.Txn, albumName string, lastAlbumId *string) (*string, error) {
-	var albumId *string
-
-	if albumName != "" {
-
-		// Check available transaction
-		txn := externalTrn
-		if txn == nil {
-			txn = s.Db.NewTransaction(true)
-			defer txn.Discard()
-		}
-
-		albumIds, err := s.GetAlbumIdsByName(txn, albumName)
-		if err != nil {
-			return nil, err
-		}
-		if len(albumIds) > 0 {
-			// Link the song to an existing album
-			if lastAlbumId == nil {
-				albumId = &albumIds[0]
-			} else {
-				if tool.Contains(albumIds, *lastAlbumId) {
-					albumId = lastAlbumId
-				} else {
-					// Create the album before linking it to the song
-					album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
-					if err != nil {
-						return nil, err
-					}
-					albumId = &album.Id
-				}
-			}
-		} else {
-			// Create the album before linking it to the song
-			album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
-			if err != nil {
-				return nil, err
-			}
-			albumId = &album.Id
-		}
-
-		// Commit transaction
-		if externalTrn == nil {
-			txn.Commit()
-		}
-
-	}
-
-	return albumId, nil
 }

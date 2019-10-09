@@ -10,7 +10,8 @@ const (
 
 type ArtistFilter struct {
 	Order  ArtistOrder
-	FromTs int64
+	FromTs *int64
+	Name   *string
 }
 
 type AlbumOrder int64
@@ -23,7 +24,8 @@ const (
 
 type AlbumFilter struct {
 	Order  AlbumOrder
-	FromTs int64
+	FromTs *int64
+	Name   *string
 }
 
 type PlaylistOrder int64
@@ -36,8 +38,9 @@ const (
 )
 
 type PlaylistFilter struct {
-	Order  PlaylistOrder
-	FromTs int64
+	Order         PlaylistOrder
+	FromTs        *int64
+	ContentFromTs *int64
 }
 
 type SongOrder int64
@@ -49,8 +52,9 @@ const (
 )
 
 type SongFilter struct {
-	Order  SongOrder
-	FromTs int64
+	Order   SongOrder
+	FromTs  *int64
+	AlbumId *string
 }
 
 type UserOrder int64
@@ -63,6 +67,6 @@ const (
 
 type UserFilter struct {
 	Order   UserOrder
-	FromTs  int64
+	FromTs  *int64
 	AdminFg *bool
 }

@@ -2,15 +2,15 @@ package svc
 
 import (
 	"bytes"
+	"github.com/asdine/storm"
 	"github.com/bogem/id3v2"
-	"github.com/dgraph-io/badger"
 	"github.com/sirupsen/logrus"
 	"lyra/restApiV1"
 	"strconv"
 	"strings"
 )
 
-func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	reader := bytes.NewReader(content)
@@ -26,15 +26,18 @@ func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content [
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
 	var publicationYear *int64 = nil
-	var albumId *string = nil
+	var albumId string = ""
 	var trackNumber *int64 = nil
 	var artistIds []string
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Extract title
@@ -53,7 +56,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content [
 	logrus.Debugf("Album: %s", albumName)
 
 	// Extract track number
-	if albumId != nil {
+	if albumId != "" {
 		rawTrackNumber := strings.Split(tag.GetTextFrame(tag.CommonID("Track number/Position in set")).Text, "/")
 		if len(rawTrackNumber) > 0 {
 			parsedTrackNumber, _ := strconv.ParseInt(normalizeString(rawTrackNumber[0]), 10, 64)
@@ -113,7 +116,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn *badger.Txn, content [
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentMp3Tag(externalTrn *badger.Txn, song *restApiV1.Song) error {
+func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, song *restApiV1.Song) error {
 	// Extract song meta from tags
 	tag, err := id3v2.Open(s.GetSongFileName(song), id3v2.Options{Parse: true})
 	if err != nil {
@@ -129,13 +132,16 @@ func (s *Service) updateSongContentMp3Tag(externalTrn *badger.Txn, song *restApi
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return err
+		}
+		defer txn.Rollback()
 	}
 
 	// Set album & track number
-	if song.AlbumId != nil {
-		album, err := s.ReadAlbum(txn, *song.AlbumId)
+	if song.AlbumId != "" {
+		album, err := s.ReadAlbum(txn, song.AlbumId)
 		if err != nil {
 			return err
 		}
