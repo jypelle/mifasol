@@ -24,6 +24,10 @@ type DeletedArtist struct {
 }
 
 type ArtistSong struct {
+	ArtistSongId `storm:"id" storm:"inline"`
+}
+
+type ArtistSongId struct {
 	ArtistId string `json:"artistId" storm:"index"`
 	SongId   string `json:"songId" storm:"index"`
 }

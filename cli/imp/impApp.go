@@ -140,7 +140,7 @@ func (a *ImpApp) start() {
 				}
 			}()
 
-			indexLastSeparator := strings.LastIndex(fileName, "/")
+			indexLastSeparator := strings.LastIndex(fileName, string(filepath.Separator))
 
 			// Reset last album id on new folder
 			if lastFolder != fileName[:indexLastSeparator] {

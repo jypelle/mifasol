@@ -151,7 +151,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew)
 		}
 
 		// Store artist songs
-		e = txn.Save(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
+		e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
 		if e != nil {
 			return nil, e
 		}
@@ -309,7 +309,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	// Update artists link
 	if songMeta != nil && artistIdsChanged {
 		for _, artistId := range songOldArtistIds {
-			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
+			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
 			if e != nil {
 				return nil, e
 			}
@@ -323,7 +323,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 			}
 
 			// Store artist song
-			e = txn.Save(&restApiV1.ArtistSong{ArtistId: artistId, SongId: song.Id})
+			e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
 			if e != nil {
 				return nil, e
 			}

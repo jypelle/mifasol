@@ -28,7 +28,7 @@ func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFi
 		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
 	}
 	if filter.Name != nil {
-		matchers = append(matchers, q.Gte("Name", *filter.Name))
+		matchers = append(matchers, q.Eq("Name", *filter.Name))
 	}
 
 	query := txn.Select(matchers...)
