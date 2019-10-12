@@ -21,29 +21,35 @@ type DeletedPlaylist struct {
 	DeleteTs int64  `json:"deleteTs" storm:"index"`
 }
 
-type PlaylistSong struct {
-	PlaylistSongId `storm:"id"`
+type PlaylistSongId struct {
+	PlaylistIdPk string
+	SongIdPk     string
 }
 
-type PlaylistSongId struct {
-	PlaylistId string `json:"playlistId" storm:"index"`
-	SongId     string `json:"songId" storm:"index"`
+type PlaylistSong struct {
+	PlaylistSongId `storm:"id"`
+	PlaylistId     string `json:"playlistId" storm:"index"`
+	SongId         string `json:"songId" storm:"index"`
+}
+
+type OwnedUserPlaylistId struct {
+	UserIdPk     string
+	PlaylistIdPk string
 }
 
 type OwnedUserPlaylist struct {
 	OwnedUserPlaylistId `storm:"id"`
+	UserId              string `json:"userId" storm:"index"`
+	PlaylistId          string `json:"playlistId" storm:"index"`
 }
 
-type OwnedUserPlaylistId struct {
-	UserId     string `json:"userId" storm:"index"`
-	PlaylistId string `json:"playlistId" storm:"index"`
+type FavoritePlaylistId struct {
+	UserIdPk     string
+	PlaylistIdPk string
 }
 
 type FavoritePlaylist struct {
 	FavoritePlaylistId `storm:"id"`
-}
-
-type FavoritePlaylistId struct {
-	UserId     string `json:"userId" storm:"index"`
-	PlaylistId string `json:"playlistId" storm:"index"`
+	UserId             string `json:"userId" storm:"index"`
+	PlaylistId         string `json:"playlistId" storm:"index"`
 }

@@ -3,6 +3,7 @@ package svc
 import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"lyra/restApiV1"
@@ -45,7 +46,6 @@ func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter
 	case restApiV1.SongOrderByUpdateTs:
 		query = query.OrderBy("UpdateTs")
 	default:
-		query = query.OrderBy("Id")
 	}
 
 	err = query.Find(&songs)
@@ -151,7 +151,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew)
 		}
 
 		// Store artist songs
-		e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
+		e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
 		if e != nil {
 			return nil, e
 		}
@@ -169,28 +169,28 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew)
 	if e != nil {
 		return nil, e
 	}
-
-	e = ioutil.WriteFile(s.GetSongFileName(song), songNew.Content, 0660)
-	if e != nil {
-		return nil, e
-	}
-
-	// Update tags in song content
-	e = s.UpdateSongContentTag(txn, song)
-	if e != nil {
-		// If tags not updated, delete the song file
-		os.Remove(s.GetSongFileName(song))
-		return nil, e
-	}
-
-	// Refresh album artists
-	if song.AlbumId != "" {
-		e = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
+	/*
+		e = ioutil.WriteFile(s.GetSongFileName(song), songNew.Content, 0660)
 		if e != nil {
 			return nil, e
 		}
-	}
 
+		// Update tags in song content
+		e = s.UpdateSongContentTag(txn, song)
+		if e != nil {
+			// If tags not updated, delete the song file
+			os.Remove(s.GetSongFileName(song))
+			return nil, e
+		}
+
+		// Refresh album artists
+		if song.AlbumId != "" {
+			e = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
+			if e != nil {
+				return nil, e
+			}
+		}
+	*/
 	// Commit transaction
 	if externalTrn == nil {
 		txn.Commit()
@@ -234,26 +234,25 @@ func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCl
 		return nil, err
 	}
 
+	logrus.Debugf("Create song")
 	song, err := s.CreateSong(txn, songNew)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add song to incoming playlist
-	incomingPlayList, err := s.ReadPlaylist(txn, "00000000000000000000000000")
-	if err != nil {
-		return nil, err
-	}
-	incomingPlayList.SongIds = append(incomingPlayList.SongIds, song.Id)
-	_, err = s.UpdatePlaylist(txn, incomingPlayList.Id, &incomingPlayList.PlaylistMeta)
+	logrus.Debugf("Add song to incoming playlist")
+	_, err = s.AddSongToPlaylist(txn, "00000000000000000000000000", song.Id)
 	if err != nil {
 		return nil, err
 	}
 
+	logrus.Debugf("Commit")
 	// Commit transaction
 	if externalTrn == nil {
 		txn.Commit()
 	}
+	logrus.Debugf("End commit")
 
 	return song, nil
 }
@@ -312,7 +311,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	// Update artists link
 	if songMeta != nil && artistIdsChanged {
 		for _, artistId := range songOldArtistIds {
-			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
+			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
 			if e != nil {
 				return nil, e
 			}
@@ -326,7 +325,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 			}
 
 			// Store artist song
-			e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistId: artistId, SongId: song.Id}})
+			e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
 			if e != nil {
 				return nil, e
 			}

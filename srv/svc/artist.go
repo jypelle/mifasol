@@ -39,7 +39,6 @@ func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFi
 	case restApiV1.ArtistOrderByUpdateTs:
 		query = query.OrderBy("UpdateTs")
 	default:
-		query = query.OrderBy("Id")
 	}
 
 	err = query.Find(&artists)

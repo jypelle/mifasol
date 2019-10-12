@@ -44,7 +44,6 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 	case restApiV1.UserOrderByUpdateTs:
 		query = query.OrderBy("UpdateTs")
 	default:
-		query = query.OrderBy("Id")
 	}
 
 	err = query.Find(&userCompletes)

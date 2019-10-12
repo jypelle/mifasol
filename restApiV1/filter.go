@@ -3,7 +3,7 @@ package restApiV1
 type ArtistOrder int64
 
 const (
-	ArtistOrderByArtistId ArtistOrder = iota
+	ArtistOrderNoOrder ArtistOrder = iota
 	ArtistOrderByArtistName
 	ArtistOrderByUpdateTs
 )
@@ -17,7 +17,7 @@ type ArtistFilter struct {
 type AlbumOrder int64
 
 const (
-	AlbumOrderByAlbumId AlbumOrder = iota
+	AlbumOrderNoOrder AlbumOrder = iota
 	AlbumOrderByAlbumName
 	AlbumOrderByUpdateTs
 )
@@ -31,7 +31,7 @@ type AlbumFilter struct {
 type PlaylistOrder int64
 
 const (
-	PlaylistOrderByPlaylistId PlaylistOrder = iota
+	PlaylistOrderNoOrder PlaylistOrder = iota
 	PlaylistOrderByPlaylistName
 	PlaylistOrderByUpdateTs
 	PlaylistOrderByContentUpdateTs
@@ -46,7 +46,7 @@ type PlaylistFilter struct {
 type SongOrder int64
 
 const (
-	SongOrderBySongId SongOrder = iota
+	SongOrderByNoOrder SongOrder = iota
 	SongOrderBySongName
 	SongOrderByUpdateTs
 )
@@ -60,7 +60,7 @@ type SongFilter struct {
 type UserOrder int64
 
 const (
-	UserOrderByUserId UserOrder = iota
+	UserOrderByNoOrder UserOrder = iota
 	UserOrderByUserName
 	UserOrderByUpdateTs
 )

@@ -147,6 +147,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content [
 	}
 
 	// Find Artist IDs
+	logrus.Debugf("Find artist ids")
 	artistIds, err = s.getArtistIdsFromArtistNames(txn, artistNames)
 	if err != nil {
 		return nil, err

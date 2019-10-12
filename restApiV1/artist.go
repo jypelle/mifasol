@@ -13,21 +13,18 @@ type ArtistMeta struct {
 	Name string `json:"name" storm:"index"`
 }
 
-type ArtistReport struct {
-	Artist    `storm:"inline"`
-	SongCount int64 `json:"songCount"`
-}
-
 type DeletedArtist struct {
 	Id       string `json:"id" storm:"id"`
 	DeleteTs int64  `json:"deleteTs" storm:"index"`
 }
 
 type ArtistSongId struct {
-	ArtistId string `json:"artistId" storm:"index"`
-	SongId   string `json:"songId" storm:"index"`
+	ArtistIdPk string
+	SongIdPk   string
 }
 
 type ArtistSong struct {
 	ArtistSongId `storm:"id"`
+	ArtistId     string `json:"artistId" storm:"index"`
+	SongId       string `json:"songId" storm:"index"`
 }

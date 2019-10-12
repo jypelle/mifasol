@@ -40,7 +40,6 @@ func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilt
 	case restApiV1.AlbumOrderByUpdateTs:
 		query = query.OrderBy("UpdateTs")
 	default:
-		query = query.OrderBy("Id")
 	}
 
 	err = query.Find(&albums)
