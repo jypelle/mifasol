@@ -245,7 +245,10 @@ func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCl
 		return nil, err
 	}
 	incomingPlayList.SongIds = append(incomingPlayList.SongIds, song.Id)
-	s.UpdatePlaylist(txn, incomingPlayList.Id, &incomingPlayList.PlaylistMeta)
+	_, err = s.UpdatePlaylist(txn, incomingPlayList.Id, &incomingPlayList.PlaylistMeta)
+	if err != nil {
+		return nil, err
+	}
 
 	// Commit transaction
 	if externalTrn == nil {
@@ -458,7 +461,7 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.
 	// Delete artists link
 	query := txn.Select(q.Eq("SongId", song.Id))
 	e = query.Delete(new(restApiV1.ArtistSong))
-	if e != nil {
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 

@@ -18,8 +18,3 @@ type DeletedAlbum struct {
 	Id       string `json:"id" storm:"id"`
 	DeleteTs int64  `json:"deleteTs" storm:"index"`
 }
-
-type AlbumSong struct {
-	AlbumId string `json:"albumId" storm:"index"`
-	SongId  string `json:"songId" storm:"index"`
-}

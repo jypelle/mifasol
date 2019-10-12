@@ -132,7 +132,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 		}
 
 		// Store playlist owner
-		e = txn.Save(&restApiV1.OwnedUserPlaylist{UserId: ownerUserId, PlaylistId: playlistId})
+		e = txn.Save(&restApiV1.OwnedUserPlaylist{OwnedUserPlaylistId: restApiV1.OwnedUserPlaylistId{UserId: ownerUserId, PlaylistId: playlistId}})
 		if e != nil {
 			return nil, e
 		}
@@ -148,7 +148,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 		}
 
 		// Store song link
-		e = txn.Save(&restApiV1.PlaylistSong{PlaylistId: playlistId, SongId: songId})
+		e = txn.Save(&restApiV1.PlaylistSong{PlaylistSongId: restApiV1.PlaylistSongId{PlaylistId: playlistId, SongId: songId}})
 		if e != nil {
 			return nil, e
 		}
@@ -215,7 +215,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	// Update owner index
 	query := txn.Select(q.Eq("PlaylistId", playlistId))
 	e = query.Delete(new(restApiV1.OwnedUserPlaylist))
-	if e != nil {
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
@@ -228,7 +228,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 		}
 
 		// Store playlist owner
-		e = txn.Save(&restApiV1.OwnedUserPlaylist{UserId: ownerUserId, PlaylistId: playlistId})
+		e = txn.Save(&restApiV1.OwnedUserPlaylist{OwnedUserPlaylistId: restApiV1.OwnedUserPlaylistId{UserId: ownerUserId, PlaylistId: playlistId}})
 		if e != nil {
 			return nil, e
 		}
@@ -238,7 +238,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	if songIdsUpdated {
 		query := txn.Select(q.Eq("PlaylistId", playlistId))
 		e = query.Delete(new(restApiV1.PlaylistSong))
-		if e != nil {
+		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
 		for _, songId := range playlist.SongIds {
@@ -250,7 +250,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 			}
 
 			// Store song link
-			e = txn.Save(&restApiV1.PlaylistSong{PlaylistId: playlistId, SongId: songId})
+			e = txn.Save(&restApiV1.PlaylistSong{PlaylistSongId: restApiV1.PlaylistSongId{PlaylistId: playlistId, SongId: songId}})
 			if e != nil {
 				return nil, e
 			}
@@ -287,14 +287,14 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*re
 	// Delete ower link
 	query := txn.Select(q.Eq("PlaylistId", playlistId))
 	e = query.Delete(new(restApiV1.OwnedUserPlaylist))
-	if e != nil {
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
 	// Delete songs link
 	query = txn.Select(q.Eq("PlaylistId", playlistId))
 	e = query.Delete(new(restApiV1.PlaylistSong))
-	if e != nil {
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 

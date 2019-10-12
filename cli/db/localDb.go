@@ -87,28 +87,33 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	// Create in-memory indexes
 
 	// Indexing songs
-	for _, song := range syncReport.Songs {
-		l.Songs[song.Id] = &song
+	for idx := range syncReport.Songs {
+		song := &syncReport.Songs[idx]
+		l.Songs[song.Id] = song
 	}
 
 	// Indexing albums
-	for _, album := range syncReport.Albums {
-		l.Albums[album.Id] = &album
+	for idx := range syncReport.Albums {
+		album := &syncReport.Albums[idx]
+		l.Albums[album.Id] = album
 	}
 
 	// Indexing artists
-	for _, artist := range syncReport.Artists {
-		l.Artists[artist.Id] = &artist
+	for idx := range syncReport.Artists {
+		artist := &syncReport.Artists[idx]
+		l.Artists[artist.Id] = artist
 	}
 
 	// Indexing playlists
-	for _, playlist := range syncReport.Playlists {
-		l.Playlists[playlist.Id] = &playlist
+	for idx := range syncReport.Playlists {
+		playlist := &syncReport.Playlists[idx]
+		l.Playlists[playlist.Id] = playlist
 	}
 
 	// Indexing users
-	for _, user := range syncReport.Users {
-		l.Users[user.Id] = &user
+	for idx := range syncReport.Users {
+		user := &syncReport.Users[idx]
+		l.Users[user.Id] = user
 	}
 
 	// OrderedSongs
