@@ -119,7 +119,7 @@ func (s *RestServer) updateSong(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the song: %v", err)
 	}
 
-	song, err := s.service.UpdateSong(nil, songId, &songMeta, nil)
+	song, err := s.service.UpdateSong(nil, songId, &songMeta, nil, true)
 	if err != nil {
 		logrus.Panicf("Unable to update the song: %v", err)
 	}

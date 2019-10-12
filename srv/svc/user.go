@@ -233,7 +233,7 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.
 			}
 		}
 		playList.OwnerUserIds = newOwnerUserIds
-		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta)
+		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta, false)
 		if e != nil {
 			return nil, e
 		}

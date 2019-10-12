@@ -99,16 +99,16 @@ func (s *Service) GetSongFileName(song *restApiV1.Song) string {
 	return filepath.Join(s.GetSongDirName(song.Id), song.Id+song.Format.Extension())
 }
 
-func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew) (*restApiV1.Song, error) {
+func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew, check bool) (*restApiV1.Song, error) {
 	var song *restApiV1.Song
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -133,25 +133,29 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew)
 
 	// Create album link
 	if song.AlbumId != "" {
-		// Check album id
-		var album restApiV1.Album
-		e := txn.One("Id", song.AlbumId, &album)
-		if e != nil {
-			return nil, e
+		if check {
+			// Check album id
+			var album restApiV1.Album
+			e = txn.One("Id", song.AlbumId, &album)
+			if e != nil {
+				return nil, e
+			}
 		}
 	}
 
 	// Create artists link
 	for _, artistId := range songNew.ArtistIds {
 		// Check artist id
-		var artist restApiV1.Artist
-		e := txn.One("Id", artistId, &artist)
-		if e != nil {
-			return nil, e
+		if check {
+			var artist restApiV1.Artist
+			e = txn.One("Id", artistId, &artist)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store artist songs
-		e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
+		e = txn.Save(restApiV1.NewArtistSong(artistId, song.Id))
 		if e != nil {
 			return nil, e
 		}
@@ -159,7 +163,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew)
 	}
 
 	// Create song
-	e := txn.Save(song)
+	e = txn.Save(song)
 	if e != nil {
 		return nil, e
 	}
@@ -235,14 +239,14 @@ func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCl
 	}
 
 	logrus.Debugf("Create song")
-	song, err := s.CreateSong(txn, songNew)
+	song, err := s.CreateSong(txn, songNew, false)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add song to incoming playlist
 	logrus.Debugf("Add song to incoming playlist")
-	_, err = s.AddSongToPlaylist(txn, "00000000000000000000000000", song.Id)
+	_, err = s.AddSongToPlaylist(txn, restApiV1.IncomingPlaylistId, song.Id, false)
 	if err != nil {
 		return nil, err
 	}
@@ -257,22 +261,23 @@ func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCl
 	return song, nil
 }
 
-func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *string) (*restApiV1.Song, error) {
+func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *string, check bool) (*restApiV1.Song, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	song, err := s.ReadSong(txn, songId)
+	song, e := s.ReadSong(txn, songId)
 
-	if err != nil {
-		return nil, err
+	if e != nil {
+		return nil, e
 	}
 
 	songOldArtistIds := song.ArtistIds
@@ -298,10 +303,12 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	if songOldAlbumId != song.AlbumId {
 		if song.AlbumId != "" {
 			// Check album id
-			var album restApiV1.Album
-			e := txn.One("Id", song.AlbumId, &album)
-			if e != nil {
-				return nil, e
+			if check {
+				var album restApiV1.Album
+				e = txn.One("Id", song.AlbumId, &album)
+				if e != nil {
+					return nil, e
+				}
 			}
 		}
 	}
@@ -311,21 +318,23 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	// Update artists link
 	if songMeta != nil && artistIdsChanged {
 		for _, artistId := range songOldArtistIds {
-			e := txn.DeleteStruct(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
+			e = txn.DeleteStruct(restApiV1.NewArtistSong(artistId, song.Id))
 			if e != nil {
 				return nil, e
 			}
 		}
 		for _, artistId := range song.ArtistIds {
 			// Check artist id
-			var artist restApiV1.Artist
-			e := txn.One("Id", artistId, &artist)
-			if e != nil {
-				return nil, e
+			if check {
+				var artist restApiV1.Artist
+				e = txn.One("Id", artistId, &artist)
+				if e != nil {
+					return nil, e
+				}
 			}
 
 			// Store artist song
-			e = txn.Save(&restApiV1.ArtistSong{ArtistSongId: restApiV1.ArtistSongId{ArtistIdPk: artistId, SongIdPk: song.Id}, ArtistId: artistId, SongId: song.Id})
+			e = txn.Save(restApiV1.NewArtistSong(artistId, song.Id))
 			if e != nil {
 				return nil, e
 			}
@@ -333,19 +342,20 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	}
 
 	// Update song
-	e := txn.Update(song)
+	e = txn.Update(song)
 	if e != nil {
 		return nil, e
 	}
 
 	// Update playlists link
-	playlistIds, e := s.GetPlaylistIdsFromSongId(txn, songId)
+	var playlistIds []string
+	playlistIds, e = s.GetPlaylistIdsFromSongId(txn, songId)
 	if e != nil {
 		return nil, e
 	}
 
 	for _, playlistId := range playlistIds {
-		_, e = s.UpdatePlaylist(txn, playlistId, nil)
+		_, e = s.UpdatePlaylist(txn, playlistId, nil, false)
 		if e != nil {
 			return nil, e
 		}
@@ -451,7 +461,7 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.
 			}
 		}
 		playList.SongIds = newSongIds
-		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta)
+		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta, false)
 		if e != nil {
 			return nil, e
 		}

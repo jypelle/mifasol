@@ -146,7 +146,7 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta 
 	}
 
 	for _, songId := range songIds {
-		s.UpdateSong(txn, songId, nil, nil)
+		s.UpdateSong(txn, songId, nil, nil, false)
 	}
 
 	// Commit transaction

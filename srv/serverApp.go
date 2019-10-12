@@ -109,21 +109,22 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	if err != nil {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}
-	app.db.Init(&restApiV1.Album{})
-	app.db.Init(&restApiV1.DeletedAlbum{})
-	app.db.Init(&restApiV1.Artist{})
-	app.db.Init(&restApiV1.ArtistSong{})
-	app.db.Init(&restApiV1.DeletedArtist{})
-	app.db.Init(&restApiV1.Song{})
-	app.db.Init(&restApiV1.DeletedSong{})
-	app.db.Init(&restApiV1.Playlist{})
-	app.db.Init(&restApiV1.PlaylistSong{})
-	app.db.Init(&restApiV1.DeletedPlaylist{})
-	app.db.Init(&restApiV1.OwnedUserPlaylist{})
-	app.db.Init(&restApiV1.FavoritePlaylist{})
-	app.db.Init(&restApiV1.UserComplete{})
-	app.db.Init(&restApiV1.DeletedUser{})
-
+	/*
+		app.db.Init(&restApiV1.Album{})
+		app.db.Init(&restApiV1.DeletedAlbum{})
+		app.db.Init(&restApiV1.Artist{})
+		app.db.Init(&restApiV1.ArtistSong{})
+		app.db.Init(&restApiV1.DeletedArtist{})
+		app.db.Init(&restApiV1.Song{})
+		app.db.Init(&restApiV1.DeletedSong{})
+		app.db.Init(&restApiV1.Playlist{})
+		app.db.Init(&restApiV1.PlaylistSong{})
+		app.db.Init(&restApiV1.DeletedPlaylist{})
+		app.db.Init(&restApiV1.OwnedUserPlaylist{})
+		app.db.Init(&restApiV1.FavoritePlaylist{})
+		app.db.Init(&restApiV1.UserComplete{})
+		app.db.Init(&restApiV1.DeletedUser{})
+	*/
 	// Create service
 	app.service = svc.NewService(app.db, &app.ServerConfig)
 
@@ -150,7 +151,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	}
 
 	// Check existence of the (incoming) playlist
-	_, err = app.service.ReadPlaylist(nil, "00000000000000000000000000")
+	_, err = app.service.ReadPlaylist(nil, restApiV1.IncomingPlaylistId)
 	if err != nil {
 		if err != svc.ErrNotFound {
 			logrus.Fatalf("Unable to retrieve incoming playlist: %v", err)
@@ -160,7 +161,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 			Name:    "(incoming)",
 			SongIds: nil,
 		}
-		_, err := app.service.CreateInternalPlaylist(nil, "00000000000000000000000000", &playlistMeta)
+		_, err := app.service.CreateInternalPlaylist(nil, restApiV1.IncomingPlaylistId, &playlistMeta, false)
 		if err != nil {
 			logrus.Fatalf("Unable to create incoming playlist: %v", err)
 		}

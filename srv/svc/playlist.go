@@ -78,11 +78,11 @@ func (s *Service) ReadPlaylist(externalTrn storm.Node, playlistId string) (*rest
 	return &playlist, nil
 }
 
-func (s *Service) CreatePlaylist(externalTrn storm.Node, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
-	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta)
+func (s *Service) CreatePlaylist(externalTrn storm.Node, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta, check)
 }
 
-func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
+func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
 
 	// Check available transaction
 	txn := externalTrn
@@ -124,14 +124,16 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	// Create owners link
 	for _, ownerUserId := range playlist.OwnerUserIds {
 		// Check owner user id
-		var userComplete restApiV1.UserComplete
-		e := txn.One("Id", ownerUserId, &userComplete)
-		if e != nil {
-			return nil, e
+		if check {
+			var userComplete restApiV1.UserComplete
+			e = txn.One("Id", ownerUserId, &userComplete)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store playlist owner
-		e = txn.Save(&restApiV1.OwnedUserPlaylist{OwnedUserPlaylistId: restApiV1.OwnedUserPlaylistId{UserIdPk: ownerUserId, PlaylistIdPk: playlistId}, UserId: ownerUserId, PlaylistId: playlistId})
+		e = txn.Save(restApiV1.NewOwnedUserPlaylist(ownerUserId, playlistId))
 		if e != nil {
 			return nil, e
 		}
@@ -140,14 +142,16 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	// Create songs link
 	for _, songId := range playlist.SongIds {
 		// Check song id
-		var song restApiV1.Song
-		e := txn.One("Id", songId, &song)
-		if e != nil {
-			return nil, e
+		if check {
+			var song restApiV1.Song
+			e = txn.One("Id", songId, &song)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store song link
-		e = txn.Save(&restApiV1.PlaylistSong{PlaylistSongId: restApiV1.PlaylistSongId{PlaylistIdPk: playlistId, SongIdPk: songId}, PlaylistId: playlistId, SongId: songId})
+		e = txn.Save(restApiV1.NewPlaylistSong(playlistId, songId))
 		if e != nil {
 			return nil, e
 		}
@@ -161,7 +165,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	return playlist, nil
 }
 
-func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
+func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
 
 	// Check available transaction
 	txn := externalTrn
@@ -220,14 +224,16 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	for _, ownerUserId := range playlist.OwnerUserIds {
 
 		// Check owner user id
-		var userComplete restApiV1.UserComplete
-		e := txn.One("Id", ownerUserId, &userComplete)
-		if e != nil {
-			return nil, e
+		if check {
+			var userComplete restApiV1.UserComplete
+			e := txn.One("Id", ownerUserId, &userComplete)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store playlist owner
-		e = txn.Save(&restApiV1.OwnedUserPlaylist{OwnedUserPlaylistId: restApiV1.OwnedUserPlaylistId{UserIdPk: ownerUserId, PlaylistIdPk: playlistId}, UserId: ownerUserId, PlaylistId: playlistId})
+		e = txn.Save(restApiV1.NewOwnedUserPlaylist(ownerUserId, playlistId))
 		if e != nil {
 			return nil, e
 		}
@@ -242,14 +248,16 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 		}
 		for _, songId := range playlist.SongIds {
 			// Check song id
-			var song restApiV1.Song
-			e := txn.One("Id", songId, &song)
-			if e != nil {
-				return nil, e
+			if check {
+				var song restApiV1.Song
+				e := txn.One("Id", songId, &song)
+				if e != nil {
+					return nil, e
+				}
 			}
 
 			// Store song link
-			e = txn.Save(&restApiV1.PlaylistSong{PlaylistSongId: restApiV1.PlaylistSongId{PlaylistIdPk: playlistId, SongIdPk: songId}, PlaylistId: playlistId, SongId: songId})
+			e = txn.Save(restApiV1.NewPlaylistSong(playlistId, songId))
 			if e != nil {
 				return nil, e
 			}
@@ -264,30 +272,33 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	return playlist, nil
 }
 
-func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, songId string) (*restApiV1.Playlist, error) {
+func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, songId string, check bool) (*restApiV1.Playlist, error) {
+	var e error
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	now := time.Now().UnixNano()
-	playlist, e := s.ReadPlaylist(txn, playlistId)
+	var playlist *restApiV1.Playlist
+	playlist, e = s.ReadPlaylist(txn, playlistId)
 
 	if e != nil {
 		return nil, e
 	}
 
 	// Check song id
-	var song restApiV1.Song
-	e = txn.One("Id", songId, &song)
-	if e != nil {
-		return nil, e
+	if check {
+		var song restApiV1.Song
+		e = txn.One("Id", songId, &song)
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	playlist.PlaylistMeta.SongIds = append(playlist.PlaylistMeta.SongIds, songId)
@@ -302,7 +313,7 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, s
 	}
 
 	// Store song link
-	e = txn.Save(&restApiV1.PlaylistSong{PlaylistSongId: restApiV1.PlaylistSongId{PlaylistIdPk: playlistId, SongIdPk: songId}, PlaylistId: playlistId, SongId: songId})
+	e = txn.Save(restApiV1.NewPlaylistSong(playlistId, songId))
 	if e != nil {
 		return nil, e
 	}
