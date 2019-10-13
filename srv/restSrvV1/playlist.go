@@ -50,7 +50,7 @@ func (s *RestServer) createPlaylist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to create the playlist: %v", err)
 	}
 
-	playlist, err := s.service.CreatePlaylist(nil, &playlistMeta)
+	playlist, err := s.service.CreatePlaylist(nil, &playlistMeta, true)
 	if err != nil {
 		logrus.Panicf("Unable to create the playlist: %v", err)
 	}
@@ -72,7 +72,7 @@ func (s *RestServer) updatePlaylist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the playlist: %v", err)
 	}
 
-	playlist, err := s.service.UpdatePlaylist(nil, playlistId, &playlistMeta)
+	playlist, err := s.service.UpdatePlaylist(nil, playlistId, &playlistMeta, true)
 	if err != nil {
 		logrus.Panicf("Unable to update the playlist: %v", err)
 	}

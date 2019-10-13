@@ -564,9 +564,9 @@ func (c *LibraryComponent) getPositionnedIdSong(song *restApiV1.Song, fromAlbumI
 	currentPosition++
 
 	// Album name
-	if song.AlbumId != nil && fromAlbumId == nil {
+	if song.AlbumId != "" && fromAlbumId == nil {
 		if currentPosition == highlightPosition {
-			return model.IdTypeAlbum, *song.AlbumId
+			return model.IdTypeAlbum, song.AlbumId
 		}
 		currentPosition++
 	}
@@ -601,7 +601,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *st
 	currentPosition++
 
 	// Album name
-	if song.AlbumId != nil && fromAlbumId == nil {
+	if song.AlbumId != "" && fromAlbumId == nil {
 		if currentPosition >= highlightPosition {
 			if currentPosition > highlightPosition {
 				text += " [::b]/[::-] "
@@ -610,7 +610,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *st
 			if currentPosition == highlightPosition {
 				underline = "u"
 			}
-			text += "[" + ColorAlbumStr + "::" + underline + "]" + tview.Escape(c.uiApp.LocalDb().Albums[*song.AlbumId].Name) + "[white::-]"
+			text += "[" + ColorAlbumStr + "::" + underline + "]" + tview.Escape(c.uiApp.LocalDb().Albums[song.AlbumId].Name) + "[white::-]"
 		}
 		currentPosition++
 	}

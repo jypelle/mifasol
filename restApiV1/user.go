@@ -2,11 +2,6 @@ package restApiV1
 
 // User
 
-type UserComplete struct {
-	User
-	Password string `json:"password"`
-}
-
 type User struct {
 	Id         string `json:"id"`
 	CreationTs int64  `json:"creationTs"`

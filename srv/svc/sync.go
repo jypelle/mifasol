@@ -2,11 +2,10 @@ package svc
 
 import (
 	"fmt"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 	"github.com/sirupsen/logrus"
 	"lyra/restApiV1"
 	"lyra/tool"
-	"strings"
 	"time"
 )
 
@@ -14,16 +13,18 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	var syncReport restApiV1.SyncReport
 
 	var err error
-
-	var txn *badger.Txn
-	txn = s.Db.NewTransaction(false)
-	defer txn.Discard()
+	var txn storm.Node
+	txn, err = s.Db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer txn.Rollback()
 
 	// Sync timestamp
 	syncReport.SyncTs = time.Now().UnixNano()
 
 	// Songs
-	syncReport.Songs, err = s.ReadSongs(txn, &restApiV1.SongFilter{Order: restApiV1.SongOrderByUpdateTs, FromTs: fromTs})
+	syncReport.Songs, err = s.ReadSongs(txn, &restApiV1.SongFilter{Order: restApiV1.SongOrderByUpdateTs, FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read songs: %v", err)
 	}
@@ -33,7 +34,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Albums
-	syncReport.Albums, err = s.ReadAlbums(txn, &restApiV1.AlbumFilter{Order: restApiV1.AlbumOrderByUpdateTs, FromTs: fromTs})
+	syncReport.Albums, err = s.ReadAlbums(txn, &restApiV1.AlbumFilter{Order: restApiV1.AlbumOrderByUpdateTs, FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read albums: %v", err)
 	}
@@ -43,7 +44,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Artists
-	syncReport.Artists, err = s.ReadArtists(txn, &restApiV1.ArtistFilter{Order: restApiV1.ArtistOrderByUpdateTs, FromTs: fromTs})
+	syncReport.Artists, err = s.ReadArtists(txn, &restApiV1.ArtistFilter{Order: restApiV1.ArtistOrderByUpdateTs, FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read artists: %v", err)
 	}
@@ -53,7 +54,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Playlists
-	syncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByUpdateTs, FromTs: fromTs})
+	syncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByUpdateTs, FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}
@@ -63,7 +64,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Users
-	syncReport.Users, err = s.ReadUsers(txn, &restApiV1.UserFilter{Order: restApiV1.UserOrderByUpdateTs, FromTs: fromTs})
+	syncReport.Users, err = s.ReadUsers(txn, &restApiV1.UserFilter{Order: restApiV1.UserOrderByUpdateTs, FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read users: %v", err)
 	}
@@ -80,9 +81,12 @@ func (s *Service) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, e
 
 	var err error
 
-	var txn *badger.Txn
-	txn = s.Db.NewTransaction(false)
-	defer txn.Discard()
+	var txn storm.Node
+	txn, err = s.Db.Begin(false)
+	if err != nil {
+		return nil, err
+	}
+	defer txn.Rollback()
 
 	// Sync timestamp
 	fileSyncReport.SyncTs = time.Now().UnixNano()
@@ -99,7 +103,7 @@ func (s *Service) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, e
 	}
 
 	// Playlists
-	fileSyncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByContentUpdateTs, FromTs: fromTs})
+	fileSyncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByContentUpdateTs, ContentFromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}
@@ -111,40 +115,31 @@ func (s *Service) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, e
 	return &fileSyncReport, nil
 }
 
-func (s *Service) ReadFileSyncSongs(externalTrn *badger.Txn, fromTs int64) ([]*restApiV1.FileSyncSong, error) {
-	fileSyncSongs := []*restApiV1.FileSyncSong{}
-
-	opts := badger.DefaultIteratorOptions
-
-	opts.Prefix = []byte(songUpdateTsSongIdPrefix)
-	opts.PrefetchValues = false
+func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, fromTs int64) ([]restApiV1.FileSyncSong, error) {
+	fileSyncSongs := []restApiV1.FileSyncSong{}
 
 	// Check available transaction
 	txn := externalTrn
+	var err error
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(false)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{Order: restApiV1.SongOrderByUpdateTs, FromTs: &fromTs})
+	if err != nil {
+		return nil, err
+	}
 
-	it.Seek([]byte(songUpdateTsSongIdPrefix + indexTs(fromTs)))
-
-	for ; it.Valid(); it.Next() {
+	for _, song := range songs {
 		var fileSyncSong restApiV1.FileSyncSong
-
-		key := it.Item().KeyCopy(nil)
-
-		songId := strings.Split(string(key), ":")[2]
-		song, e := s.ReadSong(txn, songId)
-		if e != nil {
-			return nil, e
-		}
 
 		fileSyncSong.Id = song.Id
 		fileSyncSong.UpdateTs = song.UpdateTs
-		if song.AlbumId == nil {
+		if song.AlbumId == "" {
 			fileSyncSong.Filepath += tool.SanitizeFilename("(Unknown)") + "/"
 			for ind, artistId := range song.ArtistIds {
 				artist, _ := s.ReadArtist(txn, artistId)
@@ -155,7 +150,7 @@ func (s *Service) ReadFileSyncSongs(externalTrn *badger.Txn, fromTs int64) ([]*r
 			}
 			fileSyncSong.Filepath += " - "
 		} else {
-			album, _ := s.ReadAlbum(txn, *song.AlbumId)
+			album, _ := s.ReadAlbum(txn, song.AlbumId)
 			for ind, artistId := range album.ArtistIds {
 				artist, _ := s.ReadArtist(txn, artistId)
 				if ind != 0 {
@@ -175,7 +170,7 @@ func (s *Service) ReadFileSyncSongs(externalTrn *badger.Txn, fromTs int64) ([]*r
 		}
 		fileSyncSong.Filepath += tool.SanitizeFilename(song.Name) + song.Format.Extension()
 
-		fileSyncSongs = append(fileSyncSongs, &fileSyncSong)
+		fileSyncSongs = append(fileSyncSongs, fileSyncSong)
 
 	}
 

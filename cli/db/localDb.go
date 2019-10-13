@@ -87,27 +87,32 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	// Create in-memory indexes
 
 	// Indexing songs
-	for _, song := range syncReport.Songs {
+	for idx := range syncReport.Songs {
+		song := &syncReport.Songs[idx]
 		l.Songs[song.Id] = song
 	}
 
 	// Indexing albums
-	for _, album := range syncReport.Albums {
+	for idx := range syncReport.Albums {
+		album := &syncReport.Albums[idx]
 		l.Albums[album.Id] = album
 	}
 
 	// Indexing artists
-	for _, artist := range syncReport.Artists {
+	for idx := range syncReport.Artists {
+		artist := &syncReport.Artists[idx]
 		l.Artists[artist.Id] = artist
 	}
 
 	// Indexing playlists
-	for _, playlist := range syncReport.Playlists {
+	for idx := range syncReport.Playlists {
+		playlist := &syncReport.Playlists[idx]
 		l.Playlists[playlist.Id] = playlist
 	}
 
 	// Indexing users
-	for _, user := range syncReport.Users {
+	for idx := range syncReport.Users {
+		user := &syncReport.Users[idx]
 		l.Users[user.Id] = user
 	}
 
@@ -172,8 +177,8 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	l.UnknownArtistSongs = nil
 
 	for _, song := range l.OrderedSongs {
-		if song.AlbumId != nil {
-			l.AlbumOrderedSongs[*song.AlbumId] = append(l.AlbumOrderedSongs[*song.AlbumId], song)
+		if song.AlbumId != "" {
+			l.AlbumOrderedSongs[song.AlbumId] = append(l.AlbumOrderedSongs[song.AlbumId], song)
 		} else {
 			l.UnknownAlbumSongs = append(l.UnknownAlbumSongs, song)
 		}
@@ -220,10 +225,10 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 
 	for _, songs := range l.ArtistOrderedSongs {
 		sort.Slice(songs, func(i, j int) bool {
-			if songs[i].AlbumId != nil {
-				if songs[j].AlbumId != nil {
-					if *songs[i].AlbumId != *songs[j].AlbumId {
-						return l.collator.CompareString(l.Albums[*songs[i].AlbumId].Name, l.Albums[*songs[j].AlbumId].Name) == -1
+			if songs[i].AlbumId != "" {
+				if songs[j].AlbumId != "" {
+					if songs[i].AlbumId != songs[j].AlbumId {
+						return l.collator.CompareString(l.Albums[songs[i].AlbumId].Name, l.Albums[songs[j].AlbumId].Name) == -1
 					} else {
 						if songs[i].TrackNumber != nil {
 							if songs[j].TrackNumber != nil {
@@ -243,7 +248,7 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 					return false
 				}
 			} else {
-				if songs[j].AlbumId != nil {
+				if songs[j].AlbumId != "" {
 					return true
 				}
 			}

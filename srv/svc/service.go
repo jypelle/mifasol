@@ -1,16 +1,16 @@
 package svc
 
 import (
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 	"lyra/srv/config"
 )
 
 type Service struct {
-	Db           *badger.DB
+	Db           *storm.DB
 	ServerConfig *config.ServerConfig
 }
 
-func NewService(db *badger.DB, serverConfig *config.ServerConfig) *Service {
+func NewService(db *storm.DB, serverConfig *config.ServerConfig) *Service {
 
 	service := &Service{
 		Db:           db,

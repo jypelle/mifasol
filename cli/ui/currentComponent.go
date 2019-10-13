@@ -164,8 +164,8 @@ func (c *CurrentComponent) getMainTextSong(songId string, highlightPosition int)
 	songName := "[" + ColorSongStr + "]" + tview.Escape(song.Name) + "[white]"
 
 	albumName := ""
-	if song.AlbumId != nil {
-		albumName = " [::b]/[::-] [" + ColorAlbumStr + "]" + tview.Escape(c.uiApp.localDb.Albums[*song.AlbumId].Name) + "[white]"
+	if song.AlbumId != "" {
+		albumName = " [::b]/[::-] [" + ColorAlbumStr + "]" + tview.Escape(c.uiApp.localDb.Albums[song.AlbumId].Name) + "[white]"
 	}
 	artistsName := ""
 	if len(song.ArtistIds) > 0 {

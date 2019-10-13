@@ -82,7 +82,7 @@ type SongMeta struct {
 	Size            int64        `json:"size"`
 	BitDepth        SongBitDepth `json:"bitDepth"`
 	PublicationYear *int64       `json:"publicationYear"`
-	AlbumId         *string      `json:"albumId"`
+	AlbumId         string       `json:"albumId"`
 	TrackNumber     *int64       `json:"trackNumber"`
 	ArtistIds       []string     `json:"artistIds"`
 }

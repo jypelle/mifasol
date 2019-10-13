@@ -1,17 +1,17 @@
 package restApiV1
 
 type SyncReport struct {
-	Songs              []*Song     `json:"songs"`
-	DeletedSongIds     []string    `json:"deletedSongIds"`
-	Artists            []*Artist   `json:"artists"`
-	DeletedArtistIds   []string    `json:"deletedArtistIds"`
-	Albums             []*Album    `json:"albums"`
-	DeletedAlbumIds    []string    `json:"deletedAlbumIds"`
-	Playlists          []*Playlist `json:"playlists"`
-	DeletedPlaylistIds []string    `json:"deletedPlaylistIds"`
-	Users              []*User     `json:"users"`
-	DeletedUserIds     []string    `json:"deletedUserIds"`
-	SyncTs             int64       `json:"syncTs"`
+	Songs              []Song     `json:"songs"`
+	DeletedSongIds     []string   `json:"deletedSongIds"`
+	Artists            []Artist   `json:"artists"`
+	DeletedArtistIds   []string   `json:"deletedArtistIds"`
+	Albums             []Album    `json:"albums"`
+	DeletedAlbumIds    []string   `json:"deletedAlbumIds"`
+	Playlists          []Playlist `json:"playlists"`
+	DeletedPlaylistIds []string   `json:"deletedPlaylistIds"`
+	Users              []User     `json:"users"`
+	DeletedUserIds     []string   `json:"deletedUserIds"`
+	SyncTs             int64      `json:"syncTs"`
 }
 
 type FileSyncSong struct {
@@ -21,9 +21,9 @@ type FileSyncSong struct {
 }
 
 type FileSyncReport struct {
-	FileSyncSongs      []*FileSyncSong `json:"fileSyncSongs"`
-	DeletedSongIds     []string        `json:"deletedSongIds"`
-	Playlists          []*Playlist     `json:"playlists"`
-	DeletedPlaylistIds []string        `json:"deletedPlaylistIds"`
-	SyncTs             int64           `json:"syncTs"`
+	FileSyncSongs      []FileSyncSong `json:"fileSyncSongs"`
+	DeletedSongIds     []string       `json:"deletedSongIds"`
+	Playlists          []Playlist     `json:"playlists"`
+	DeletedPlaylistIds []string       `json:"deletedPlaylistIds"`
+	SyncTs             int64          `json:"syncTs"`
 }

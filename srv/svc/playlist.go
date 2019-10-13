@@ -1,198 +1,170 @@
 package svc
 
 import (
-	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"lyra/tool"
 	"reflect"
 	"sort"
-	"strings"
 	"time"
 )
 
-func (s *Service) ReadPlaylists(externalTrn *badger.Txn, filter *restApiV1.PlaylistFilter) ([]*restApiV1.Playlist, error) {
-	playlists := []*restApiV1.Playlist{}
-
-	opts := badger.DefaultIteratorOptions
-	switch filter.Order {
-	case restApiV1.PlaylistOrderByPlaylistName:
-		opts.Prefix = []byte(playlistNamePlaylistIdPrefix)
-		opts.PrefetchValues = false
-	case restApiV1.PlaylistOrderByUpdateTs:
-		opts.Prefix = []byte(playlistUpdateTsPlaylistIdPrefix)
-		opts.PrefetchValues = false
-	case restApiV1.PlaylistOrderByContentUpdateTs:
-		opts.Prefix = []byte(playlistContentUpdateTsPlaylistIdPrefix)
-		opts.PrefetchValues = false
-	default:
-		opts.Prefix = []byte(playlistIdPrefix)
-	}
+func (s *Service) ReadPlaylists(externalTrn storm.Node, filter *restApiV1.PlaylistFilter) ([]restApiV1.Playlist, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
-	}
-
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	if filter.Order == restApiV1.PlaylistOrderByUpdateTs {
-		it.Seek([]byte(playlistUpdateTsPlaylistIdPrefix + indexTs(filter.FromTs)))
-	} else if filter.Order == restApiV1.PlaylistOrderByContentUpdateTs {
-		it.Seek([]byte(playlistContentUpdateTsPlaylistIdPrefix + indexTs(filter.FromTs)))
-	} else {
-		it.Rewind()
-	}
-
-	for ; it.Valid(); it.Next() {
-		var playlist *restApiV1.Playlist
-
-		switch filter.Order {
-		case restApiV1.PlaylistOrderByPlaylistName,
-			restApiV1.PlaylistOrderByUpdateTs,
-			restApiV1.PlaylistOrderByContentUpdateTs:
-			key := it.Item().KeyCopy(nil)
-
-			playlistId := strings.Split(string(key), ":")[2]
-			var e error
-			playlist, e = s.ReadPlaylist(txn, playlistId)
-			if e != nil {
-				return nil, e
-			}
-		default:
-			encodedPlaylist, e := it.Item().ValueCopy(nil)
-			if e != nil {
-				return nil, e
-			}
-			e = json.Unmarshal(encodedPlaylist, &playlist)
-			if e != nil {
-				return nil, e
-			}
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
+		defer txn.Rollback()
+	}
 
+	var matchers []q.Matcher
+
+	if filter.FromTs != nil {
+		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
+	}
+	if filter.ContentFromTs != nil {
+		matchers = append(matchers, q.Gte("ContentUpdateTs", *filter.ContentFromTs))
+	}
+
+	query := txn.Select(matchers...)
+
+	switch filter.Order {
+	case restApiV1.PlaylistOrderByPlaylistName:
+		query = query.OrderBy("Name")
+	case restApiV1.PlaylistOrderByUpdateTs:
+		query = query.OrderBy("UpdateTs")
+	case restApiV1.PlaylistOrderByContentUpdateTs:
+		query = query.OrderBy("ContentUpdateTs")
+	default:
+	}
+
+	playlistEntities := []entity.PlaylistEntity{}
+
+	e = query.Find(&playlistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+
+	playlists := []restApiV1.Playlist{}
+
+	for _, playlistEntity := range playlistEntities {
+		var playlist restApiV1.Playlist
+		playlistEntity.Fill(&playlist)
 		playlists = append(playlists, playlist)
-
 	}
 
 	return playlists, nil
 }
 
-func (s *Service) ReadPlaylist(externalTrn *badger.Txn, playlistId string) (*restApiV1.Playlist, error) {
-	var playlist *restApiV1.Playlist
+func (s *Service) ReadPlaylist(externalTrn storm.Node, playlistId string) (*restApiV1.Playlist, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
-	item, e := txn.Get(getPlaylistIdKey(playlistId))
+	var playlistEntity entity.PlaylistEntity
+	e = txn.One("Id", playlistId, &playlistEntity)
 	if e != nil {
-		if e == badger.ErrKeyNotFound {
+		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
 		}
 		return nil, e
 	}
-	encodedPlaylist, e := item.ValueCopy(nil)
-	if e != nil {
-		return nil, e
-	}
-	e = json.Unmarshal(encodedPlaylist, &playlist)
-	if e != nil {
-		return nil, e
-	}
 
-	return playlist, nil
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
 }
 
-func (s *Service) CreatePlaylist(externalTrn *badger.Txn, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
-	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta)
+func (s *Service) CreatePlaylist(externalTrn storm.Node, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta, check)
 }
 
-func (s *Service) CreateInternalPlaylist(externalTrn *badger.Txn, playlistId string, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
-	var playlist *restApiV1.Playlist
+func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
-	// Create playlist
+	// Store playlist
 	now := time.Now().UnixNano()
 
 	if playlistId == "" {
 		playlistId = tool.CreateUlid()
 	}
 
-	playlist = &restApiV1.Playlist{
+	playlistEntity := entity.PlaylistEntity{
 		Id:              playlistId,
 		CreationTs:      now,
 		UpdateTs:        now,
 		ContentUpdateTs: now,
-		PlaylistMeta:    *playlistMeta,
 	}
+	playlistEntity.LoadMeta(playlistMeta)
 
 	// Clean owner list
-	playlist.OwnerUserIds = tool.Deduplicate(playlist.OwnerUserIds)
-	sort.Slice(playlist.OwnerUserIds, func(i, j int) bool {
-		return playlist.OwnerUserIds[i] < playlist.OwnerUserIds[j]
+	playlistEntity.OwnerUserIds = tool.Deduplicate(playlistEntity.OwnerUserIds)
+	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
+		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
 	})
 
-	encodedPlaylist, _ := json.Marshal(playlist)
-	e := txn.Set(getPlaylistIdKey(playlist.Id), encodedPlaylist)
-	if e != nil {
-		return nil, e
-	}
-
-	// Create playlistName Index
-	e = txn.Set(getPlaylistNamePlaylistIdKey(playlist.Name, playlist.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Create playlist updateTs index
-	e = txn.Set(getPlaylistUpdateTsPlaylistIdKey(playlist.UpdateTs, playlist.Id), nil)
-	if e != nil {
-		return nil, e
-	}
-
-	// Create playlist contentUpdateTs index
-	e = txn.Set(getPlaylistContentUpdateTsPlaylistIdKey(playlist.ContentUpdateTs, playlist.Id), nil)
+	e = txn.Save(&playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Create owners link
-	for _, ownerUserId := range playlist.OwnerUserIds {
+	for _, ownerUserId := range playlistEntity.OwnerUserIds {
 		// Check owner user id
-		_, e = txn.Get(getUserIdKey(ownerUserId))
-		if e != nil {
-			return nil, e
+		if check {
+			var userEntity entity.UserEntity
+			e = txn.One("Id", ownerUserId, &userEntity)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store playlist owner
-		e = txn.Set(getUserIdOwnedPlaylistIdKey(ownerUserId, playlistId), nil)
+		e = txn.Save(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
 		if e != nil {
 			return nil, e
 		}
 	}
 
 	// Create songs link
-	for _, songId := range playlist.SongIds {
+	for _, songId := range playlistEntity.SongIds {
 		// Check song id
-		_, e := txn.Get(getSongIdKey(songId))
-		if e != nil {
-			return nil, e
+		if check {
+			var songEntity entity.SongEntity
+			e = txn.One("Id", songId, &songEntity)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store song link
-		e = txn.Set(getSongIdPlaylistIdKey(songId, playlist.Id), nil)
+		e = txn.Save(entity.NewPlaylistSongEntity(playlistId, songId))
 		if e != nil {
 			return nil, e
 		}
@@ -203,98 +175,80 @@ func (s *Service) CreateInternalPlaylist(externalTrn *badger.Txn, playlistId str
 		txn.Commit()
 	}
 
-	return playlist, nil
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
 }
 
-func (s *Service) UpdatePlaylist(externalTrn *badger.Txn, playlistId string, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, error) {
+func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
 	now := time.Now().UnixNano()
 
-	playlist, e := s.ReadPlaylist(txn, playlistId)
-
+	var playlistEntity entity.PlaylistEntity
+	e = txn.One("Id", playlistId, &playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
-	playlistOldName := playlist.Name
-	playlistOldUpdateTs := playlist.UpdateTs
-	playlistOldContentUpdateTs := playlist.ContentUpdateTs
-	playlistOldSongIds := playlist.PlaylistMeta.SongIds
-	playlistOldOwnerUserIds := playlist.PlaylistMeta.OwnerUserIds
+	playlistOldName := playlistEntity.Name
+	playlistOldSongIds := playlistEntity.SongIds
 
-	if playlistMeta != nil {
-		playlist.PlaylistMeta = *playlistMeta
-	}
+	playlistEntity.LoadMeta(playlistMeta)
 
 	// Clean owner list
-	playlist.OwnerUserIds = tool.Deduplicate(playlist.OwnerUserIds)
-	sort.Slice(playlist.OwnerUserIds, func(i, j int) bool {
-		return playlist.OwnerUserIds[i] < playlist.OwnerUserIds[j]
+	playlistEntity.OwnerUserIds = tool.Deduplicate(playlistEntity.OwnerUserIds)
+	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
+		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
 	})
 
 	// Detect song list update
-	songIdsUpdated := !reflect.DeepEqual(playlistOldSongIds, playlist.PlaylistMeta.SongIds)
+	songIdsUpdated := !reflect.DeepEqual(playlistOldSongIds, playlistEntity.SongIds)
 
 	// Update playlist update timestamp
-	playlist.UpdateTs = now
-
-	e = tool.ReplaceKey(
-		txn,
-		getPlaylistUpdateTsPlaylistIdKey(playlistOldUpdateTs, playlist.Id),
-		getPlaylistUpdateTsPlaylistIdKey(playlist.UpdateTs, playlist.Id),
-	)
+	playlistEntity.UpdateTs = now
 
 	// Update playlist update content timestamp
-	if playlistOldName != playlist.Name || songIdsUpdated {
-		playlist.ContentUpdateTs = now
-
-		// Update playlist contentUpdateTs index
-		e = tool.ReplaceKey(
-			txn,
-			getPlaylistContentUpdateTsPlaylistIdKey(playlistOldContentUpdateTs, playlist.Id),
-			getPlaylistContentUpdateTsPlaylistIdKey(playlist.ContentUpdateTs, playlist.Id),
-		)
-
+	if playlistOldName != playlistEntity.Name || songIdsUpdated {
+		playlistEntity.ContentUpdateTs = now
 	}
 
-	encodedPlaylist, _ := json.Marshal(playlist)
-	e = txn.Set(getPlaylistIdKey(playlist.Id), encodedPlaylist)
+	e = txn.Update(&playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
-	// Update playlist name index
-	if playlistOldName != playlist.Name {
-		e = tool.ReplaceKey(
-			txn,
-			getPlaylistNamePlaylistIdKey(playlistOldName, playlist.Id),
-			getPlaylistNamePlaylistIdKey(playlist.Name, playlist.Id),
-		)
+	// Update owner index
+	query := txn.Select(q.Eq("PlaylistId", playlistId))
+	e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	// Update owner index
-	for _, ownerUserId := range playlistOldOwnerUserIds {
-		e = txn.Delete(getUserIdOwnedPlaylistIdKey(ownerUserId, playlistId))
-		if e != nil {
-			return nil, e
-		}
-	}
-	for _, ownerUserId := range playlist.OwnerUserIds {
+	for _, ownerUserId := range playlistEntity.OwnerUserIds {
+
 		// Check owner user id
-		_, e := txn.Get(getUserIdKey(ownerUserId))
-		if e != nil {
-			return nil, e
+		if check {
+			var userEntity entity.UserEntity
+			e := txn.One("Id", ownerUserId, &userEntity)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// Store playlist owner
-		e = txn.Set(getUserIdOwnedPlaylistIdKey(ownerUserId, playlistId), nil)
+		e = txn.Save(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
 		if e != nil {
 			return nil, e
 		}
@@ -302,21 +256,23 @@ func (s *Service) UpdatePlaylist(externalTrn *badger.Txn, playlistId string, pla
 
 	// Update songs list
 	if songIdsUpdated {
-		for _, songId := range playlistOldSongIds {
-			e = txn.Delete(getSongIdPlaylistIdKey(songId, playlist.Id))
-			if e != nil {
-				return nil, e
-			}
+		query := txn.Select(q.Eq("PlaylistId", playlistId))
+		e = query.Delete(new(entity.PlaylistSongEntity))
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
 		}
-		for _, songId := range playlist.SongIds {
+		for _, songId := range playlistEntity.SongIds {
 			// Check song id
-			_, e := txn.Get(getSongIdKey(songId))
-			if e != nil {
-				return nil, e
+			if check {
+				var song restApiV1.Song
+				e := txn.One("Id", songId, &song)
+				if e != nil {
+					return nil, e
+				}
 			}
 
 			// Store song link
-			e = txn.Set(getSongIdPlaylistIdKey(songId, playlist.Id), nil)
+			e = txn.Save(entity.NewPlaylistSongEntity(playlistId, songId))
 			if e != nil {
 				return nil, e
 			}
@@ -328,66 +284,113 @@ func (s *Service) UpdatePlaylist(externalTrn *badger.Txn, playlistId string, pla
 		txn.Commit()
 	}
 
-	return playlist, nil
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
 }
 
-func (s *Service) DeletePlaylist(externalTrn *badger.Txn, playlistId string) (*restApiV1.Playlist, error) {
+func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, songId string, check bool) (*restApiV1.Playlist, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
-	deleteTs := time.Now().UnixNano()
+	now := time.Now().UnixNano()
 
-	playlist, e := s.ReadPlaylist(txn, playlistId)
+	var playlistEntity entity.PlaylistEntity
+	e = txn.One("Id", playlistId, &playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
-	// Delete playlist name index
-	e = txn.Delete(getPlaylistNamePlaylistIdKey(playlist.Name, playlistId))
+	// Check song id
+	if check {
+		var song restApiV1.Song
+		e = txn.One("Id", songId, &song)
+		if e != nil {
+			return nil, e
+		}
+	}
+
+	playlistEntity.SongIds = append(playlistEntity.SongIds, songId)
+
+	// Update playlist update timestamp
+	playlistEntity.UpdateTs = now
+	playlistEntity.ContentUpdateTs = now
+
+	e = txn.Update(&playlistEntity)
+	if e != nil {
+		return nil, e
+	}
+
+	// Store song link
+	e = txn.Save(entity.NewPlaylistSongEntity(playlistId, songId))
+	if e != nil {
+		return nil, e
+	}
+
+	// Commit transaction
+	if externalTrn == nil {
+		txn.Commit()
+	}
+
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
+}
+
+func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*restApiV1.Playlist, error) {
+	var e error
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
+	}
+
+	deleteTs := time.Now().UnixNano()
+
+	var playlistEntity entity.PlaylistEntity
+	e = txn.One("Id", playlistId, &playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Delete ower link
-	for _, owenrUserId := range playlist.OwnerUserIds {
-		e = txn.Delete(getUserIdOwnedPlaylistIdKey(owenrUserId, playlistId))
-		if e != nil {
-			return nil, e
-		}
-	}
-
-	// Delete songs link
-	for _, songId := range playlist.SongIds {
-		e = txn.Delete(getSongIdPlaylistIdKey(songId, playlist.Id))
-		if e != nil {
-			return nil, e
-		}
-	}
-
-	// Delete updateTs index
-	e = txn.Delete(getPlaylistUpdateTsPlaylistIdKey(playlist.UpdateTs, playlist.Id))
-	if e != nil {
+	query := txn.Select(q.Eq("PlaylistId", playlistId))
+	e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
-	// Delete contentUpdateTs index
-	e = txn.Delete(getPlaylistContentUpdateTsPlaylistIdKey(playlist.ContentUpdateTs, playlist.Id))
-	if e != nil {
+	// Delete songs link
+	query = txn.Select(q.Eq("PlaylistId", playlistId))
+	e = query.Delete(new(entity.PlaylistSongEntity))
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
 	// Delete playlist
-	e = txn.Delete(getPlaylistIdKey(playlistId))
+	e = txn.DeleteStruct(&playlistEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive playlistId
-	e = txn.Set(getPlaylistDeleteTsPlaylistIdKey(deleteTs, playlist.Id), nil)
+	e = txn.Save(&entity.DeletedPlaylistEntity{Id: playlistEntity.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -397,128 +400,98 @@ func (s *Service) DeletePlaylist(externalTrn *badger.Txn, playlistId string) (*r
 		txn.Commit()
 	}
 
-	return playlist, nil
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
 }
 
-func (s *Service) GetDeletedPlaylistIds(externalTrn *badger.Txn, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+	var e error
 
 	playlistIds := []string{}
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(playlistDeleteTsPlaylistIdPrefix)
-	opts.PrefetchValues = false
+	deletedPlaylistEntities := []entity.DeletedPlaylistEntity{}
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	for it.Seek([]byte(playlistDeleteTsPlaylistIdPrefix + indexTs(fromTs))); it.Valid(); it.Next() {
+	e = query.Find(&deletedPlaylistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
 
-		key := it.Item().KeyCopy(nil)
-
-		playlistId := strings.Split(string(key), ":")[2]
-
-		playlistIds = append(playlistIds, playlistId)
-
+	for _, deletedPlaylistEntity := range deletedPlaylistEntities {
+		playlistIds = append(playlistIds, deletedPlaylistEntity.Id)
 	}
 
 	return playlistIds, nil
 }
 
-func (s *Service) GetPlaylistIdsByName(externalTrn *badger.Txn, playlistName string) ([]string, error) {
-	var playlistIds []string
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(playlistNamePlaylistIdPrefix + indexString(playlistName) + ":")
-	opts.PrefetchValues = false
+func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string) ([]string, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
-
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	for it.Rewind(); it.Valid(); it.Next() {
-
-		key := it.Item().KeyCopy(nil)
-
-		playlistId := strings.Split(string(key), ":")[2]
-
-		playlistIds = append(playlistIds, playlistId)
-
-	}
-
-	return playlistIds, nil
-}
-
-func (s *Service) GetPlaylistIdsFromSongId(externalTrn *badger.Txn, songId string) ([]string, error) {
 
 	var playlistIds []string
+	playlistSongEntities := []entity.PlaylistSongEntity{}
 
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(songIdPlaylistIdPrefix + songId + ":")
-	opts.PrefetchValues = false
+	query := txn.Select(q.Eq("SongId", songId))
 
-	// Check available transaction
-	txn := externalTrn
-	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+	e = query.Find(&playlistSongEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
-
-	for it.Rewind(); it.Valid(); it.Next() {
-
-		key := it.Item().KeyCopy(nil)
-
-		playlistId := strings.Split(string(key), ":")[2]
-
-		playlistIds = append(playlistIds, playlistId)
-
+	for _, playlistSongEntity := range playlistSongEntities {
+		playlistIds = append(playlistIds, playlistSongEntity.PlaylistId)
 	}
 
 	return playlistIds, nil
 
 }
 
-func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn *badger.Txn, ownerUserId string) ([]string, error) {
-
-	var playlistIds []string
-
-	opts := badger.DefaultIteratorOptions
-	opts.Prefix = []byte(userIdOwnedPlaylistIdPrefix + ownerUserId + ":")
-	opts.PrefetchValues = false
+func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUserId string) ([]string, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(false)
-		defer txn.Discard()
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
 	}
 
-	it := txn.NewIterator(opts)
-	defer it.Close()
+	var playlistIds []string
+	ownedUserPlaylistEntities := []entity.OwnedUserPlaylistEntity{}
 
-	for it.Rewind(); it.Valid(); it.Next() {
+	query := txn.Select(q.Eq("UserId", ownerUserId))
+	e = query.Find(&ownedUserPlaylistEntities)
 
-		key := it.Item().KeyCopy(nil)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
 
-		playlistId := strings.Split(string(key), ":")[2]
-
-		playlistIds = append(playlistIds, playlistId)
-
+	for _, ownedUserPlaylistEntity := range ownedUserPlaylistEntities {
+		playlistIds = append(playlistIds, ownedUserPlaylistEntity.PlaylistId)
 	}
 
 	return playlistIds, nil

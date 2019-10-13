@@ -2,11 +2,12 @@ package svc
 
 import (
 	"bytes"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
 	"github.com/sirupsen/logrus"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"strconv"
 	"strings"
 )
@@ -15,7 +16,7 @@ type LyraMetaDataBlockVorbisComment struct {
 	flacvorbis.MetaDataBlockVorbisComment
 }
 
-func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	flacFile, err := flac.ParseMetadata(bytes.NewBuffer(content))
@@ -40,7 +41,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
-	var albumId *string = nil
+	var albumId string = ""
 	var trackNumber *int64 = nil
 	var publicationYear *int64 = nil
 	var artistIds []string
@@ -48,8 +49,11 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
 	}
 
 	// Extract bit depth
@@ -95,7 +99,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	logrus.Debugf("Album: %s", albumName)
 
 	// Extract track number
-	if albumId != nil {
+	if albumId != "" {
 		trackNumbers, err := cmt.Get(flacvorbis.FIELD_TRACKNUMBER)
 		if err != nil {
 			return nil, err
@@ -144,6 +148,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	}
 
 	// Find Artist IDs
+	logrus.Debugf("Find artist ids")
 	artistIds, err = s.getArtistIdsFromArtistNames(txn, artistNames)
 	if err != nil {
 		return nil, err
@@ -173,10 +178,10 @@ func (s *Service) createSongNewFromFlacContent(externalTrn *badger.Txn, content 
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentFlacTag(externalTrn *badger.Txn, song *restApiV1.Song) error {
+func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
 
 	// region Extract tags
-	flacFile, err := flac.ParseFile(s.GetSongFileName(song))
+	flacFile, err := flac.ParseFile(s.getSongFileName(songEntity))
 	if err != nil {
 		return err
 	}
@@ -204,39 +209,42 @@ func (s *Service) updateSongContentFlacTag(externalTrn *badger.Txn, song *restAp
 
 	// Set title
 	vorbisClean(cmt, flacvorbis.FIELD_TITLE)
-	cmt.Add(flacvorbis.FIELD_TITLE, song.Name)
+	cmt.Add(flacvorbis.FIELD_TITLE, songEntity.Name)
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn = s.Db.NewTransaction(true)
-		defer txn.Discard()
+		txn, err = s.Db.Begin(true)
+		if err != nil {
+			return err
+		}
+		defer txn.Rollback()
 	}
 
 	// Set album & track number
 	vorbisClean(cmt, flacvorbis.FIELD_ALBUM)
 	vorbisClean(cmt, flacvorbis.FIELD_TRACKNUMBER)
-	if song.AlbumId != nil {
-		album, err := s.ReadAlbum(txn, *song.AlbumId)
+	if songEntity.AlbumId != "" {
+		album, err := s.ReadAlbum(txn, songEntity.AlbumId)
 		if err != nil {
 			return err
 		}
 		cmt.Add(flacvorbis.FIELD_ALBUM, album.Name)
 
-		if song.TrackNumber != nil {
-			cmt.Add(flacvorbis.FIELD_TRACKNUMBER, strconv.FormatInt(*song.TrackNumber, 10))
+		if songEntity.TrackNumber != nil {
+			cmt.Add(flacvorbis.FIELD_TRACKNUMBER, strconv.FormatInt(*songEntity.TrackNumber, 10))
 		}
 	}
 
 	// Set publication date
 	vorbisClean(cmt, flacvorbis.FIELD_DATE)
-	if song.PublicationYear != nil {
-		cmt.Add(flacvorbis.FIELD_DATE, strconv.FormatInt(*song.PublicationYear, 10))
+	if songEntity.PublicationYear != nil {
+		cmt.Add(flacvorbis.FIELD_DATE, strconv.FormatInt(*songEntity.PublicationYear, 10))
 	}
 
 	// Set artists
 	vorbisClean(cmt, flacvorbis.FIELD_ARTIST)
-	for _, artistId := range song.ArtistIds {
+	for _, artistId := range songEntity.ArtistIds {
 		artist, err := s.ReadArtist(txn, artistId)
 		if err != nil {
 			return err
@@ -254,7 +262,7 @@ func (s *Service) updateSongContentFlacTag(externalTrn *badger.Txn, song *restAp
 	} else {
 		flacFile.Meta = append(flacFile.Meta, &metaDataBlock)
 	}
-	flacFile.Save(s.GetSongFileName(song))
+	flacFile.Save(s.getSongFileName(songEntity))
 
 	// Commit transaction
 	if externalTrn == nil {

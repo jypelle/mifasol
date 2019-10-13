@@ -3,7 +3,8 @@ package srv
 import (
 	"context"
 	"encoding/json"
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ import (
 
 type ServerApp struct {
 	config.ServerConfig
-	db         *badger.DB
+	db         *storm.DB
 	service    *svc.Service
 	restApiV1  *restSrvV1.RestServer
 	httpServer *http.Server
@@ -104,31 +105,32 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	}
 
 	// Open database connection
-	options := badger.DefaultOptions(app.ServerConfig.GetCompleteConfigDbDirName())
-	options.SyncWrites = true
-	options.Truncate = false
-
-	dbLogger := logrus.New()
-	dbLogger.SetLevel(logrus.GetLevel())
-
-	if debugMode {
-		dbLogger.SetFormatter(&logrus.TextFormatter{ForceColors: true, FullTimestamp: true, TimestampFormat: time.RFC3339Nano})
-	} else {
-		dbLogger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
-	}
-	options.Logger = dbLogger
-
-	app.db, err = badger.Open(options)
+	app.db, err = storm.Open(app.ServerConfig.GetCompleteConfigDbFilename(), storm.Codec(gob.Codec))
 	if err != nil {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}
-
+	/*
+		app.db.Init(&restApiV1.Album{})
+		app.db.Init(&restApiV1.DeletedAlbum{})
+		app.db.Init(&restApiV1.Artist{})
+		app.db.Init(&restApiV1.ArtistSong{})
+		app.db.Init(&restApiV1.DeletedArtist{})
+		app.db.Init(&restApiV1.Song{})
+		app.db.Init(&restApiV1.DeletedSong{})
+		app.db.Init(&restApiV1.Playlist{})
+		app.db.Init(&restApiV1.PlaylistSong{})
+		app.db.Init(&restApiV1.DeletedPlaylist{})
+		app.db.Init(&restApiV1.OwnedUserPlaylist{})
+		app.db.Init(&restApiV1.FavoritePlaylist{})
+		app.db.Init(&restApiV1.UserComplete{})
+		app.db.Init(&restApiV1.DeletedUser{})
+	*/
 	// Create service
 	app.service = svc.NewService(app.db, &app.ServerConfig)
 
 	// Check existence of at least one admin user
 	adminFg := true
-	users, err := app.service.ReadUsers(nil, &restApiV1.UserFilter{Order: restApiV1.UserOrderByUserId, AdminFg: &adminFg})
+	users, err := app.service.ReadUsers(nil, &restApiV1.UserFilter{AdminFg: &adminFg})
 	if err != nil {
 		logrus.Fatalf("Unable to retrieve users: %v", err)
 	}
@@ -149,7 +151,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	}
 
 	// Check existence of the (incoming) playlist
-	_, err = app.service.ReadPlaylist(nil, "00000000000000000000000000")
+	_, err = app.service.ReadPlaylist(nil, restApiV1.IncomingPlaylistId)
 	if err != nil {
 		if err != svc.ErrNotFound {
 			logrus.Fatalf("Unable to retrieve incoming playlist: %v", err)
@@ -159,7 +161,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 			Name:    "(incoming)",
 			SongIds: nil,
 		}
-		_, err := app.service.CreateInternalPlaylist(nil, "00000000000000000000000000", &playlistMeta)
+		_, err := app.service.CreateInternalPlaylist(nil, restApiV1.IncomingPlaylistId, &playlistMeta, false)
 		if err != nil {
 			logrus.Fatalf("Unable to create incoming playlist: %v", err)
 		}
