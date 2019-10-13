@@ -107,7 +107,7 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 					return
 				}
 
-				user, err := restServer.service.ReadUserComplete(nil, intToken.(*internalToken).userId)
+				user, err := restServer.service.ReadUser(nil, intToken.(*internalToken).userId)
 				if err != nil {
 					if err == svc.ErrNotFound {
 						restServer.apiErrorCodeResponse(w, restApiV1.InvalidTokenErrorCode)

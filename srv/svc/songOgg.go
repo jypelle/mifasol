@@ -3,6 +3,7 @@ package svc
 import (
 	"github.com/asdine/storm"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 )
 
 func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
@@ -44,7 +45,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentOggTag(externalTrn storm.Node, song *restApiV1.Song) error {
+func (s *Service) updateSongContentOggTag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
 	// TODO
 	return nil
 }
