@@ -35,7 +35,7 @@ func (s *RestServer) generateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.service.ReadUserCompleteByUserName(nil, name)
+	user, err := s.service.ReadUserEntityByUserName(nil, name)
 	if err != nil {
 		if err == svc.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.InvalideGrantErrorCode)

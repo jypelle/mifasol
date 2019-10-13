@@ -4,20 +4,20 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"lyra/tool"
 	"time"
 )
 
 func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFilter) ([]restApiV1.Artist, error) {
-	artists := []restApiV1.Artist{}
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -41,29 +41,38 @@ func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFi
 	default:
 	}
 
-	err = query.Find(&artists)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	artistEntities := []entity.ArtistEntity{}
+	e = query.Find(&artistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+
+	artists := []restApiV1.Artist{}
+
+	for _, artistEntity := range artistEntities {
+		var artist restApiV1.Artist
+		artistEntity.Fill(&artist)
+		artists = append(artists, artist)
 	}
 
 	return artists, nil
 }
 
 func (s *Service) ReadArtist(externalTrn storm.Node, artistId string) (*restApiV1.Artist, error) {
-	var artist restApiV1.Artist
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	e := txn.One("Id", artistId, &artist)
+	var artistEntity entity.ArtistEntity
+	e = txn.One("Id", artistId, &artistEntity)
 	if e != nil {
 		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
@@ -71,34 +80,36 @@ func (s *Service) ReadArtist(externalTrn storm.Node, artistId string) (*restApiV
 		return nil, e
 	}
 
+	var artist restApiV1.Artist
+	artistEntity.Fill(&artist)
+
 	return &artist, nil
 }
 
 func (s *Service) CreateArtist(externalTrn storm.Node, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, error) {
-	var artist *restApiV1.Artist
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	// Create artist
+	// Store artist
 	now := time.Now().UnixNano()
 
-	artist = &restApiV1.Artist{
+	artistEntity := entity.ArtistEntity{
 		Id:         tool.CreateUlid(),
 		CreationTs: now,
 		UpdateTs:   now,
-		ArtistMeta: *artistMeta,
 	}
+	artistEntity.LoadMeta(artistMeta)
 
-	e := txn.Save(artist)
+	e = txn.Save(&artistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -108,32 +119,37 @@ func (s *Service) CreateArtist(externalTrn storm.Node, artistMeta *restApiV1.Art
 		txn.Commit()
 	}
 
-	return artist, nil
+	var artist restApiV1.Artist
+	artistEntity.Fill(&artist)
+
+	return &artist, nil
+
 }
 
 func (s *Service) UpdateArtist(externalTrn storm.Node, artistId string, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	artist, err := s.ReadArtist(txn, artistId)
-
-	if err != nil {
-		return nil, err
+	var artistEntity entity.ArtistEntity
+	e = txn.One("Id", artistId, &artistEntity)
+	if e != nil {
+		return nil, e
 	}
 
-	artist.ArtistMeta = *artistMeta
-	artist.UpdateTs = time.Now().UnixNano()
+	artistEntity.LoadMeta(artistMeta)
+	artistEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update artist
-	e := txn.Update(artist)
+	e = txn.Update(&artistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -153,25 +169,29 @@ func (s *Service) UpdateArtist(externalTrn storm.Node, artistId string, artistMe
 		txn.Commit()
 	}
 
-	return artist, nil
+	var artist restApiV1.Artist
+	artistEntity.Fill(&artist)
+
+	return &artist, nil
 }
 
 func (s *Service) DeleteArtist(externalTrn storm.Node, artistId string) (*restApiV1.Artist, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
 
-	artist, e := s.ReadArtist(txn, artistId)
-
+	var artistEntity entity.ArtistEntity
+	e = txn.One("Id", artistId, &artistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -186,13 +206,13 @@ func (s *Service) DeleteArtist(externalTrn storm.Node, artistId string) (*restAp
 	}
 
 	// Delete artist
-	e = txn.DeleteStruct(artist)
+	e = txn.DeleteStruct(&artistEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive artistId
-	e = txn.Save(&restApiV1.DeletedArtist{Id: artist.Id, DeleteTs: deleteTs})
+	e = txn.Save(&entity.DeletedArtistEntity{Id: artistEntity.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -202,61 +222,64 @@ func (s *Service) DeleteArtist(externalTrn storm.Node, artistId string) (*restAp
 		txn.Commit()
 	}
 
-	return artist, nil
+	var artist restApiV1.Artist
+	artistEntity.Fill(&artist)
+
+	return &artist, nil
 }
 
 func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+	var e error
 
 	artistIds := []string{}
-	deletedArtists := []restApiV1.DeletedArtist{}
+	deletedArtistEntities := []entity.DeletedArtistEntity{}
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
-
-	err = query.Find(&deletedArtists)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	e = query.Find(&deletedArtistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	for _, deletedArtist := range deletedArtists {
-		artistIds = append(artistIds, deletedArtist.Id)
+	for _, deletedArtistEntity := range deletedArtistEntities {
+		artistIds = append(artistIds, deletedArtistEntity.Id)
 	}
 
 	return artistIds, nil
 }
 
 func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistNames []string) ([]string, error) {
-
-	var artistIds []string
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
+	var artistIds []string
+
 	for _, artistName := range artistNames {
 		artistName = normalizeString(artistName)
 		if artistName != "" {
-			artists, err := s.ReadArtists(txn, &restApiV1.ArtistFilter{Name: &artistName})
+			var artists []restApiV1.Artist
+			artists, e = s.ReadArtists(txn, &restApiV1.ArtistFilter{Name: &artistName})
 
-			if err != nil {
-				return nil, err
+			if e != nil {
+				return nil, e
 			}
 			var artistId string
 			if len(artists) > 0 {

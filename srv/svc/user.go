@@ -4,6 +4,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"lyra/tool"
 	"time"
 )
@@ -12,16 +13,14 @@ const DefaultUserName = "lyra"
 const DefaultUserPassword = "lyra"
 
 func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter) ([]restApiV1.User, error) {
-	users := []restApiV1.User{}
-	userCompletes := []restApiV1.UserComplete{}
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -46,67 +45,38 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 	default:
 	}
 
-	err = query.Find(&userCompletes)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	userEntities := []entity.UserEntity{}
+	e = query.Find(&userEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	for _, userComplete := range userCompletes {
-		users = append(users, userComplete.User)
+	users := []restApiV1.User{}
+
+	for _, userEntity := range userEntities {
+		var user restApiV1.User
+		userEntity.Fill(&user)
+		users = append(users, user)
 	}
 
 	return users, nil
 }
 
-func (s *Service) ReadUserComplete(externalTrn storm.Node, userId string) (*restApiV1.UserComplete, error) {
-	var userComplete restApiV1.UserComplete
-
-	// Check available transaction
-	txn := externalTrn
-	var err error
-	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
-		}
-		defer txn.Rollback()
-	}
-
-	e := txn.One("Id", userId, &userComplete)
-	if e != nil {
-		if e == storm.ErrNotFound {
-			return nil, ErrNotFound
-		}
-		return nil, e
-	}
-
-	return &userComplete, nil
-}
-
 func (s *Service) ReadUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
-	userComplete, err := s.ReadUserComplete(externalTrn, userId)
-	if err != nil {
-		return nil, err
-	} else {
-		return &userComplete.User, nil
-	}
-}
-
-func (s *Service) ReadUserCompleteByUserName(externalTrn storm.Node, userName string) (*restApiV1.UserComplete, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	var userComplete restApiV1.UserComplete
-	e := txn.One("Name", userName, &userComplete)
+	var userEntity entity.UserEntity
+	e = txn.One("Id", userId, &userEntity)
 	if e != nil {
 		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
@@ -114,18 +84,47 @@ func (s *Service) ReadUserCompleteByUserName(externalTrn storm.Node, userName st
 		return nil, e
 	}
 
-	return &userComplete, nil
+	var user restApiV1.User
+	userEntity.Fill(&user)
+
+	return &user, nil
+}
+
+func (s *Service) ReadUserEntityByUserName(externalTrn storm.Node, userName string) (*entity.UserEntity, error) {
+
+	var e error
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
+	}
+
+	var userEntity entity.UserEntity
+	e = txn.One("Name", userName, &userEntity)
+	if e != nil {
+		if e == storm.ErrNotFound {
+			return nil, ErrNotFound
+		}
+		return nil, e
+	}
+
+	return &userEntity, nil
 }
 
 func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -133,17 +132,15 @@ func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1
 	// Store user
 	now := time.Now().UnixNano()
 
-	userComplete := &restApiV1.UserComplete{
-		User: restApiV1.User{
-			Id:         tool.CreateUlid(),
-			CreationTs: now,
-			UpdateTs:   now,
-			UserMeta:   userMetaComplete.UserMeta,
-		},
-		Password: userMetaComplete.Password,
+	userEntity := entity.UserEntity{
+		Id:         tool.CreateUlid(),
+		CreationTs: now,
+		UpdateTs:   now,
+		Password:   userMetaComplete.Password,
 	}
+	userEntity.LoadMeta(&userMetaComplete.UserMeta)
 
-	e := txn.Save(userComplete)
+	e = txn.Save(&userEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -153,37 +150,42 @@ func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1
 		txn.Commit()
 	}
 
-	return &userComplete.User, nil
+	var user restApiV1.User
+	userEntity.Fill(&user)
+
+	return &user, nil
 }
 
 func (s *Service) UpdateUser(externalTrn storm.Node, userId string, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	userComplete, err := s.ReadUserComplete(txn, userId)
-	if err != nil {
-		return nil, err
+	var userEntity entity.UserEntity
+	e = txn.One("Id", userId, &userEntity)
+	if e != nil {
+		return nil, e
 	}
 
-	userComplete.UserMeta = userMetaComplete.UserMeta
+	userEntity.LoadMeta(&userMetaComplete.UserMeta)
 
 	// Update only non void password
 	if userMetaComplete.Password != "" {
-		userComplete.Password = userMetaComplete.Password
+		userEntity.Password = userMetaComplete.Password
 	}
 
-	// Update user
-	userComplete.UpdateTs = time.Now().UnixNano()
+	userEntity.UpdateTs = time.Now().UnixNano()
 
-	e := txn.Update(userComplete)
+	// Update user
+	e = txn.Update(&userEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -193,24 +195,29 @@ func (s *Service) UpdateUser(externalTrn storm.Node, userId string, userMetaComp
 		txn.Commit()
 	}
 
-	return &userComplete.User, nil
+	var user restApiV1.User
+	userEntity.Fill(&user)
+
+	return &user, nil
 }
 
 func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
 
-	user, e := s.ReadUserComplete(txn, userId)
+	var userEntity entity.UserEntity
+	e = txn.One("Id", userId, &userEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -240,13 +247,13 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.
 	}
 
 	// Delete user
-	e = txn.DeleteStruct(user)
+	e = txn.DeleteStruct(&userEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive userId
-	e = txn.Save(&restApiV1.DeletedUser{Id: user.Id, DeleteTs: deleteTs})
+	e = txn.Save(&entity.DeletedUserEntity{Id: userEntity.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -256,33 +263,37 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.
 		txn.Commit()
 	}
 
-	return &user.User, nil
+	var user restApiV1.User
+	userEntity.Fill(&user)
+
+	return &user, nil
 }
 
 func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+	var e error
+
 	userIds := []string{}
-	deletedUsers := []restApiV1.DeletedUser{}
+	deletedUserEntities := []entity.DeletedUserEntity{}
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	err = query.Find(&deletedUsers)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	e = query.Find(&deletedUserEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	for _, deletedUser := range deletedUsers {
-		userIds = append(userIds, deletedUser.Id)
+	for _, deletedUserEntity := range deletedUserEntities {
+		userIds = append(userIds, deletedUserEntity.Id)
 	}
 
 	return userIds, nil

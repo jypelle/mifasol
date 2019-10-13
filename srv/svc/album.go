@@ -4,21 +4,21 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"lyra/tool"
 	"sort"
 	"time"
 )
 
 func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilter) ([]restApiV1.Album, error) {
-	albums := []restApiV1.Album{}
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -42,29 +42,38 @@ func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilt
 	default:
 	}
 
-	err = query.Find(&albums)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	albumEntities := []entity.AlbumEntity{}
+	e = query.Find(&albumEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+
+	albums := []restApiV1.Album{}
+
+	for _, albumEntity := range albumEntities {
+		var album restApiV1.Album
+		albumEntity.Fill(&album)
+		albums = append(albums, album)
 	}
 
 	return albums, nil
 }
 
 func (s *Service) ReadAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
-	var album restApiV1.Album
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	e := txn.One("Id", albumId, &album)
+	var albumEntity entity.AlbumEntity
+	e = txn.One("Id", albumId, &albumEntity)
 	if e != nil {
 		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
@@ -72,19 +81,21 @@ func (s *Service) ReadAlbum(externalTrn storm.Node, albumId string) (*restApiV1.
 		return nil, e
 	}
 
+	var album restApiV1.Album
+	albumEntity.Fill(&album)
+
 	return &album, nil
 }
 
 func (s *Service) CreateAlbum(externalTrn storm.Node, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
-	var album *restApiV1.Album
+	var e error
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
@@ -92,49 +103,53 @@ func (s *Service) CreateAlbum(externalTrn storm.Node, albumMeta *restApiV1.Album
 	// Store album
 	now := time.Now().UnixNano()
 
-	album = &restApiV1.Album{
+	albumEntity := entity.AlbumEntity{
 		Id:         tool.CreateUlid(),
 		CreationTs: now,
 		UpdateTs:   now,
-		AlbumMeta:  *albumMeta,
 	}
+	albumEntity.LoadMeta(albumMeta)
 
-	e := txn.Save(album)
+	e = txn.Save(&albumEntity)
 	if e != nil {
 		return nil, e
 	}
+
+	var album restApiV1.Album
+	albumEntity.Fill(&album)
 
 	// Commit transaction
 	if externalTrn == nil {
 		txn.Commit()
 	}
 
-	return album, nil
+	return &album, nil
 }
 
 func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
-	album, err := s.ReadAlbum(txn, albumId)
-	if err != nil {
-		return nil, err
+	var albumEntity entity.AlbumEntity
+	e = txn.One("Id", albumId, &albumEntity)
+	if e != nil {
+		return nil, e
 	}
 
-	album.AlbumMeta = *albumMeta
+	albumEntity.LoadMeta(albumMeta)
+	albumEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update album
-	album.UpdateTs = time.Now().UnixNano()
-
-	e := txn.Update(album)
+	e = txn.Update(&albumEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -149,27 +164,32 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta 
 		s.UpdateSong(txn, songId, nil, nil, false)
 	}
 
+	var album restApiV1.Album
+	albumEntity.Fill(&album)
+
 	// Commit transaction
 	if externalTrn == nil {
 		txn.Commit()
 	}
 
-	return album, nil
+	return &album, nil
 }
 
 func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, updateArtistMetaArtistId *string) error {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return e
 		}
 		defer txn.Rollback()
 	}
 
-	album, e := s.ReadAlbum(txn, albumId)
+	var albumEntity entity.AlbumEntity
+	e = txn.One("Id", albumId, &albumEntity)
 	if e != nil {
 		return e
 	}
@@ -179,7 +199,7 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 		return e
 	}
 
-	albumOldArtistIds := album.ArtistIds
+	albumOldArtistIds := albumEntity.ArtistIds
 
 	// Update AlbumArtists
 	artistsCount := make(map[string]int)
@@ -199,25 +219,25 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 		}
 	}
 
-	album.ArtistIds = []string{}
+	albumEntity.ArtistIds = []string{}
 
 	for artistId, artistCount := range artistsCount {
 		if artistCount > len(songIds)/2 {
-			album.ArtistIds = append(album.ArtistIds, artistId)
+			albumEntity.ArtistIds = append(albumEntity.ArtistIds, artistId)
 		}
 	}
 
 	// Reorder artists
-	sort.Slice(album.ArtistIds, func(i, j int) bool {
-		artistI, _ := s.ReadArtist(txn, album.ArtistIds[i])
-		artistJ, _ := s.ReadArtist(txn, album.ArtistIds[j])
+	sort.Slice(albumEntity.ArtistIds, func(i, j int) bool {
+		artistI, _ := s.ReadArtist(txn, albumEntity.ArtistIds[i])
+		artistJ, _ := s.ReadArtist(txn, albumEntity.ArtistIds[j])
 		return artistI.Name < artistJ.Name
 	})
 
-	artistIdsChanged := !isArtistIdsEqual(albumOldArtistIds, album.ArtistIds)
+	artistIdsChanged := !isArtistIdsEqual(albumOldArtistIds, albumEntity.ArtistIds)
 	isUpdatedArtistMetaInAlbumArtistIds := false
 	if updateArtistMetaArtistId != nil {
-		for _, artistId := range album.ArtistIds {
+		for _, artistId := range albumEntity.ArtistIds {
 			if artistId == *updateArtistMetaArtistId {
 				isUpdatedArtistMetaInAlbumArtistIds = true
 				break
@@ -228,13 +248,13 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 	if artistIdsChanged || isUpdatedArtistMetaInAlbumArtistIds {
 		// Update Song AlbumArtists
 		for _, songId := range songIds {
-			s.updateSongAlbumArtists(txn, songId, album.ArtistIds)
+			s.updateSongAlbumArtists(txn, songId, albumEntity.ArtistIds)
 		}
 
 		// Update album
-		album.UpdateTs = time.Now().UnixNano()
+		albumEntity.UpdateTs = time.Now().UnixNano()
 
-		e := txn.Update(album)
+		e := txn.Update(&albumEntity)
 		if e != nil {
 			return e
 		}
@@ -249,21 +269,22 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 }
 
 func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
+	var e error
+
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(true)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	deleteTs := time.Now().UnixNano()
 
-	album, e := s.ReadAlbum(txn, albumId)
-
+	var albumEntity entity.AlbumEntity
+	e = txn.One("Id", albumId, &albumEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -278,13 +299,13 @@ func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV
 	}
 
 	// Delete album
-	e = txn.DeleteStruct(album)
+	e = txn.DeleteStruct(&albumEntity)
 	if e != nil {
 		return nil, e
 	}
 
 	// Archive albumId
-	e = txn.Save(&restApiV1.DeletedAlbum{Id: album.Id, DeleteTs: deleteTs})
+	e = txn.Save(&entity.DeletedAlbumEntity{Id: albumEntity.Id, DeleteTs: deleteTs})
 	if e != nil {
 		return nil, e
 	}
@@ -294,58 +315,63 @@ func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV
 		txn.Commit()
 	}
 
-	return album, nil
+	var album restApiV1.Album
+	albumEntity.Fill(&album)
+
+	return &album, nil
 }
 
 func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+	var e error
 
 	albumIds := []string{}
-	deletedAlbums := []restApiV1.DeletedAlbum{}
+	deletedAlbumEntities := []entity.DeletedAlbumEntity{}
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}
 
 	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
 
-	err = query.Find(&deletedAlbums)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
+	e = query.Find(&deletedAlbumEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
-	for _, deletedAlbum := range deletedAlbums {
-		albumIds = append(albumIds, deletedAlbum.Id)
+	for _, deletedAlbumEntity := range deletedAlbumEntities {
+		albumIds = append(albumIds, deletedAlbumEntity.Id)
 	}
 
 	return albumIds, nil
 }
 
 func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId *string) (string, error) {
+	var e error
+
 	var albumId string
 
 	if albumName != "" {
 
 		// Check available transaction
 		txn := externalTrn
-		var err error
 		if txn == nil {
-			txn, err = s.Db.Begin(true)
-			if err != nil {
-				return "", err
+			txn, e = s.Db.Begin(true)
+			if e != nil {
+				return "", e
 			}
 			defer txn.Rollback()
 		}
 
-		albums, err := s.ReadAlbums(txn, &restApiV1.AlbumFilter{Name: &albumName})
-		if err != nil {
-			return "", err
+		var albums []restApiV1.Album
+		albums, e = s.ReadAlbums(txn, &restApiV1.AlbumFilter{Name: &albumName})
+		if e != nil {
+			return "", e
 		}
 		if len(albums) > 0 {
 			// Link the song to an existing album
@@ -359,18 +385,18 @@ func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName stri
 				}
 				if albumId == "" {
 					// Create the album before linking it to the song
-					album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
-					if err != nil {
-						return "", err
+					var album, e = s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
+					if e != nil {
+						return "", e
 					}
 					albumId = album.Id
 				}
 			}
 		} else {
 			// Create the album before linking it to the song
-			album, err := s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
-			if err != nil {
-				return "", err
+			var album, e = s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
+			if e != nil {
+				return "", e
 			}
 			albumId = album.Id
 		}

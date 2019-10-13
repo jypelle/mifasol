@@ -6,6 +6,7 @@ import (
 	"github.com/bogem/id3v2"
 	"github.com/sirupsen/logrus"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"strconv"
 	"strings"
 )
@@ -116,9 +117,9 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, song *restApiV1.Song) error {
+func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
 	// Extract song meta from tags
-	tag, err := id3v2.Open(s.GetSongFileName(song), id3v2.Options{Parse: true})
+	tag, err := id3v2.Open(s.getSongFileName(songEntity), id3v2.Options{Parse: true})
 	if err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, song *restApiV
 	// region Update tags with song meta
 
 	// Set title
-	tag.SetTitle(song.Name)
+	tag.SetTitle(songEntity.Name)
 
 	// Check available transaction
 	txn := externalTrn
@@ -140,26 +141,26 @@ func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, song *restApiV
 	}
 
 	// Set album & track number
-	if song.AlbumId != "" {
-		album, err := s.ReadAlbum(txn, song.AlbumId)
+	if songEntity.AlbumId != "" {
+		album, err := s.ReadAlbum(txn, songEntity.AlbumId)
 		if err != nil {
 			return err
 		}
 		tag.SetAlbum(album.Name)
 
-		if song.TrackNumber != nil {
-			tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), strconv.FormatInt(*song.TrackNumber, 10))
+		if songEntity.TrackNumber != nil {
+			tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), strconv.FormatInt(*songEntity.TrackNumber, 10))
 		}
 	}
 
 	// Set publication date
-	if song.PublicationYear != nil {
-		tag.SetYear(strconv.FormatInt(*song.PublicationYear, 10))
+	if songEntity.PublicationYear != nil {
+		tag.SetYear(strconv.FormatInt(*songEntity.PublicationYear, 10))
 	}
 
 	// Set artists
 	artistNamesStr := ""
-	for ind, artistId := range song.ArtistIds {
+	for ind, artistId := range songEntity.ArtistIds {
 
 		artist, err := s.ReadArtist(txn, artistId)
 		if err != nil {

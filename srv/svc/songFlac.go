@@ -7,6 +7,7 @@ import (
 	"github.com/go-flac/go-flac"
 	"github.com/sirupsen/logrus"
 	"lyra/restApiV1"
+	"lyra/srv/entity"
 	"strconv"
 	"strings"
 )
@@ -177,10 +178,10 @@ func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content [
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, song *restApiV1.Song) error {
+func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
 
 	// region Extract tags
-	flacFile, err := flac.ParseFile(s.GetSongFileName(song))
+	flacFile, err := flac.ParseFile(s.getSongFileName(songEntity))
 	if err != nil {
 		return err
 	}
@@ -208,7 +209,7 @@ func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, song *restApi
 
 	// Set title
 	vorbisClean(cmt, flacvorbis.FIELD_TITLE)
-	cmt.Add(flacvorbis.FIELD_TITLE, song.Name)
+	cmt.Add(flacvorbis.FIELD_TITLE, songEntity.Name)
 
 	// Check available transaction
 	txn := externalTrn
@@ -223,27 +224,27 @@ func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, song *restApi
 	// Set album & track number
 	vorbisClean(cmt, flacvorbis.FIELD_ALBUM)
 	vorbisClean(cmt, flacvorbis.FIELD_TRACKNUMBER)
-	if song.AlbumId != "" {
-		album, err := s.ReadAlbum(txn, song.AlbumId)
+	if songEntity.AlbumId != "" {
+		album, err := s.ReadAlbum(txn, songEntity.AlbumId)
 		if err != nil {
 			return err
 		}
 		cmt.Add(flacvorbis.FIELD_ALBUM, album.Name)
 
-		if song.TrackNumber != nil {
-			cmt.Add(flacvorbis.FIELD_TRACKNUMBER, strconv.FormatInt(*song.TrackNumber, 10))
+		if songEntity.TrackNumber != nil {
+			cmt.Add(flacvorbis.FIELD_TRACKNUMBER, strconv.FormatInt(*songEntity.TrackNumber, 10))
 		}
 	}
 
 	// Set publication date
 	vorbisClean(cmt, flacvorbis.FIELD_DATE)
-	if song.PublicationYear != nil {
-		cmt.Add(flacvorbis.FIELD_DATE, strconv.FormatInt(*song.PublicationYear, 10))
+	if songEntity.PublicationYear != nil {
+		cmt.Add(flacvorbis.FIELD_DATE, strconv.FormatInt(*songEntity.PublicationYear, 10))
 	}
 
 	// Set artists
 	vorbisClean(cmt, flacvorbis.FIELD_ARTIST)
-	for _, artistId := range song.ArtistIds {
+	for _, artistId := range songEntity.ArtistIds {
 		artist, err := s.ReadArtist(txn, artistId)
 		if err != nil {
 			return err
@@ -261,7 +262,7 @@ func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, song *restApi
 	} else {
 		flacFile.Meta = append(flacFile.Meta, &metaDataBlock)
 	}
-	flacFile.Save(s.GetSongFileName(song))
+	flacFile.Save(s.getSongFileName(songEntity))
 
 	// Commit transaction
 	if externalTrn == nil {

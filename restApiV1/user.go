@@ -2,29 +2,19 @@ package restApiV1
 
 // User
 
-type UserComplete struct {
-	User     `storm:"inline"`
-	Password string `json:"password"`
-}
-
 type User struct {
-	Id         string `json:"id" storm:"id"`
+	Id         string `json:"id"`
 	CreationTs int64  `json:"creationTs"`
-	UpdateTs   int64  `json:"updateTs" storm:"index"`
-	UserMeta   `storm:"inline"`
+	UpdateTs   int64  `json:"updateTs"`
+	UserMeta
 }
 
 type UserMeta struct {
-	Name    string `json:"name" storm:"unique"`
+	Name    string `json:"name"`
 	AdminFg bool   `json:"adminFlag"`
 }
 
 type UserMetaComplete struct {
-	UserMeta `storm:"inline"`
+	UserMeta
 	Password string `json:"password"`
-}
-
-type DeletedUser struct {
-	Id       string `json:"id" storm:"id"`
-	DeleteTs int64  `json:"deleteTs" storm:"index"`
 }
