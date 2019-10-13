@@ -4,8 +4,8 @@ import "strconv"
 
 var (
 	MajorVersionNumber int = 0
-	MinorVersionNumber int = 0
-	PatchVersionNumber int = 2
+	MinorVersionNumber int = 1
+	PatchVersionNumber int = 0
 )
 
 func Version() string {
