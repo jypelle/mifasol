@@ -204,6 +204,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 
 	playlistOldName := playlistEntity.Name
 	playlistOldSongIds := playlistEntity.SongIds
+	playlistOldOwnerUserIds := playlistEntity.OwnerUserIds
 
 	playlistEntity.LoadMeta(playlistMeta)
 
@@ -230,10 +231,12 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	}
 
 	// Update owner index
-	query := txn.Select(q.Eq("PlaylistId", playlistId))
-	e = query.Delete(new(entity.OwnedUserPlaylistEntity))
-	if e != nil && e != storm.ErrNotFound {
-		return nil, e
+	for _, ownerUserId := range playlistOldOwnerUserIds {
+		query := txn.Select(q.Eq("UserId", ownerUserId))
+		e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
 	}
 
 	for _, ownerUserId := range playlistEntity.OwnerUserIds {
@@ -256,10 +259,12 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 
 	// Update songs list
 	if songIdsUpdated {
-		query := txn.Select(q.Eq("PlaylistId", playlistId))
-		e = query.Delete(new(entity.PlaylistSongEntity))
-		if e != nil && e != storm.ErrNotFound {
-			return nil, e
+		for _, songId := range playlistOldSongIds {
+			query := txn.Select(q.Eq("SongId", songId))
+			e = query.Delete(new(entity.PlaylistSongEntity))
+			if e != nil && e != storm.ErrNotFound {
+				return nil, e
+			}
 		}
 		for _, songId := range playlistEntity.SongIds {
 			// Check song id
@@ -370,17 +375,21 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*re
 	}
 
 	// Delete ower link
-	query := txn.Select(q.Eq("PlaylistId", playlistId))
-	e = query.Delete(new(entity.OwnedUserPlaylistEntity))
-	if e != nil && e != storm.ErrNotFound {
-		return nil, e
+	for _, ownerUserId := range playlistEntity.OwnerUserIds {
+		query := txn.Select(q.Eq("UserId", ownerUserId))
+		e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
 	}
 
 	// Delete songs link
-	query = txn.Select(q.Eq("PlaylistId", playlistId))
-	e = query.Delete(new(entity.PlaylistSongEntity))
-	if e != nil && e != storm.ErrNotFound {
-		return nil, e
+	for _, _songId := range playlistEntity.SongIds {
+		query := txn.Select(q.Eq("SongId", _songId))
+		e = query.Delete(new(entity.PlaylistSongEntity))
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
 	}
 
 	// Delete playlist
@@ -460,7 +469,7 @@ func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string
 	}
 
 	for _, playlistSongEntity := range playlistSongEntities {
-		playlistIds = append(playlistIds, playlistSongEntity.PlaylistId)
+		playlistIds = append(playlistIds, playlistSongEntity.Id.PlaylistId)
 	}
 
 	return playlistIds, nil
@@ -491,7 +500,7 @@ func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUse
 	}
 
 	for _, ownedUserPlaylistEntity := range ownedUserPlaylistEntities {
-		playlistIds = append(playlistIds, ownedUserPlaylistEntity.PlaylistId)
+		playlistIds = append(playlistIds, ownedUserPlaylistEntity.Id.PlaylistId)
 	}
 
 	return playlistIds, nil

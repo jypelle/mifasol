@@ -38,65 +38,61 @@ type DeletedPlaylistEntity struct {
 }
 
 type PlaylistSongId struct {
-	PlaylistIdPk string
-	SongIdPk     string
+	PlaylistId string
+	SongId     string
 }
 
 type PlaylistSongEntity struct {
-	PlaylistSongId `storm:"id"`
-	PlaylistId     string `storm:"index"`
-	SongId         string `storm:"index"`
+	Id     PlaylistSongId `storm:"id"`
+	SongId string         `storm:"index"`
 }
 
 func NewPlaylistSongEntity(playlistId string, songId string) *PlaylistSongEntity {
 	return &PlaylistSongEntity{
-		PlaylistSongId: PlaylistSongId{
-			PlaylistIdPk: playlistId,
-			SongIdPk:     songId,
+		Id: PlaylistSongId{
+			PlaylistId: playlistId,
+			SongId:     songId,
 		},
-		PlaylistId: playlistId,
-		SongId:     songId,
+		SongId: songId,
 	}
 }
 
 type OwnedUserPlaylistId struct {
-	UserIdPk     string
-	PlaylistIdPk string
+	UserId     string
+	PlaylistId string
 }
 
 type OwnedUserPlaylistEntity struct {
-	OwnedUserPlaylistId `storm:"id"`
-	UserId              string `storm:"index"`
-	PlaylistId          string `storm:"index"`
+	Id     OwnedUserPlaylistId `storm:"id"`
+	UserId string              `storm:"index"`
 }
 
 func NewOwnedUserPlaylistEntity(userId string, playlistId string) *OwnedUserPlaylistEntity {
 	return &OwnedUserPlaylistEntity{
-		OwnedUserPlaylistId: OwnedUserPlaylistId{
-			UserIdPk:     userId,
-			PlaylistIdPk: playlistId,
+		Id: OwnedUserPlaylistId{
+			UserId:     userId,
+			PlaylistId: playlistId,
 		},
-		UserId:     userId,
-		PlaylistId: playlistId,
+		UserId: userId,
 	}
 }
 
 type FavoritePlaylistId struct {
-	UserIdPk     string
-	PlaylistIdPk string
+	UserId     string
+	PlaylistId string
 }
 
 type FavoritePlaylistEntity struct {
-	FavoritePlaylistId `storm:"id"`
-	UserId             string `storm:"index"`
-	PlaylistId         string `storm:"index"`
+	Id         FavoritePlaylistId `storm:"id"`
+	UserId     string             `storm:"index"`
+	PlaylistId string             `storm:"index"`
 }
 
 func NewFavoritePlaylistEntity(userId string, playlistId string) *FavoritePlaylistEntity {
 	return &FavoritePlaylistEntity{
-		FavoritePlaylistId: FavoritePlaylistId{
-			UserIdPk:     userId,
-			PlaylistIdPk: playlistId,
+		Id: FavoritePlaylistId{
+			UserId:     userId,
+			PlaylistId: playlistId,
 		},
 		UserId:     userId,
 		PlaylistId: playlistId,

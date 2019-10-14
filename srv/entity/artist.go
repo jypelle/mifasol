@@ -30,21 +30,21 @@ type DeletedArtistEntity struct {
 }
 
 type ArtistSongId struct {
-	ArtistIdPk string
-	SongIdPk   string
+	ArtistId string
+	SongId   string
 }
 
 type ArtistSongEntity struct {
-	ArtistSongId `storm:"id"`
-	ArtistId     string `storm:"index"`
-	SongId       string `storm:"index"`
+	Id       ArtistSongId `storm:"id"`
+	ArtistId string       `storm:"index"`
+	SongId   string       `storm:"index"`
 }
 
 func NewArtistSongEntity(artistId string, songId string) *ArtistSongEntity {
 	return &ArtistSongEntity{
-		ArtistSongId: ArtistSongId{
-			ArtistIdPk: artistId,
-			SongIdPk:   songId,
+		Id: ArtistSongId{
+			ArtistId: artistId,
+			SongId:   songId,
 		},
 		ArtistId: artistId,
 		SongId:   songId,
