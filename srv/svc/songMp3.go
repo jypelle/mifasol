@@ -5,8 +5,8 @@ import (
 	"github.com/asdine/storm"
 	"github.com/bogem/id3v2"
 	"github.com/sirupsen/logrus"
-	"lyra/restApiV1"
-	"lyra/srv/entity"
+	"mifasol/restApiV1"
+	"mifasol/srv/entity"
 	"strconv"
 	"strings"
 )

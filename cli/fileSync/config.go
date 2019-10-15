@@ -1,6 +1,6 @@
 package fileSync
 
-const FileSyncFilename = ".lyraFileSync.json"
+const FileSyncFilename = ".mifasolFileSync.json"
 
 type FileSyncConfig struct {
 	LastFileSyncTs         int64                             `json:"lastFileSyncTs"`

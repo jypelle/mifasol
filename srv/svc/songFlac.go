@@ -6,13 +6,13 @@ import (
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
 	"github.com/sirupsen/logrus"
-	"lyra/restApiV1"
-	"lyra/srv/entity"
+	"mifasol/restApiV1"
+	"mifasol/srv/entity"
 	"strconv"
 	"strings"
 )
 
-type LyraMetaDataBlockVorbisComment struct {
+type MifasolMetaDataBlockVorbisComment struct {
 	flacvorbis.MetaDataBlockVorbisComment
 }
 

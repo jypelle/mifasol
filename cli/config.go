@@ -31,9 +31,9 @@ func (c *ClientApp) Config(
 		c.config.ClientEditableConfig.ServerSsl = *serverSsl
 		shouldSaveConfig = true
 		if *serverSsl {
-			fmt.Println("SSL enabled: lyracli will use https to connect to server")
+			fmt.Println("SSL enabled: mifasolcli will use https to connect to server")
 		} else {
-			fmt.Println("SSL disabled: lyracli will use http to connect to server")
+			fmt.Println("SSL disabled: mifasolcli will use http to connect to server")
 		}
 	}
 

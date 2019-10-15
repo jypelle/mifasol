@@ -1,6 +1,6 @@
 package cli
 
-import "lyra/cli/imp"
+import "mifasol/cli/imp"
 
 func (c *ClientApp) Import(importDir string, importOneFolderPerAlbumDisabled bool) {
 

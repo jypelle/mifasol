@@ -8,7 +8,7 @@ import (
 )
 
 const configFilename = "config.json"
-const configDbFilename = "lyra.db"
+const configDbFilename = "mifasol.db"
 const configDbDirName = "db"
 const configDataDirName = "data"
 const configSongsDirName = "songs"

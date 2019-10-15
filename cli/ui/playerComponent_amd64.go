@@ -7,7 +7,7 @@ import (
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 	"time"
 )
 

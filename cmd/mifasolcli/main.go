@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"lyra/cli"
+	"mifasol/cli"
 	"os"
 	"path/filepath"
 	"time"
@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const configSuffix = "lyracli"
+const configSuffix = "mifasolcli"
 
 func main() {
 
@@ -31,19 +31,19 @@ func main() {
 	if err == nil {
 		defaultConfigDir = filepath.Join(userConfigDir, configSuffix)
 	}
-	configDir := flag.String("c", defaultConfigDir, "Location of lyracli config folder")
+	configDir := flag.String("c", defaultConfigDir, "Location of mifasolcli config folder")
 
 	// Usage
 	flag.Usage = func() {
 		fmt.Printf("\nUsage: %s [OPTIONS] [COMMAND]\n", mainCommand)
-		fmt.Printf("\nA self-sufficient music client for lyra server\n")
+		fmt.Printf("\nA self-sufficient music client for mifasol server\n")
 		fmt.Printf("\nOptions:\n")
 		flag.PrintDefaults()
 		fmt.Printf("\nCommands:\n")
-		fmt.Printf("  config    Configure the lyra client\n")
+		fmt.Printf("  config    Configure the mifasol client\n")
 		fmt.Printf("  ui        Launch the console interface\n")
-		fmt.Printf("  import    Import every flac, mp3 and ogg files from current folder to lyra server\n")
-		fmt.Printf("  filesync  Sync a folder with lyra server content\n")
+		fmt.Printf("  import    Import every flac, mp3 and ogg files from current folder to mifasol server\n")
+		fmt.Printf("  filesync  Sync a folder with mifasol server content\n")
 		fmt.Printf("\nRun '%s COMMAND --help' for more information on a command.\n", mainCommand)
 	}
 
@@ -61,7 +61,7 @@ func main() {
 
 	configCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s config [OPTIONS]\n", mainCommand)
-		fmt.Printf("\nConfigure the lyra client\n")
+		fmt.Printf("\nConfigure the mifasol client\n")
 		fmt.Printf("\nOptions:\n")
 		configCmd.PrintDefaults()
 	}
@@ -80,7 +80,7 @@ func main() {
 
 	importCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s import [OPTIONS] [Location of music folder to import]\n", mainCommand)
-		fmt.Printf("\nImport flac, mp3 and ogg files to lyra server\n")
+		fmt.Printf("\nImport flac, mp3 and ogg files to mifasol server\n")
 		fmt.Printf("\nOptions:\n")
 		importCmd.PrintDefaults()
 	}
@@ -90,10 +90,10 @@ func main() {
 
 	fileSyncCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s filesync [SUBCOMMAND]\n", mainCommand)
-		fmt.Printf("\nSync a folder with lyra server content\n")
+		fmt.Printf("\nSync a folder with mifasol server content\n")
 		fmt.Printf("\nSubcommands:\n")
-		fmt.Printf("  init    Prepare folder for synchronization with lyra server\n")
-		fmt.Printf("  sync    Synchronize folder with lyra server content\n")
+		fmt.Printf("  init    Prepare folder for synchronization with mifasol server\n")
+		fmt.Printf("  sync    Synchronize folder with mifasol server content\n")
 	}
 
 	// filesync init subcommand
@@ -101,7 +101,7 @@ func main() {
 
 	fileSyncCmdInitSubCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s %s %s [Location of folder to synchronize]\n", mainCommand, fileSyncCmd.Name(), fileSyncCmdInitSubCmd.Name())
-		fmt.Printf("\nPrepare music folder for synchronization with lyra server\n")
+		fmt.Printf("\nPrepare music folder for synchronization with mifasol server\n")
 	}
 
 	// filesync sync subcommand
@@ -109,7 +109,7 @@ func main() {
 
 	fileSyncCmdSyncSubCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s %s %s [Location of folder to synchronize]\n", mainCommand, fileSyncCmd.Name(), fileSyncCmdSyncSubCmd.Name())
-		fmt.Printf("\nSynchronize music folder content with lyra server\n")
+		fmt.Printf("\nSynchronize music folder content with mifasol server\n")
 	}
 
 	// endregion
@@ -173,12 +173,12 @@ func main() {
 				os.Exit(1)
 			}
 		default:
-			fmt.Printf("\n%s is not a lyracli %s subcommand\n", fileSyncCmd.Arg(0), flag.Arg(0))
+			fmt.Printf("\n%s is not a mifasolcli %s subcommand\n", fileSyncCmd.Arg(0), flag.Arg(0))
 			fileSyncCmd.Usage()
 			os.Exit(1)
 		}
 	default:
-		fmt.Printf("\n%s is not a lyracli command\n", flag.Args()[0])
+		fmt.Printf("\n%s is not a mifasolcli command\n", flag.Args()[0])
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -190,12 +190,12 @@ func main() {
 		logrus.Printf("Debug mode activated")
 	}
 
-	// Create lyra client
+	// Create mifasol client
 	clientApp := cli.NewClientApp(*configDir, *debugMode)
 
 	if configCmd.Parsed() {
 
-		// Update lyra client config
+		// Update mifasol client config
 		var configServerSSL *bool = nil
 		if *configServerSSLEnabled {
 			trueVar := true
@@ -227,7 +227,7 @@ func main() {
 
 	} else {
 
-		// Init lyra client
+		// Init mifasol client
 		clientApp.Init()
 
 		if uiCmd.Parsed() {

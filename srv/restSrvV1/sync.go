@@ -3,8 +3,8 @@ package restSrvV1
 import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"lyra/restApiV1"
-	"lyra/tool"
+	"mifasol/restApiV1"
+	"mifasol/tool"
 	"net/http"
 	"strconv"
 )

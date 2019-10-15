@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"lyra/cli/ui/model"
-	"lyra/primitive"
-	"lyra/restApiV1"
+	"mifasol/cli/ui/model"
+	"mifasol/primitive"
+	"mifasol/restApiV1"
 	"strconv"
 )
 

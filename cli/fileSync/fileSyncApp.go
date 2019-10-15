@@ -8,9 +8,9 @@ import (
 	"github.com/vbauerster/mpb/v4/decor"
 	"io"
 	"io/ioutil"
-	"lyra/cli/config"
-	"lyra/restClientV1"
-	"lyra/tool"
+	"mifasol/cli/config"
+	"mifasol/restClientV1"
+	"mifasol/tool"
 	"os"
 	"os/signal"
 	"strings"
@@ -187,7 +187,7 @@ func (a *FileSyncApp) sync() {
 				// Read song content
 				reader, contentLength, apiErr := a.restClient.ReadSongContent(fileSyncSong.Id)
 				if apiErr != nil {
-					logrus.Warningf("Unable to read \"%s\" from lyrasrv: %v\n", fileSyncSong.Filepath, apiErr)
+					logrus.Warningf("Unable to read \"%s\" from mifasolsrv: %v\n", fileSyncSong.Filepath, apiErr)
 					songSyncErrors++
 					return
 				}

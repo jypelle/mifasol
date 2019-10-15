@@ -3,14 +3,14 @@ package svc
 import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"lyra/restApiV1"
-	"lyra/srv/entity"
-	"lyra/tool"
+	"mifasol/restApiV1"
+	"mifasol/srv/entity"
+	"mifasol/tool"
 	"time"
 )
 
-const DefaultUserName = "lyra"
-const DefaultUserPassword = "lyra"
+const DefaultUserName = "mifasol"
+const DefaultUserPassword = "mifasol"
 
 func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter) ([]restApiV1.User, error) {
 	var e error

@@ -35,7 +35,7 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 '+'    : Increase volume
 '-'    : Decrease Volume
 <TAB>  : Change view
-<F5>   : Get updates from lyrasrv
+<F5>   : Get updates from mifasolsrv
 <ESC>  : Quit
 
 [` + ColorHelpTitle2Str + `::u]"Library" shortcuts

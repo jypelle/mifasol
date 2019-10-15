@@ -2,8 +2,8 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"lyra/restApiV1"
-	"lyra/srv/entity"
+	"mifasol/restApiV1"
+	"mifasol/srv/entity"
 )
 
 func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {

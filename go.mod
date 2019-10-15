@@ -1,4 +1,4 @@
-module lyra
+module mifasol
 
 go 1.13
 

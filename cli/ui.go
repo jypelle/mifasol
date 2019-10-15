@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"lyra/cli/ui"
+	"mifasol/cli/ui"
 )
 
 func (c *ClientApp) UI() {

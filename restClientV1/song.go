@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 )
 
 func (c *RestClient) ReadSongContent(songId string) (io.ReadCloser, int64, ClientError) {

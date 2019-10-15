@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"lyra/cli/fileSync"
+	"mifasol/cli/fileSync"
 )
 
 func (c *ClientApp) FileSyncInit(fileSyncMusicFolder string) {

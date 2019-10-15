@@ -3,8 +3,8 @@ package restSrvV1
 import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"lyra/restApiV1"
-	"lyra/srv/svc"
+	"mifasol/restApiV1"
+	"mifasol/srv/svc"
 	"net/http"
 	"strings"
 	"sync"
@@ -13,7 +13,7 @@ import (
 type contextKey string
 
 func (c contextKey) String() string {
-	return "lyra restSrvV1 key " + string(c)
+	return "mifasol restSrvV1 key " + string(c)
 }
 
 var (

@@ -2,8 +2,8 @@ package db
 
 import (
 	"golang.org/x/text/collate"
-	"lyra/restApiV1"
-	"lyra/restClientV1"
+	"mifasol/restApiV1"
+	"mifasol/restClientV1"
 	"sort"
 )
 
@@ -52,7 +52,7 @@ func (l *LocalDb) IsPlaylistOwnedBy(playlistId, userId string) bool {
 
 func (l *LocalDb) Refresh() restClientV1.ClientError {
 
-	// Retrieve library content from lyrasrv
+	// Retrieve library content from mifasolsrv
 	syncReport, cliErr := l.restClient.ReadSyncReport(l.LastSyncTs)
 	if cliErr != nil {
 		return cliErr

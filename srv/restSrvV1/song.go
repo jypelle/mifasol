@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"lyra/restApiV1"
-	"lyra/srv/svc"
-	"lyra/tool"
+	"mifasol/restApiV1"
+	"mifasol/srv/svc"
+	"mifasol/tool"
 	"net/http"
 	"strconv"
 )

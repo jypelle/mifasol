@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/rivo/tview"
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 )
 
 type AlbumEditComponent struct {

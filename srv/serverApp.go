@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"lyra/restApiV1"
-	"lyra/srv/config"
-	"lyra/srv/restSrvV1"
-	"lyra/srv/svc"
-	"lyra/tool"
-	"lyra/version"
+	"mifasol/restApiV1"
+	"mifasol/srv/config"
+	"mifasol/srv/restSrvV1"
+	"mifasol/srv/svc"
+	"mifasol/tool"
+	"mifasol/version"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,7 +31,7 @@ type ServerApp struct {
 
 func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
-	logrus.Debugf("Creation of lyra server %s ...", version.Version())
+	logrus.Debugf("Creation of mifasol server %s ...", version.Version())
 
 	app := &ServerApp{
 		ServerConfig: config.ServerConfig{
@@ -91,8 +91,8 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 		if !existServerCert || !existServerKey {
 			logrus.Info("Missing cert and key files, trying to generate them...")
 			err = tool.GenerateTlsCertificate(
-				"Lyra",
-				"Lyra Server",
+				"Mifasol",
+				"Mifasol Server",
 				app.GetCompleteConfigKeyFilename(),
 				app.GetCompleteConfigCertFilename(),
 				app.Hostnames)
@@ -145,9 +145,9 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 		}
 		_, err := app.service.CreateUser(nil, &userMetaComplete)
 		if err != nil {
-			logrus.Fatalf("Unable to create default lyra user: %v", err)
+			logrus.Fatalf("Unable to create default mifasol user: %v", err)
 		}
-		logrus.Printf("No admin user found: the default user/password 'lyra/lyra' has been created ...")
+		logrus.Printf("No admin user found: the default user/password 'mifasol/mifasol' has been created ...")
 	}
 
 	// Check existence of the (incoming) playlist
@@ -198,7 +198,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 }
 
 func (s *ServerApp) Start() {
-	logrus.Printf("Starting lyra server ...")
+	logrus.Printf("Starting mifasol server ...")
 
 	// Start serving REST request
 	if s.Ssl {
@@ -223,7 +223,7 @@ func (s *ServerApp) Start() {
 }
 
 func (s *ServerApp) Stop() {
-	logrus.Printf("Stopping lyra server ...")
+	logrus.Printf("Stopping mifasol server ...")
 
 	// Stop listening REST request
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)

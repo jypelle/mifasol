@@ -7,8 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"lyra/cli/config"
-	"lyra/restApiV1"
+	"mifasol/cli/config"
+	"mifasol/restApiV1"
 	"net"
 	"net/http"
 	"strconv"
@@ -76,7 +76,7 @@ func (c *RestClient) getServerUrl() string {
 // doRequest prepare and send an http request, managing access token renewal for expired token
 func (c *RestClient) doRequest(method, relativeUrl string, contentType string, body io.Reader) (*http.Response, ClientError) {
 
-	// Dear lyrasrv, could you gimme a token ?
+	// Dear mifasolsrv, could you gimme a token ?
 	if c.token == nil {
 		logrus.Debugln("Ask for a new token")
 		cliErr := c.refreshToken()

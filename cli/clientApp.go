@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"lyra/cli/config"
-	"lyra/restClientV1"
-	"lyra/tool"
-	"lyra/version"
+	"mifasol/cli/config"
+	"mifasol/restClientV1"
+	"mifasol/tool"
+	"mifasol/version"
 	"net"
 	"net/http"
 	"net/url"
@@ -28,7 +28,7 @@ type ClientApp struct {
 
 func NewClientApp(configDir string, debugMode bool) *ClientApp {
 
-	logrus.Debugf("Creation of lyra client %s ...", version.Version())
+	logrus.Debugf("Creation of mifasol client %s ...", version.Version())
 
 	app := &ClientApp{
 		config: config.ClientConfig{
@@ -107,18 +107,18 @@ func (c *ClientApp) Init() {
 			// Prepare the request
 			req, err := http.NewRequest("GET", c.getServerUrl()+"/isalive", nil)
 			if err != nil {
-				logrus.Fatalf("Unable to connect to lyra server: %v\n", err)
+				logrus.Fatalf("Unable to connect to mifasol server: %v\n", err)
 			}
 
 			// Send the request
 			response, err := insecureClient.Do(req)
 			if err != nil {
-				logrus.Fatalf("Unable to connect to lyra server: %v\n", err)
+				logrus.Fatalf("Unable to connect to mifasol server: %v\n", err)
 			}
 			defer response.Body.Close()
 
 			if len(response.TLS.PeerCertificates) == 0 {
-				logrus.Fatalf("Unable to connect to lyra server: certificate is missing\n", err)
+				logrus.Fatalf("Unable to connect to mifasol server: certificate is missing\n", err)
 			}
 
 			// Retrieve server certificate
@@ -163,7 +163,7 @@ func (c *ClientApp) Init() {
 		// Prepare the request
 		req, err := http.NewRequest("GET", c.getServerUrl()+"/isalive", nil)
 		if err != nil {
-			logrus.Fatalf("Unable to prepare lyra server connection: %v\n", err)
+			logrus.Fatalf("Unable to prepare mifasol server connection: %v\n", err)
 		}
 
 		// Send the request
@@ -171,10 +171,10 @@ func (c *ClientApp) Init() {
 		if err != nil {
 			if urlErr, ok := err.(*url.Error); ok {
 				if hostnameError, ok := urlErr.Err.(x509.HostnameError); ok {
-					logrus.Fatalf("Bad hostname: Lyra server is available but should be reconfigured to accept connection with \"%s\" hostname\n", hostnameError.Host)
+					logrus.Fatalf("Bad hostname: Mifasol server is available but should be reconfigured to accept connection with \"%s\" hostname\n", hostnameError.Host)
 				}
 				if _, ok := urlErr.Err.(x509.UnknownAuthorityError); ok {
-					fmt.Print("Lyra server certificate has changed.\nDo you accept the new one (to prevent man-in-the-middle attack, you should explicitely accept) ?[y/N]\n")
+					fmt.Print("Mifasol server certificate has changed.\nDo you accept the new one (to prevent man-in-the-middle attack, you should explicitely accept) ?[y/N]\n")
 					reader := bufio.NewReader(os.Stdin)
 					text, _ := reader.ReadString('\n')
 					text = strings.Replace(text, "\n", "", -1)
@@ -188,10 +188,10 @@ func (c *ClientApp) Init() {
 					}
 				}
 				if _, ok := urlErr.Err.(x509.CertificateInvalidError); ok {
-					logrus.Fatalf("Invalid certificate: Lyra server is available but should regenerate its SSL certificate.\n")
+					logrus.Fatalf("Invalid certificate: Mifasol server is available but should regenerate its SSL certificate.\n")
 				}
 			}
-			logrus.Fatalf("Unable to connect to lyra server: %v\n", err)
+			logrus.Fatalf("Unable to connect to mifasol server: %v\n", err)
 		} else {
 			defer response.Body.Close()
 		}

@@ -3,7 +3,7 @@ package restClientV1
 import (
 	"bytes"
 	"encoding/json"
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 )
 
 func (c *RestClient) CreateArtist(artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, ClientError) {

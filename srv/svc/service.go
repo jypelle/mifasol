@@ -2,7 +2,7 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"lyra/srv/config"
+	"mifasol/srv/config"
 )
 
 type Service struct {

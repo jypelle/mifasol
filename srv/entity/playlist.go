@@ -1,6 +1,6 @@
 package entity
 
-import "lyra/restApiV1"
+import "mifasol/restApiV1"
 
 // Playlist
 

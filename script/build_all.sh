@@ -1,11 +1,11 @@
 #!/bin/bash
 echo "Build server"
-GOOS=windows GOARCH=amd64 go build -o assets/lyrasrv-windows-amd64.exe lyra/cmd/lyrasrv
-GOOS=linux GOARCH=amd64 go build -o assets/lyrasrv-linux-amd64 lyra/cmd/lyrasrv
-GOOS=linux GOARCH=arm go build -o assets/lyrasrv-linux-arm lyra/cmd/lyrasrv
-GOOS=darwin GOARCH=amd64 go build -o assets/lyrasrv-darwin-amd64 lyra/cmd/lyrasrv
+GOOS=windows GOARCH=amd64 go build -o assets/mifasolsrv-windows-amd64.exe mifasol/cmd/mifasolsrv
+GOOS=linux GOARCH=amd64 go build -o assets/mifasolsrv-linux-amd64 mifasol/cmd/mifasolsrv
+GOOS=linux GOARCH=arm go build -o assets/mifasolsrv-linux-arm mifasol/cmd/mifasolsrv
+GOOS=darwin GOARCH=amd64 go build -o assets/mifasolsrv-darwin-amd64 mifasol/cmd/mifasolsrv
 echo "Build client"
-GOOS=windows GOARCH=amd64 go build -o assets/lyracli-windows-amd64.exe lyra/cmd/lyracli
-GOOS=linux GOARCH=amd64 go build -o assets/lyracli-linux-amd64 lyra/cmd/lyracli
-GOOS=linux GOARCH=arm go build -o assets/lyracli-linux-arm lyra/cmd/lyracli
-#GOOS=darwin GOARCH=amd64 go build -o assets/lyracli-darwin-amd64 lyra/cmd/lyracli
+GOOS=windows GOARCH=amd64 go build -o assets/mifasolcli-windows-amd64.exe mifasol/cmd/mifasolcli
+GOOS=linux GOARCH=amd64 go build -o assets/mifasolcli-linux-amd64 mifasol/cmd/mifasolcli
+GOOS=linux GOARCH=arm go build -o assets/mifasolcli-linux-arm mifasol/cmd/mifasolcli
+#GOOS=darwin GOARCH=amd64 go build -o assets/mifasolcli-darwin-amd64 mifasol/cmd/mifasolcli

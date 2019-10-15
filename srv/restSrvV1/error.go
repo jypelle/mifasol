@@ -2,7 +2,7 @@ package restSrvV1
 
 import (
 	"encoding/json"
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 	"net/http"
 )
 

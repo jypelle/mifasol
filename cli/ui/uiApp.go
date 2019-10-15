@@ -4,10 +4,10 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
-	"lyra/cli/config"
-	"lyra/cli/db"
-	"lyra/restApiV1"
-	"lyra/restClientV1"
+	"mifasol/cli/config"
+	"mifasol/cli/db"
+	"mifasol/restApiV1"
+	"mifasol/restClientV1"
 	"strconv"
 )
 
@@ -340,7 +340,7 @@ func (a *UIApp) Reload() {
 	// Refresh In memory Db
 	cliErr := a.localDb.Refresh()
 	if cliErr != nil {
-		a.WarningMessage("Unable to refresh data from lyrasrv (" + cliErr.Code().String() + ")")
+		a.WarningMessage("Unable to refresh data from mifasolsrv (" + cliErr.Code().String() + ")")
 		return
 	}
 

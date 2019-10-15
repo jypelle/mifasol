@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"lyra/srv"
+	"mifasol/srv"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const configSuffix = "lyrasrv"
+const configSuffix = "mifasolsrv"
 
 func main() {
 
@@ -34,7 +34,7 @@ func main() {
 	if err == nil {
 		defaultConfigDir = filepath.Join(userConfigDir, configSuffix)
 	}
-	configDir := flag.String("c", defaultConfigDir, "Location of lyrasrv config folder")
+	configDir := flag.String("c", defaultConfigDir, "Location of mifasolsrv config folder")
 
 	// Usage
 	flag.Usage = func() {
@@ -58,7 +58,7 @@ func main() {
 
 	configCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s config\n", mainCommand)
-		fmt.Printf("\nConfigure the lyra server\n")
+		fmt.Printf("\nConfigure the mifasol server\n")
 		fmt.Printf("\nOptions:\n")
 		configCmd.PrintDefaults()
 	}
@@ -101,7 +101,7 @@ func main() {
 			os.Exit(1)
 		}
 	default:
-		fmt.Printf("\n%s is not a lyrasrv command\n", flag.Args()[0])
+		fmt.Printf("\n%s is not a mifasolsrv command\n", flag.Args()[0])
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -113,11 +113,11 @@ func main() {
 		logrus.Printf("Debug mode activated")
 	}
 
-	// Create lyra server
+	// Create mifasol server
 	serverApp := srv.NewServerApp(*configDir, *debugMode)
 
 	if configCmd.Parsed() {
-		// Update lyra server config
+		// Update mifasol server config
 		var configSsl *bool = nil
 		if *configSslEnabled {
 			trueVar := true
@@ -137,7 +137,7 @@ func main() {
 
 	} else {
 		if runCmd.Parsed() {
-			// Start lyra server
+			// Start mifasol server
 			serverApp.Start()
 			defer serverApp.Stop()
 

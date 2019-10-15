@@ -2,4 +2,4 @@
 export GOOS=linux
 export GOARCH=arm
 echo "Build"
-go build lyra/cmd/lyracli
+go build mifasol/cmd/mifasolcli

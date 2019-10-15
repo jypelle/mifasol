@@ -1,7 +1,7 @@
 package restClientV1
 
 import (
-	"lyra/restApiV1"
+	"mifasol/restApiV1"
 )
 
 type ClientError interface {

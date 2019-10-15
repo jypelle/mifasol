@@ -3,9 +3,9 @@ package ui
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"lyra/primitive"
-	"lyra/restApiV1"
 	"math/rand"
+	"mifasol/primitive"
+	"mifasol/restApiV1"
 )
 
 type CurrentComponent struct {
