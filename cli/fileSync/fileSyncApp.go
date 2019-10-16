@@ -270,7 +270,7 @@ func (a *FileSyncApp) sync() {
 
 	if !synchroAborded {
 
-		playlistsBar := progressContainer.AddBar(int64(len(fileSyncReport.Playlists)+1),
+		playlistsBar := progressContainer.AddBar(int64(len(fileSyncReport.FavoritePlaylists)+1),
 			mpb.PrependDecorators(
 				// simple name decorator
 				decor.Name("Sync playlists"),
@@ -281,7 +281,7 @@ func (a *FileSyncApp) sync() {
 
 		// Delete playlists
 
-		for _, playlistId := range fileSyncReport.DeletedPlaylistIds {
+		for _, playlistId := range fileSyncReport.DeletedFavoritePlaylistIds {
 			if synchroAborded {
 				break
 			}
@@ -314,7 +314,7 @@ func (a *FileSyncApp) sync() {
 		if !synchroAborded {
 			playlistsBar.Increment()
 
-			for _, playlist := range fileSyncReport.Playlists {
+			for _, playlist := range fileSyncReport.FavoritePlaylists {
 				if synchroAborded {
 					break
 				}
@@ -403,7 +403,7 @@ func (a *FileSyncApp) sync() {
 		fmt.Println("Synchronization done:")
 	}
 	fmt.Printf("- Songs: %d updated / %d deleted / %d errors\n", songSyncUpdatedSongs, songSyncDeletedSongs, songSyncErrors)
-	fmt.Printf("- Playlists: %d updated / %d deleted / %d errors\n", playlistSyncUpdatedPlaylists, playlistSyncDeletedPlaylists, playlistSyncErrors)
+	fmt.Printf("- FavoritePlaylists: %d updated / %d deleted / %d errors\n", playlistSyncUpdatedPlaylists, playlistSyncDeletedPlaylists, playlistSyncErrors)
 
 	// Cleaning
 	select {

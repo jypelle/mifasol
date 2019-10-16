@@ -1,6 +1,8 @@
 package entity
 
-import "mifasol/restApiV1"
+import (
+	"mifasol/restApiV1"
+)
 
 // Playlist
 
@@ -74,27 +76,5 @@ func NewOwnedUserPlaylistEntity(userId string, playlistId string) *OwnedUserPlay
 			PlaylistId: playlistId,
 		},
 		UserId: userId,
-	}
-}
-
-type FavoritePlaylistId struct {
-	UserId     string
-	PlaylistId string
-}
-
-type FavoritePlaylistEntity struct {
-	Id         FavoritePlaylistId `storm:"id"`
-	UserId     string             `storm:"index"`
-	PlaylistId string             `storm:"index"`
-}
-
-func NewFavoritePlaylistEntity(userId string, playlistId string) *FavoritePlaylistEntity {
-	return &FavoritePlaylistEntity{
-		Id: FavoritePlaylistId{
-			UserId:     userId,
-			PlaylistId: playlistId,
-		},
-		UserId:     userId,
-		PlaylistId: playlistId,
 	}
 }

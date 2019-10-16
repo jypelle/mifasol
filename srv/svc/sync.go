@@ -73,6 +73,16 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 		logrus.Panicf("Unable to read deleted user ids: %v", err)
 	}
 
+	// Favorite playlists
+	syncReport.FavoritePlaylists, err = s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{Order: restApiV1.FavoritePlaylistOrderByUpdateTs, FromTs: &fromTs})
+	if err != nil {
+		logrus.Panicf("Unable to read playlists: %v", err)
+	}
+	syncReport.DeletedFavoritePlaylistIds, err = s.GetDeletedFavoritePlaylistIds(txn, fromTs)
+	if err != nil {
+		logrus.Panicf("Unable to read deleted favorite playlist ids: %v", err)
+	}
+
 	return &syncReport, nil
 }
 

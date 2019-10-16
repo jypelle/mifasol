@@ -70,3 +70,15 @@ type UserFilter struct {
 	FromTs  *int64
 	AdminFg *bool
 }
+
+type FavoritePlaylistOrder int64
+
+const (
+	FavoritePlaylistOrderNoOrder FavoritePlaylistOrder = iota
+	FavoritePlaylistOrderByUpdateTs
+)
+
+type FavoritePlaylistFilter struct {
+	Order  FavoritePlaylistOrder
+	FromTs *int64
+}
