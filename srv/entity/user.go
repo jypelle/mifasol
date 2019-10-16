@@ -11,7 +11,6 @@ type UserEntity struct {
 	Name       string `storm:"unique"`
 	AdminFg    bool
 	Password   string
-	//	FavoritePlaylistsUpdateTs int64
 }
 
 func (e *UserEntity) Fill(s *restApiV1.User) {

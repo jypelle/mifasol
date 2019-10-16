@@ -13,17 +13,20 @@ type LocalDb struct {
 
 	LastSyncTs int64
 
-	Albums    map[string]*restApiV1.Album
-	Artists   map[string]*restApiV1.Artist
-	Playlists map[string]*restApiV1.Playlist
-	Songs     map[string]*restApiV1.Song
-	Users     map[string]*restApiV1.User
+	Albums                map[string]*restApiV1.Album
+	Artists               map[string]*restApiV1.Artist
+	Playlists             map[string]*restApiV1.Playlist
+	Songs                 map[string]*restApiV1.Song
+	Users                 map[string]*restApiV1.User
+	UserFavoritePlaylists map[string]map[string]*restApiV1.Playlist
 
 	OrderedAlbums    []*restApiV1.Album
 	OrderedArtists   []*restApiV1.Artist
 	OrderedPlaylists []*restApiV1.Playlist
 	OrderedSongs     []*restApiV1.Song
 	OrderedUsers     []*restApiV1.User
+
+	UserOrderedFavoritePlaylists map[string][]*restApiV1.Playlist
 
 	AlbumOrderedSongs map[string][]*restApiV1.Song
 	UnknownAlbumSongs []*restApiV1.Song
@@ -65,8 +68,14 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 		l.Artists = make(map[string]*restApiV1.Artist, len(syncReport.Artists))
 		l.Playlists = make(map[string]*restApiV1.Playlist, len(syncReport.Playlists))
 		l.Users = make(map[string]*restApiV1.User, len(syncReport.Users))
+		l.UserFavoritePlaylists = make(map[string]map[string]*restApiV1.Playlist, len(syncReport.Users))
 	} else {
 		// Remove deleted items
+		for _, favoritePlaylistId := range syncReport.DeletedFavoritePlaylistIds {
+			if favoritePlaylists, ok := l.UserFavoritePlaylists[favoritePlaylistId.UserId]; ok {
+				delete(favoritePlaylists, favoritePlaylistId.PlaylistId)
+			}
+		}
 		for _, songId := range syncReport.DeletedSongIds {
 			delete(l.Songs, songId)
 		}
@@ -81,6 +90,7 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 		}
 		for _, userId := range syncReport.DeletedUserIds {
 			delete(l.Users, userId)
+			delete(l.UserFavoritePlaylists, userId)
 		}
 	}
 
@@ -114,6 +124,13 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	for idx := range syncReport.Users {
 		user := &syncReport.Users[idx]
 		l.Users[user.Id] = user
+		l.UserFavoritePlaylists[user.Id] = make(map[string]*restApiV1.Playlist, 2)
+	}
+
+	// Indexing favorite playlists
+	for idx := range syncReport.FavoritePlaylists {
+		favoritePlaylist := &syncReport.FavoritePlaylists[idx]
+		l.UserFavoritePlaylists[favoritePlaylist.Id.UserId][favoritePlaylist.Id.PlaylistId] = l.Playlists[favoritePlaylist.Id.PlaylistId]
 	}
 
 	// OrderedSongs
@@ -296,8 +313,27 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 		} else {
 			return l.OrderedUsers[i].CreationTs < l.OrderedUsers[j].CreationTs
 		}
-
 	})
+
+	// UserOrderedFavoritePlaylists
+	l.UserOrderedFavoritePlaylists = make(map[string][]*restApiV1.Playlist, len(l.Users))
+	for _, user := range l.Users {
+		userOrderedPlaylists := make([]*restApiV1.Playlist, 0, len(l.UserFavoritePlaylists[user.Id]))
+		for _, playlist := range l.UserFavoritePlaylists[user.Id] {
+			userOrderedPlaylists = append(userOrderedPlaylists, playlist)
+		}
+
+		sort.Slice(userOrderedPlaylists, func(i, j int) bool {
+			playlistNameCompare := l.collator.CompareString(userOrderedPlaylists[i].Name, userOrderedPlaylists[j].Name)
+			if playlistNameCompare != 0 {
+				return playlistNameCompare == -1
+			} else {
+				return userOrderedPlaylists[i].CreationTs < userOrderedPlaylists[j].CreationTs
+			}
+		})
+
+		l.UserOrderedFavoritePlaylists[user.Id] = userOrderedPlaylists
+	}
 
 	// Remember new sync timestamp
 	l.LastSyncTs = syncReport.SyncTs

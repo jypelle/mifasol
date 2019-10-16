@@ -232,8 +232,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 
 	// Update owner index
 	for _, ownerUserId := range playlistOldOwnerUserIds {
-		query := txn.Select(q.Eq("UserId", ownerUserId))
-		e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+		e = txn.DeleteStruct(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
@@ -260,8 +259,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	// Update songs list
 	if songIdsUpdated {
 		for _, songId := range playlistOldSongIds {
-			query := txn.Select(q.Eq("SongId", songId))
-			e = query.Delete(new(entity.PlaylistSongEntity))
+			e = txn.DeleteStruct(entity.NewPlaylistSongEntity(playlistId, songId))
 			if e != nil && e != storm.ErrNotFound {
 				return nil, e
 			}
@@ -374,19 +372,28 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*re
 		return nil, e
 	}
 
+	// Delete favorite playlist link
+	query := txn.Select(q.Eq("PlaylistId", playlistId))
+	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
+	e = query.Find(&favoritePlaylistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
+		s.DeleteFavoritePlaylist(txn, favoritePlaylistEntity.Id)
+	}
+
 	// Delete ower link
 	for _, ownerUserId := range playlistEntity.OwnerUserIds {
-		query := txn.Select(q.Eq("UserId", ownerUserId))
-		e = query.Delete(new(entity.OwnedUserPlaylistEntity))
+		e = txn.DeleteStruct(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
 	}
 
 	// Delete songs link
-	for _, _songId := range playlistEntity.SongIds {
-		query := txn.Select(q.Eq("SongId", _songId))
-		e = query.Delete(new(entity.PlaylistSongEntity))
+	for _, songId := range playlistEntity.SongIds {
+		e = txn.DeleteStruct(entity.NewPlaylistSongEntity(playlistId, songId))
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}

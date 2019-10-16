@@ -1,6 +1,14 @@
 package restSrvV1
 
-/*
+import (
+	"encoding/json"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"mifasol/restApiV1"
+	"mifasol/tool"
+	"net/http"
+)
+
 func (s *RestServer) readFavoritePlaylists(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read favorite playlists")
 
@@ -12,60 +20,38 @@ func (s *RestServer) readFavoritePlaylists(w http.ResponseWriter, r *http.Reques
 	tool.WriteJsonResponse(w, favoritePlaylists)
 }
 
+func (s *RestServer) createFavoritePlaylist(w http.ResponseWriter, r *http.Request) {
+	logrus.Debugf("Create favorite playlist")
 
-func (s *RestServer) createPlaylist(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Create playlist")
-
-	var playlistMeta restApiV1.PlaylistMeta
-	err := json.NewDecoder(r.Body).Decode(&playlistMeta)
+	var favoritePlaylistMeta restApiV1.FavoritePlaylistMeta
+	err := json.NewDecoder(r.Body).Decode(&favoritePlaylistMeta)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to create the playlist: %v", err)
+		logrus.Panicf("Unable to interpret data to create the favorite playlist: %v", err)
 	}
 
-	playlist, err := s.service.CreatePlaylist(nil, &playlistMeta, true)
+	favoritePlaylist, err := s.service.CreateFavoritePlaylist(nil, &favoritePlaylistMeta, true)
 	if err != nil {
-		logrus.Panicf("Unable to create the playlist: %v", err)
+		logrus.Panicf("Unable to create the favorite playlist: %v", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	tool.WriteJsonResponse(w, playlist)
+	tool.WriteJsonResponse(w, favoritePlaylist)
 }
 
-func (s *RestServer) updatePlaylist(w http.ResponseWriter, r *http.Request) {
+func (s *RestServer) deleteFavoritePlaylist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	playlistId := vars["id"]
+	userId := vars["userId"]
+	playlistId := vars["playlistId"]
+	favoritePlaylistId := restApiV1.FavoritePlaylistId{UserId: userId, PlaylistId: playlistId}
 
-	logrus.Debugf("Update playlist: %s", playlistId)
+	logrus.Debugf("Delete favorite playlist: %v", favoritePlaylistId)
 
-	var playlistMeta restApiV1.PlaylistMeta
-	err := json.NewDecoder(r.Body).Decode(&playlistMeta)
+	favoritePlaylist, err := s.service.DeleteFavoritePlaylist(nil, favoritePlaylistId)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to update the playlist: %v", err)
+		logrus.Panicf("Unable to delete favorite playlist: %v", err)
 	}
 
-	playlist, err := s.service.UpdatePlaylist(nil, playlistId, &playlistMeta, true)
-	if err != nil {
-		logrus.Panicf("Unable to update the playlist: %v", err)
-	}
-
-	tool.WriteJsonResponse(w, playlist)
+	tool.WriteJsonResponse(w, favoritePlaylist)
 
 }
-
-func (s *RestServer) deletePlaylist(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	playlistId := vars["id"]
-
-	logrus.Debugf("Delete playlist: %s", playlistId)
-
-	playlist, err := s.service.DeletePlaylist(nil, playlistId)
-	if err != nil {
-		logrus.Panicf("Unable to delete playlist: %v", err)
-	}
-
-	tool.WriteJsonResponse(w, playlist)
-
-}
-*/

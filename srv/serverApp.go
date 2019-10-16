@@ -109,22 +109,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	if err != nil {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}
-	/*
-		app.db.Init(&restApiV1.Album{})
-		app.db.Init(&restApiV1.DeletedAlbum{})
-		app.db.Init(&restApiV1.Artist{})
-		app.db.Init(&restApiV1.ArtistSong{})
-		app.db.Init(&restApiV1.DeletedArtist{})
-		app.db.Init(&restApiV1.Song{})
-		app.db.Init(&restApiV1.DeletedSong{})
-		app.db.Init(&restApiV1.Playlist{})
-		app.db.Init(&restApiV1.PlaylistSong{})
-		app.db.Init(&restApiV1.DeletedPlaylist{})
-		app.db.Init(&restApiV1.OwnedUserPlaylist{})
-		app.db.Init(&restApiV1.FavoritePlaylist{})
-		app.db.Init(&restApiV1.UserComplete{})
-		app.db.Init(&restApiV1.DeletedUser{})
-	*/
+
 	// Create service
 	app.service = svc.NewService(app.db, &app.ServerConfig)
 

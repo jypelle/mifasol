@@ -70,6 +70,10 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 	restServer.subRooter.HandleFunc("/users/{id}", restServer.updateUser).Methods("PUT")
 	restServer.subRooter.HandleFunc("/users/{id}", restServer.deleteUser).Methods("DELETE")
 
+	restServer.subRooter.HandleFunc("/favoritePlaylists", restServer.readFavoritePlaylists).Methods("GET")
+	restServer.subRooter.HandleFunc("/favoritePlaylists", restServer.createFavoritePlaylist).Methods("POST")
+	restServer.subRooter.HandleFunc("/favoritePlaylists/{userId}/{playlistId}", restServer.deleteFavoritePlaylist).Methods("DELETE")
+
 	restServer.subRooter.HandleFunc("/syncReport/{fromTs}", restServer.readSyncReport).Methods("GET")
 	restServer.subRooter.HandleFunc("/fileSyncReport/{fromTs}", restServer.readFileSyncReport).Methods("GET")
 
