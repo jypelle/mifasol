@@ -1,11 +1,12 @@
 package svc
 
 import (
+	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"mifasol/restApiV1"
-	"mifasol/srv/entity"
-	"mifasol/tool"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/entity"
+	"github.com/jypelle/mifasol/tool"
 	"reflect"
 	"sort"
 	"time"
@@ -353,6 +354,11 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, s
 
 func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*restApiV1.Playlist, error) {
 	var e error
+
+	// Incoming playlist can't be deleted
+	if playlistId == restApiV1.IncomingPlaylistId {
+		return nil, errors.New("Incoming playlist can't be deleted")
+	}
 
 	// Check available transaction
 	txn := externalTrn

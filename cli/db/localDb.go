@@ -1,9 +1,9 @@
 package db
 
 import (
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restClientV1"
 	"golang.org/x/text/collate"
-	"mifasol/restApiV1"
-	"mifasol/restClientV1"
 	"sort"
 )
 

@@ -4,11 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
+	"errors"
+	"github.com/jypelle/mifasol/restApiV1"
 	"io"
 	"io/ioutil"
-	"mifasol/cli/config"
-	"mifasol/restApiV1"
 	"net"
 	"net/http"
 	"strconv"
@@ -18,18 +17,18 @@ import (
 const JsonContentType = "application/json"
 
 type RestClient struct {
-	ClientConfig *config.ClientConfig
+	ClientConfig RestConfig
 	httpClient   *http.Client
 	token        *restApiV1.Token
 }
 
-func NewRestClient(clientConfig *config.ClientConfig) *RestClient {
+func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 	var rootCAPool *x509.CertPool = nil
 
-	if clientConfig.ServerSsl && clientConfig.ServerSelfSigned {
+	if clientConfig.GetServerSsl() && clientConfig.GetServerSelfSigned() {
 		certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
 		if err != nil {
-			logrus.Fatalf("Reading server certificate failed : %v", err)
+			return nil, errors.New("Reading server certificate failed: " + err.Error())
 		}
 
 		rootCAPool = x509.NewCertPool()
@@ -58,18 +57,18 @@ func NewRestClient(clientConfig *config.ClientConfig) *RestClient {
 		ClientConfig: clientConfig,
 		httpClient: &http.Client{
 			Transport: tr,
-			Timeout:   time.Second * time.Duration(clientConfig.Timeout),
+			Timeout:   time.Second * time.Duration(clientConfig.GetTimeout()),
 		},
 	}
 
-	return restClient
+	return restClient, nil
 }
 
 func (c *RestClient) getServerUrl() string {
-	if c.ClientConfig.ServerSsl {
-		return "https://" + c.ClientConfig.ServerHostname + ":" + strconv.FormatInt(c.ClientConfig.ServerPort, 10) + "/api/v1"
+	if c.ClientConfig.GetServerSsl() {
+		return "https://" + c.ClientConfig.GetServerHostname() + ":" + strconv.FormatInt(c.ClientConfig.GetServerPort(), 10) + "/api/v1"
 	} else {
-		return "http://" + c.ClientConfig.ServerHostname + ":" + strconv.FormatInt(c.ClientConfig.ServerPort, 10) + "/api/v1"
+		return "http://" + c.ClientConfig.GetServerHostname() + ":" + strconv.FormatInt(c.ClientConfig.GetServerPort(), 10) + "/api/v1"
 	}
 }
 
@@ -78,7 +77,6 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 
 	// Dear mifasolsrv, could you gimme a token ?
 	if c.token == nil {
-		logrus.Debugln("Ask for a new token")
 		cliErr := c.refreshToken()
 		if cliErr != nil {
 			return nil, cliErr

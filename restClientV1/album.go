@@ -3,7 +3,7 @@ package restClientV1
 import (
 	"bytes"
 	"encoding/json"
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
 func (c *RestClient) CreateAlbum(albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, ClientError) {

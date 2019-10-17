@@ -5,9 +5,9 @@ import (
 	"github.com/asdine/storm"
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/sirupsen/logrus"
-	"mifasol/restApiV1"
-	"mifasol/srv/entity"
 	"strconv"
 	"strings"
 )

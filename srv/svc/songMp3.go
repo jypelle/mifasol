@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"github.com/asdine/storm"
 	"github.com/bogem/id3v2"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/sirupsen/logrus"
-	"mifasol/restApiV1"
-	"mifasol/srv/entity"
 	"strconv"
 	"strings"
 )

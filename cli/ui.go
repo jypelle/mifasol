@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"mifasol/cli/ui"
+	"github.com/jypelle/mifasol/cli/ui"
 )
 
 func (c *ClientApp) UI() {

@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
 // Playlist

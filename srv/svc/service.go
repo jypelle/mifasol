@@ -2,7 +2,7 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"mifasol/srv/config"
+	"github.com/jypelle/mifasol/srv/config"
 )
 
 type Service struct {

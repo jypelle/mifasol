@@ -2,12 +2,12 @@ package ui
 
 import (
 	"github.com/gdamore/tcell"
+	"github.com/jypelle/mifasol/cli/config"
+	"github.com/jypelle/mifasol/cli/db"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
-	"mifasol/cli/config"
-	"mifasol/cli/db"
-	"mifasol/restApiV1"
-	"mifasol/restClientV1"
 	"strconv"
 )
 
@@ -270,6 +270,11 @@ func (a *UIApp) ConfirmPlaylistDelete(playlist *restApiV1.Playlist) {
 	// Only admin or playlist owner can delete a playlist
 	if !a.IsConnectedUserAdmin() && !a.localDb.IsPlaylistOwnedBy(playlist.Id, a.ConnectedUserId()) {
 		a.WarningMessage("Only administrator or owner can delete this playlist")
+		return
+	}
+
+	if playlist.Id == restApiV1.IncomingPlaylistId {
+		a.WarningMessage("Incoming playlist cannot be deleted")
 		return
 	}
 

@@ -6,12 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/jypelle/mifasol/cli/config"
+	"github.com/jypelle/mifasol/restClientV1"
+	"github.com/jypelle/mifasol/tool"
+	"github.com/jypelle/mifasol/version"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"mifasol/cli/config"
-	"mifasol/restClientV1"
-	"mifasol/tool"
-	"mifasol/version"
 	"net"
 	"net/http"
 	"net/url"
@@ -199,7 +199,11 @@ func (c *ClientApp) Init() {
 	}
 
 	// Create rest Client
-	c.restClient = restClientV1.NewRestClient(&c.config)
+	var e error
+	c.restClient, e = restClientV1.NewRestClient(&c.config)
+	if e != nil {
+		logrus.Fatalf("Unable to instanciate mifasol rest client: %v\n", e)
+	}
 }
 
 func (c *ClientApp) getServerUrl() string {

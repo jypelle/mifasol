@@ -3,10 +3,10 @@ package ui
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
+	"github.com/jypelle/mifasol/cli/ui/model"
+	"github.com/jypelle/mifasol/primitive"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/rivo/tview"
-	"mifasol/cli/ui/model"
-	"mifasol/primitive"
-	"mifasol/restApiV1"
 	"strconv"
 )
 

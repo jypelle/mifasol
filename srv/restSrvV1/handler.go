@@ -2,9 +2,9 @@ package restSrvV1
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/svc"
 	"github.com/sirupsen/logrus"
-	"mifasol/restApiV1"
-	"mifasol/srv/svc"
 	"net/http"
 	"strings"
 	"sync"

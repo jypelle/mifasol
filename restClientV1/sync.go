@@ -2,7 +2,7 @@ package restClientV1
 
 import (
 	"encoding/json"
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 	"strconv"
 )
 

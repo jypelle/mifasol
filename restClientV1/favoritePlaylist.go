@@ -3,7 +3,7 @@ package restClientV1
 import (
 	"bytes"
 	"encoding/json"
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
 func (c *RestClient) CreateFavoritePlaylist(favoritePlayListMeta *restApiV1.FavoritePlaylistMeta) (*restApiV1.FavoritePlaylist, ClientError) {

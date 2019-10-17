@@ -3,8 +3,8 @@ package svc
 import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"mifasol/restApiV1"
-	"mifasol/srv/entity"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/entity"
 	"time"
 )
 
@@ -66,22 +66,45 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 		defer txn.Rollback()
 	}
 
-	// Store playlist
-	now := time.Now().UnixNano()
+	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 
-	favoritePlaylistEntity := entity.FavoritePlaylistEntity{
-		UpdateTs: now,
-	}
-	favoritePlaylistEntity.LoadMeta(favoritePlaylistMeta)
-
-	e = txn.Save(&favoritePlaylistEntity)
-	if e != nil {
+	e = txn.One("Id", favoritePlaylistMeta.Id, &favoritePlaylistEntity)
+	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
+	if e == storm.ErrNotFound {
+		// Store favorite playlist
+		now := time.Now().UnixNano()
 
-	// Commit transaction
-	if externalTrn == nil {
-		txn.Commit()
+		favoritePlaylistEntity = entity.FavoritePlaylistEntity{
+			UpdateTs: now,
+		}
+		favoritePlaylistEntity.LoadMeta(favoritePlaylistMeta)
+
+		e = txn.Save(&favoritePlaylistEntity)
+		if e != nil {
+			return nil, e
+		}
+
+		// if previously deletedFavoritePlaylist exists
+		var deletedFavoritePlaylistEntity entity.DeletedFavoritePlaylistEntity
+		e = txn.One("Id", favoritePlaylistMeta.Id, &deletedFavoritePlaylistEntity)
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
+
+		if e == nil {
+			// Delete deletedFavoritePlaylist
+			e = txn.DeleteStruct(&deletedFavoritePlaylistEntity)
+			if e != nil {
+				return nil, e
+			}
+		}
+
+		// Commit transaction
+		if externalTrn == nil {
+			txn.Commit()
+		}
 	}
 
 	var favoritePlaylist restApiV1.FavoritePlaylist
@@ -107,6 +130,12 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 	e = txn.One("Id", favoritePlaylistId, &favoritePlaylistEntity)
+	if e != nil {
+		return nil, e
+	}
+
+	// Delete favoritePlaylist
+	e = txn.DeleteStruct(&favoritePlaylistEntity)
 	if e != nil {
 		return nil, e
 	}

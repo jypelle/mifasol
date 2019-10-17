@@ -3,8 +3,8 @@ package restClientV1
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/jypelle/mifasol/restApiV1"
 	"io"
-	"mifasol/restApiV1"
 )
 
 func (c *RestClient) ReadSongContent(songId string) (io.ReadCloser, int64, ClientError) {

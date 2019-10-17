@@ -2,10 +2,10 @@ package ui
 
 import (
 	"github.com/gdamore/tcell"
+	"github.com/jypelle/mifasol/primitive"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/rivo/tview"
 	"math/rand"
-	"mifasol/primitive"
-	"mifasol/restApiV1"
 )
 
 type CurrentComponent struct {

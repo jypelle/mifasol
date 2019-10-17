@@ -1,6 +1,6 @@
 package entity
 
-import "mifasol/restApiV1"
+import "github.com/jypelle/mifasol/restApiV1"
 
 // Album
 

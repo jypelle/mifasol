@@ -1,8 +1,8 @@
 package ui
 
 import (
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/rivo/tview"
-	"mifasol/restApiV1"
 )
 
 type AlbumEditComponent struct {

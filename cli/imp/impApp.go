@@ -2,13 +2,13 @@ package imp
 
 import (
 	"fmt"
+	"github.com/jypelle/mifasol/cli/config"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restClientV1"
+	"github.com/jypelle/mifasol/tool"
 	"github.com/sirupsen/logrus"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
-	"mifasol/cli/config"
-	"mifasol/restApiV1"
-	"mifasol/restClientV1"
-	"mifasol/tool"
 	"os"
 	"os/signal"
 	"path/filepath"

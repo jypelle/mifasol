@@ -1,7 +1,7 @@
 package restClientV1
 
 import (
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
 type ClientError interface {

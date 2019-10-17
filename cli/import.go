@@ -1,6 +1,6 @@
 package cli
 
-import "mifasol/cli/imp"
+import "github.com/jypelle/mifasol/cli/imp"
 
 func (c *ClientApp) Import(importDir string, importOneFolderPerAlbumDisabled bool) {
 

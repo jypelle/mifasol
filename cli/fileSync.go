@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"mifasol/cli/fileSync"
+	"github.com/jypelle/mifasol/cli/fileSync"
 )
 
 func (c *ClientApp) FileSyncInit(fileSyncMusicFolder string) {

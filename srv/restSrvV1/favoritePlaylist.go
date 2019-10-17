@@ -3,9 +3,9 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/tool"
 	"github.com/sirupsen/logrus"
-	"mifasol/restApiV1"
-	"mifasol/tool"
 	"net/http"
 )
 

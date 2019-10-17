@@ -3,9 +3,9 @@ package svc
 import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"mifasol/restApiV1"
-	"mifasol/srv/entity"
-	"mifasol/tool"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/srv/entity"
+	"github.com/jypelle/mifasol/tool"
 	"time"
 )
 

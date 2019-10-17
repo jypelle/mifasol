@@ -1,4 +1,4 @@
-module mifasol
+module github.com/jypelle/mifasol
 
 go 1.13
 
@@ -17,7 +17,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/oklog/ulid/v2 v2.0.2
-	github.com/rivo/tview v0.0.0-20190721135419-23dc8a0944e4
+	github.com/rivo/tview v0.0.0-20191017100741-c35e6b2b4c98
 	github.com/sirupsen/logrus v1.4.2
 	github.com/vbauerster/mpb/v4 v4.9.2
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect

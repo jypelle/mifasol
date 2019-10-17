@@ -100,6 +100,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rivo/tview v0.0.0-20190721135419-23dc8a0944e4 h1:3L7UVoI/26LdSEPadEc4tNPMW+4vLBJaj31jAlJG4xg=
 github.com/rivo/tview v0.0.0-20190721135419-23dc8a0944e4/go.mod h1:+rKjP5+h9HMwWRpAfhIkkQ9KE3m3Nz5rwn7YtUpwgqk=
+github.com/rivo/tview v0.0.0-20191017100741-c35e6b2b4c98 h1:nPfVK45RSX656/m0SXLl0GfhQbBgIUjojrbVxpOA8Ak=
+github.com/rivo/tview v0.0.0-20191017100741-c35e6b2b4c98/go.mod h1:+rKjP5+h9HMwWRpAfhIkkQ9KE3m3Nz5rwn7YtUpwgqk=
 github.com/rivo/uniseg v0.0.0-20190513083848-b9f5b9457d44 h1:XKCbzPvK4/BbMXoMJOkYP2ANxiAEO0HM1xn6psSbXxY=
 github.com/rivo/uniseg v0.0.0-20190513083848-b9f5b9457d44/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=

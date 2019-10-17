@@ -6,8 +6,8 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/rivo/tview"
-	"mifasol/restApiV1"
 	"time"
 )
 

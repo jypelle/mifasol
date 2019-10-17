@@ -2,7 +2,7 @@ package restSrvV1
 
 import (
 	"encoding/json"
-	"mifasol/restApiV1"
+	"github.com/jypelle/mifasol/restApiV1"
 	"net/http"
 )
 

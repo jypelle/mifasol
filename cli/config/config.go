@@ -189,3 +189,31 @@ func (c ClientConfig) GetCompleteConfigFilename() string {
 func (c ClientConfig) GetCompleteConfigCertFilename() string {
 	return filepath.Join(c.ConfigDir, configCertFilename)
 }
+
+func (c ClientConfig) GetServerHostname() string {
+	return c.ServerHostname
+}
+
+func (c ClientConfig) GetServerPort() int64 {
+	return c.ServerPort
+}
+
+func (c ClientConfig) GetServerSsl() bool {
+	return c.ServerSsl
+}
+
+func (c ClientConfig) GetServerSelfSigned() bool {
+	return c.ServerSelfSigned
+}
+
+func (c ClientConfig) GetTimeout() int64 {
+	return c.Timeout
+}
+
+func (c ClientConfig) GetUsername() string {
+	return c.Username
+}
+
+func (c ClientConfig) GetPassword() string {
+	return c.Password
+}

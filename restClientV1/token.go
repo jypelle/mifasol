@@ -14,8 +14,8 @@ func (c *RestClient) refreshToken() ClientError {
 	}
 	query := req.URL.Query()
 	query.Add("grant_type", "password")
-	query.Add("username", c.ClientConfig.Username)
-	query.Add("password", c.ClientConfig.Password)
+	query.Add("username", c.ClientConfig.GetUsername())
+	query.Add("password", c.ClientConfig.GetPassword())
 	req.URL.RawQuery = query.Encode()
 
 	response, err := c.httpClient.Do(req)

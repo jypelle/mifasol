@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"mifasol/srv"
+	"github.com/jypelle/mifasol/srv"
 	"os"
 	"os/signal"
 	"path/filepath"
