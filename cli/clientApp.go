@@ -178,6 +178,7 @@ func (c *ClientApp) Init() {
 					reader := bufio.NewReader(os.Stdin)
 					text, _ := reader.ReadString('\n')
 					text = strings.Replace(text, "\n", "", -1)
+					text = strings.Replace(text, "\r", "", -1)
 					if text == "y" || text == "Y" {
 						os.Remove(c.config.GetCompleteConfigCertFilename())
 						c.Init()

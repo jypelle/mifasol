@@ -353,7 +353,6 @@ func (a *UIApp) Reload() {
 	a.currentComponent.RefreshView()
 
 	a.Message(strconv.Itoa(len(a.localDb.Songs)) + " songs, " + strconv.Itoa(len(a.localDb.Artists)) + " artists, " + strconv.Itoa(len(a.localDb.Albums)) + " albums, " + strconv.Itoa(len(a.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(a.localDb.Users)) + " users.")
-
 }
 
 func (a *UIApp) LocalDb() *db.LocalDb {

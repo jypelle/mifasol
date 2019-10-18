@@ -34,6 +34,8 @@ func (e *FavoritePlaylistEntity) Fill(s *restApiV1.FavoritePlaylist) {
 func (e *FavoritePlaylistEntity) LoadMeta(s *restApiV1.FavoritePlaylistMeta) {
 	if s != nil {
 		e.Id = s.Id
+		e.UserId = s.Id.UserId
+		e.PlaylistId = s.Id.PlaylistId
 	}
 }
 
