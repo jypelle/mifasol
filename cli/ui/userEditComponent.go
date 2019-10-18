@@ -76,7 +76,12 @@ func (c *UserEditComponent) save() {
 	}
 
 	if c.userId != "" {
-		c.uiApp.restClient.UpdateUser(c.userId, userMetaComplete)
+		_, cliErr := c.uiApp.restClient.UpdateUser(c.userId, userMetaComplete)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to update the user", cliErr)
+			return
+		}
+
 		// Update username/password stored in config file on self edit
 		if c.uiApp.ConnectedUserId() == c.userId {
 			c.uiApp.ClientEditableConfig.Username = userMetaComplete.Name
@@ -93,8 +98,9 @@ func (c *UserEditComponent) save() {
 			return
 		}
 
-		_, err := c.uiApp.restClient.CreateUser(userMetaComplete)
-		if err != nil {
+		_, cliErr := c.uiApp.restClient.CreateUser(userMetaComplete)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to create the user", cliErr)
 			return
 		}
 	}

@@ -148,9 +148,11 @@ func checkStatusCode(response *http.Response) ClientError {
 }
 
 func (c *RestClient) UserId() string {
-	if c.token != nil {
-		return c.token.UserId
-	} else {
-		return "xxx"
+	if c.token == nil {
+		cliErr := c.refreshToken()
+		if cliErr != nil {
+			return "xxx"
+		}
 	}
+	return c.token.UserId
 }

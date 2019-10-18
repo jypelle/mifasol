@@ -160,9 +160,9 @@ func (c *PlayerComponent) Play(songId string) {
 	c.uiApp.Message("Start playing: " + c.getMainTextSong(c.playingSong))
 	c.uiApp.tviewApp.ForceDraw()
 
-	reader, _, apiErr := c.uiApp.restClient.ReadSongContent(song.Id)
-	if apiErr != nil {
-		c.uiApp.WarningMessage("Unable to retrieve content for: " + c.playingSong.Name)
+	reader, _, cliErr := c.uiApp.restClient.ReadSongContent(song.Id)
+	if cliErr != nil {
+		c.uiApp.ClientErrorMessage("Unable to retrieve content for: "+c.playingSong.Name, cliErr)
 		return
 	}
 

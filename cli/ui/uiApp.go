@@ -338,6 +338,9 @@ func (a *UIApp) ForceMessage(message string) {
 func (a *UIApp) WarningMessage(message string) {
 	a.messageComponent.SetWarningMessage("! " + message)
 }
+func (a *UIApp) ClientErrorMessage(message string, cliErr restClientV1.ClientError) {
+	a.messageComponent.SetWarningMessage("! " + message + " (" + cliErr.Code().String() + ")")
+}
 
 func (a *UIApp) Reload() {
 
@@ -345,7 +348,7 @@ func (a *UIApp) Reload() {
 	// Refresh In memory Db
 	cliErr := a.localDb.Refresh()
 	if cliErr != nil {
-		a.WarningMessage("Unable to refresh data from mifasolsrv (" + cliErr.Code().String() + ")")
+		a.ClientErrorMessage("Unable to refresh data from mifasolsrv", cliErr)
 		return
 	}
 

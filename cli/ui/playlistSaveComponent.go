@@ -79,7 +79,12 @@ func (c *PlaylistSaveComponent) save() {
 		playlistMeta.SongIds = c.songIds
 		playlistMeta.OwnerUserIds = append(playlistMeta.OwnerUserIds, c.uiApp.ConnectedUserId())
 
-		playList, _ := c.uiApp.restClient.CreatePlaylist(&playlistMeta)
+		playList, cliErr := c.uiApp.restClient.CreatePlaylist(&playlistMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to create the playlist", cliErr)
+			return
+		}
+
 		id = playList.Id
 	} else {
 		selectedPlaylist := c.orderedFilteredPlaylists[selectedPlaylistInd]
@@ -87,7 +92,12 @@ func (c *PlaylistSaveComponent) save() {
 		playlistMeta.Name = c.nameInputField.GetText()
 		playlistMeta.SongIds = c.songIds
 
-		c.uiApp.restClient.UpdatePlaylist(selectedPlaylist.Id, &playlistMeta)
+		_, cliErr := c.uiApp.restClient.UpdatePlaylist(selectedPlaylist.Id, &playlistMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to create the playlist", cliErr)
+			return
+		}
+
 		id = selectedPlaylist.Id
 	}
 	c.uiApp.currentComponent.srcPlaylistId = &id

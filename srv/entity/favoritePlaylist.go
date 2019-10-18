@@ -42,4 +42,15 @@ func (e *FavoritePlaylistEntity) LoadMeta(s *restApiV1.FavoritePlaylistMeta) {
 type DeletedFavoritePlaylistEntity struct {
 	Id       restApiV1.FavoritePlaylistId `storm:"id"`
 	DeleteTs int64                        `storm:"index"`
+	UserId   string                       `storm:"index"`
+}
+
+func NewDeletedFavoritePlaylistEntity(favoritePlaylistId restApiV1.FavoritePlaylistId) *DeletedFavoritePlaylistEntity {
+	now := time.Now().UnixNano()
+
+	return &DeletedFavoritePlaylistEntity{
+		Id:       favoritePlaylistId,
+		DeleteTs: now,
+		UserId:   favoritePlaylistId.UserId,
+	}
 }

@@ -64,15 +64,15 @@ func (c libraryType) label() string {
 	case libraryTypeAllUsers:
 		return "All users"
 	case libraryTypeSongsFromArtist:
-		return "Songs from %s"
+		return "Songs from %s artist"
 	case libraryTypeSongsFromUnknownArtist:
 		return "Songs from unknown artists"
 	case libraryTypeSongsFromAlbum:
-		return "Songs from %s"
+		return "Songs from %s album"
 	case libraryTypeSongsFromUnknownAlbum:
 		return "Songs from unknown albums"
 	case libraryTypeSongsFromPlaylist:
-		return "Songs from %s"
+		return "Songs from %s playlist"
 	case libraryTypeFavoritePlaylistsFromUser:
 		return "Favorite playlist from %s"
 	}
@@ -334,12 +334,19 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 								PlaylistId: playlist.Id,
 							}
 							if _, ok := myFavoritePlaylists[playlist.Id]; ok {
-								c.uiApp.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
+								_, cliErr := c.uiApp.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
+								if cliErr != nil {
+									c.uiApp.ClientErrorMessage("Unable to add playlist to favorites", cliErr)
+								}
+								c.uiApp.Reload()
 							} else {
-								c.uiApp.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
+								_, cliErr := c.uiApp.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
+								if cliErr != nil {
+									c.uiApp.ClientErrorMessage("Unable to remove playlist from favorites", cliErr)
+								}
+								c.uiApp.Reload()
+								c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)
 							}
-							c.uiApp.Reload()
-							c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)
 						}
 					}
 				}

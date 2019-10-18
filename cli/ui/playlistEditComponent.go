@@ -64,7 +64,11 @@ func (c *PlaylistEditComponent) save() {
 		}
 	}
 
-	c.uiApp.restClient.UpdatePlaylist(c.playlist.Id, &c.playlist.PlaylistMeta)
+	_, cliErr := c.uiApp.restClient.UpdatePlaylist(c.playlist.Id, &c.playlist.PlaylistMeta)
+	if cliErr != nil {
+		c.uiApp.ClientErrorMessage("Unable to update the playlist", cliErr)
+	}
+
 	c.uiApp.Reload()
 
 	c.close()

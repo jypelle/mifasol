@@ -56,6 +56,18 @@ func (s *Service) ReadPlaylists(externalTrn storm.Node, filter *restApiV1.Playli
 	playlists := []restApiV1.Playlist{}
 
 	for _, playlistEntity := range playlistEntities {
+		if filter.FavoriteUserId != nil {
+			fav, e := s.ReadFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: *filter.FavoriteUserId, PlaylistId: playlistEntity.Id})
+			if e != nil {
+				continue
+			}
+			if filter.FavoriteFromTs != nil {
+				if playlistEntity.ContentUpdateTs < *filter.FavoriteFromTs && fav.UpdateTs < *filter.FavoriteFromTs {
+					continue
+				}
+			}
+		}
+
 		var playlist restApiV1.Playlist
 		playlistEntity.Fill(&playlist)
 		playlists = append(playlists, playlist)
@@ -268,8 +280,8 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 		for _, songId := range playlistEntity.SongIds {
 			// Check song id
 			if check {
-				var song restApiV1.Song
-				e := txn.One("Id", songId, &song)
+				var songEntity entity.SongEntity
+				e := txn.One("Id", songId, &songEntity)
 				if e != nil {
 					return nil, e
 				}
@@ -317,8 +329,8 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, s
 
 	// Check song id
 	if check {
-		var song restApiV1.Song
-		e = txn.One("Id", songId, &song)
+		var songEntity entity.SongEntity
+		e = txn.One("Id", songId, &songEntity)
 		if e != nil {
 			return nil, e
 		}

@@ -54,9 +54,15 @@ func OpenArtistEditComponent(uiApp *UIApp, artistId string, artistMeta *restApiV
 func (c *ArtistEditComponent) save() {
 	c.artistMeta.Name = c.nameInputField.GetText()
 	if c.artistId != "" {
-		c.uiApp.restClient.UpdateArtist(c.artistId, c.artistMeta)
+		_, cliErr := c.uiApp.restClient.UpdateArtist(c.artistId, c.artistMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to update the artist", cliErr)
+		}
 	} else {
-		c.uiApp.restClient.CreateArtist(c.artistMeta)
+		_, cliErr := c.uiApp.restClient.CreateArtist(c.artistMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to create the artist", cliErr)
+		}
 	}
 	c.uiApp.Reload()
 

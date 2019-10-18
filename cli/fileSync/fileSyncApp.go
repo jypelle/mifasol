@@ -99,7 +99,7 @@ func (a *FileSyncApp) sync() {
 	}
 
 	// Read file sync report
-	fileSyncReport, cliErr := a.restClient.ReadFileSyncReport(a.fileSyncConfig.LastFileSyncTs)
+	fileSyncReport, cliErr := a.restClient.ReadFileSyncReport(a.fileSyncConfig.LastFileSyncTs, a.restClient.UserId())
 	if cliErr != nil {
 		logrus.Fatalf("Unable to retrieve songs data: %v\n", cliErr)
 	}

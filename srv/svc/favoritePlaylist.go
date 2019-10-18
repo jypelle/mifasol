@@ -53,6 +53,34 @@ func (s *Service) ReadFavoritePlaylists(externalTrn storm.Node, filter *restApiV
 	return favoritePlaylists, nil
 }
 
+func (s *Service) ReadFavoritePlaylist(externalTrn storm.Node, favoritePlaylistId restApiV1.FavoritePlaylistId) (*restApiV1.FavoritePlaylist, error) {
+	var e error
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
+	}
+
+	var favoritePlaylistEntity entity.FavoritePlaylistEntity
+	e = txn.One("Id", favoritePlaylistId, &favoritePlaylistEntity)
+	if e != nil {
+		if e == storm.ErrNotFound {
+			return nil, ErrNotFound
+		}
+		return nil, e
+	}
+
+	var favoritePlaylist restApiV1.FavoritePlaylist
+	favoritePlaylistEntity.Fill(&favoritePlaylist)
+
+	return &favoritePlaylist, nil
+}
+
 func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylistMeta *restApiV1.FavoritePlaylistMeta, check bool) (*restApiV1.FavoritePlaylist, error) {
 	var e error
 
@@ -126,8 +154,6 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 		defer txn.Rollback()
 	}
 
-	deleteTs := time.Now().UnixNano()
-
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 	e = txn.One("Id", favoritePlaylistId, &favoritePlaylistEntity)
 	if e != nil {
@@ -141,7 +167,7 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 	}
 
 	// Archive favoritePlaylistId
-	e = txn.Save(&entity.DeletedFavoritePlaylistEntity{Id: favoritePlaylistEntity.Id, DeleteTs: deleteTs})
+	e = txn.Save(entity.NewDeletedFavoritePlaylistEntity(favoritePlaylistEntity.Id))
 	if e != nil {
 		return nil, e
 	}
@@ -185,4 +211,34 @@ func (s *Service) GetDeletedFavoritePlaylistIds(externalTrn storm.Node, fromTs i
 	}
 
 	return favoritePlaylistIds, nil
+}
+
+func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, fromTs int64, userId string) ([]string, error) {
+	var e error
+
+	playlistIds := []string{}
+	deletedFavoritePlaylistEntities := []entity.DeletedFavoritePlaylistEntity{}
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, e = s.Db.Begin(false)
+		if e != nil {
+			return nil, e
+		}
+		defer txn.Rollback()
+	}
+
+	query := txn.Select(q.Gte("DeleteTs", fromTs), q.Eq("UserId", userId)).OrderBy("DeleteTs")
+
+	e = query.Find(&deletedFavoritePlaylistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+
+	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
+		playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.Id.PlaylistId)
+	}
+
+	return playlistIds, nil
 }

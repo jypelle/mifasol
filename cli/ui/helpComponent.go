@@ -7,7 +7,7 @@ import (
 
 type HelpComponent struct {
 	*tview.Flex
-	title   *tview.TextView
+	//	title   *tview.TextView
 	content *tview.TextView
 
 	uiApp *UIApp
@@ -18,18 +18,17 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 	c := &HelpComponent{
 		uiApp: uiApp,
 	}
-
-	c.title = tview.NewTextView()
-	c.title.SetDynamicColors(true)
-	c.title.SetText("[" + ColorTitleStr + "] Help")
-	c.title.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
-
+	/*
+		c.title = tview.NewTextView()
+		c.title.SetDynamicColors(true)
+		c.title.SetText("[" + ColorTitleStr + "] Help")
+		c.title.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
+	*/
 	c.content = tview.NewTextView()
 	c.content.SetDynamicColors(true)
 	c.content.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
 	c.content.SetTextColor(ColorHelpText)
-	c.content.SetText(`
-[` + ColorHelpTitleStr + `::u]Global shortcuts
+	c.content.SetText(`[` + ColorHelpTitleStr + `::u]Global shortcuts
 
 'h'    : Show/Hide this sideview
 '+'    : Increase volume
@@ -45,6 +44,7 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 'd'    : Delete song / album / artist / playlist
 'a'    : Add song / album / artist / playlist to Current playlist
 'l'    : Load song / album / artist / playlist to Current playlist
+'f'    : Add to favorite songs / playlists
 <LEFT> : Previous item
 <RIGHT>: Next item
 <ENTER>: Play song / Artist's songs / Album's songs / Playlist's songs
@@ -70,7 +70,7 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 
 	c.Flex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(c.title, 1, 0, false).
+		//		AddItem(c.title, 1, 0, false).
 		AddItem(c.content, 0, 1, false)
 
 	return c

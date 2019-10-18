@@ -75,7 +75,7 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 	restServer.subRooter.HandleFunc("/favoritePlaylists/{userId}/{playlistId}", restServer.deleteFavoritePlaylist).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/syncReport/{fromTs}", restServer.readSyncReport).Methods("GET")
-	restServer.subRooter.HandleFunc("/fileSyncReport/{fromTs}", restServer.readFileSyncReport).Methods("GET")
+	restServer.subRooter.HandleFunc("/fileSyncReport/{fromTs}/{userId}", restServer.readFileSyncReport).Methods("GET")
 
 	restServer.subRooter.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		restServer.apiErrorCodeResponse(w, restApiV1.MethodNotAllowedErrorCode)

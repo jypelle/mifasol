@@ -54,9 +54,15 @@ func OpenAlbumEditComponent(uiApp *UIApp, albumId string, albumMeta *restApiV1.A
 func (c *AlbumEditComponent) save() {
 	c.albumMeta.Name = c.nameInputField.GetText()
 	if c.albumId != "" {
-		c.uiApp.restClient.UpdateAlbum(c.albumId, c.albumMeta)
+		_, cliErr := c.uiApp.restClient.UpdateAlbum(c.albumId, c.albumMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to update the album", cliErr)
+		}
 	} else {
-		c.uiApp.restClient.CreateAlbum(c.albumMeta)
+		_, cliErr := c.uiApp.restClient.CreateAlbum(c.albumMeta)
+		if cliErr != nil {
+			c.uiApp.ClientErrorMessage("Unable to create the album", cliErr)
+		}
 	}
 	c.uiApp.Reload()
 

@@ -86,7 +86,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	return &syncReport, nil
 }
 
-func (s *Service) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, error) {
+func (s *Service) ReadFileSyncReport(fromTs int64, userId string) (*restApiV1.FileSyncReport, error) {
 	var fileSyncReport restApiV1.FileSyncReport
 
 	var err error
@@ -113,11 +113,11 @@ func (s *Service) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, e
 	}
 
 	// Playlists
-	fileSyncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByContentUpdateTs, ContentFromTs: &fromTs})
+	fileSyncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{FavoriteFromTs: &fromTs, FavoriteUserId: &userId})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}
-	fileSyncReport.DeletedPlaylistIds, err = s.GetDeletedPlaylistIds(txn, fromTs)
+	fileSyncReport.DeletedPlaylistIds, err = s.GetDeletedUserFavoritePlaylistIds(txn, fromTs, userId)
 	if err != nil {
 		logrus.Panicf("Unable to read deleted playlist ids: %v", err)
 	}

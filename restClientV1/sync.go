@@ -24,11 +24,11 @@ func (c *RestClient) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, Client
 	return syncReport, nil
 }
 
-func (c *RestClient) ReadFileSyncReport(fromTs int64) (*restApiV1.FileSyncReport, ClientError) {
+func (c *RestClient) ReadFileSyncReport(fromTs int64, userId string) (*restApiV1.FileSyncReport, ClientError) {
 
 	var fileSyncReport *restApiV1.FileSyncReport
 
-	response, cliErr := c.doGetRequest("/fileSyncReport/" + strconv.FormatInt(fromTs, 10))
+	response, cliErr := c.doGetRequest("/fileSyncReport/" + strconv.FormatInt(fromTs, 10) + "/" + userId)
 
 	if cliErr != nil {
 		return nil, cliErr

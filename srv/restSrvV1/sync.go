@@ -38,8 +38,9 @@ func (s *RestServer) readFileSyncReport(w http.ResponseWriter, r *http.Request) 
 		s.apiErrorCodeResponse(w, restApiV1.InvalideRequestErrorCode)
 		return
 	}
+	userId := vars["userId"]
 
-	fileSyncReport, err := s.service.ReadFileSyncReport(fromTs)
+	fileSyncReport, err := s.service.ReadFileSyncReport(fromTs, userId)
 	if err != nil {
 		logrus.Panicf("Unable to read sync report: %v", err)
 	}
