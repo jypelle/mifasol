@@ -12,15 +12,15 @@ Mifasol is a self-hosted *opinionated* music server.
 2. Keeping song and playlist files synced with server content on different clients.
 3. Differentiation of homonym artists and albums.
 4. Song can be linked to more than one artist.
-3. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
-4. No requirements about music player used to listen your music (thanks to the files sync).
-5. Server is easy to
+5. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
+6. No requirements about music player used to listen your music (thanks to the files sync).
+7. Server is easy to
     1. Install (one executable file to copy and you are done)
     2. Backup (all data in one folder)
     3. Secure (https by default, no certificate authentication required)
-6. Blazing fast navigation with console user interface
-7. Multiplatform (different OS or Architecture: Windows/Mac/Linux/Raspbian/Synology)
-8. REST API for those who want to develop their own client.
+8. Blazing fast navigation with console user interface
+9. Multiplatform (different OS or Architecture: Windows/Mac/Linux/Raspbian/Synology)
+10. REST API for those who want to develop their own client.
 
 Mifasol is a free and open source project distributed under the permissive Apache 2.0 License. 
 
@@ -79,7 +79,7 @@ On first launch, `mifasolsrv run` will:
 
 #### Configuration
 
-If you want to access your server from both https://mypersonaldomain.org:6630 and https://77.77.77.77:6630, you should configure mifasolsrv accordingly with:
+If you want to access your server with those external urls: https://mypersonaldomain.org:6630 and https://77.77.77.77:6630, you should configure mifasolsrv accordingly with:
 
 ```
 mifasolsrv config -hostnames mypersonaldomain.org,77.77.77.77 -n 6630 -enable-ssl
