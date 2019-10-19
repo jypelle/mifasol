@@ -6,17 +6,21 @@ Mifasol is a self-hosted *opinionated* music server.
 
 ![mifasolcli console user interface](docs/mifasolcli-ui-screenshot.png)
 
-Its main purpose is to meet these objectives :
+## Key features
 
-1. To manage songs and playlists on a self-hosted server.
-2. To keep song and playlist files on different clients synced with server content.
-3. To avoid playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
-4. Not to impose a particular music player to listen your music (thanks to the files sync).
-5. To be easy to
-    1. Install (statically compiled)
-    2. Backup (embedded database)
-    3. Secure (https by default)
-6. To be multiplatform (different OS or Architecture: Windows/Mac/Linux/Raspbian)
+1. Songs and playlists management on a self-hosted server for multiple users.
+2. Keeping song and playlist files synced with server content on different clients.
+3. Differentiation of homonym artists and albums.
+4. Song can be linked to more than one artist.
+3. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
+4. No requirements about music player used to listen your music (thanks to the files sync).
+5. Server is easy to
+    1. Install (one executable file to copy and you are done)
+    2. Backup (all data in one folder)
+    3. Secure (https by default, no certificate authentication required)
+6. Blazing fast navigation with console user interface
+7. Multiplatform (different OS or Architecture: Windows/Mac/Linux/Raspbian/Synology)
+8. REST API for those who want to develop their own client.
 
 Mifasol is a free and open source project distributed under the permissive Apache 2.0 License. 
 
@@ -40,8 +44,7 @@ This software doesn’t try to satisfy the needs of everyone.
 - When you import some music on mifasol server, **song filenames are ignored**, only tags are used to link your song to an artist, an album or to known the song name.
 - Once your music is imported, **song tags are partially managed by mifasol server** and are used to generate song filename on mifasol clients.
 - **Only one-way sync is supported**:  song files and playlists are copied from mifasol server to mifasol clients.
-- Homonym artists and albums are differentiated.
-- Each song can be linked to **multiple artists** but only one album.
+- Even though mifasol client is able to play music, his development is more focused on music library management and its synchonization than on music streaming.
 
 ## Mifasol server
 
@@ -67,10 +70,10 @@ go install mifasol/cmd/mifasolsrv
 mifasolsrv run
 ```
 
-Use Ctrl+C to gracefully stop it.
+Use Ctrl+C to gracefully stop it (and to avoid database corruption).
 
 On first launch, `mifasolsrv run` will:
-- Create default admin user with mifasolcli/mifasolcli as username/password
+- Create default admin user with mifasol/mifasol as username/password
 - Create a self-signed certificate valid for localhost only
 - Listen client requests on https://localhost:6620
 
@@ -172,7 +175,7 @@ go install mifasol/cmd/mifasolcli
 #### Configuration
 
 On first launch, *mifasolcli* try to connect to mifasol server using https://localhost:6620
-(only accepting server self-signed certificate read on first connection) with mifasolcli/mifasolcli as username/password.
+(only accepting server self-signed certificate read on first connection) with mifasol/mifasol as username/password.
 
 You can change default configuration with:
 
@@ -212,7 +215,9 @@ mifasolcli ui
 
 Press `H` to display available shortcuts to navigate through the interface.
 
-NB: After a fresh server installation, use the console user interface to change your default username/password.
+##### Tips:
+- **After a fresh server installation, use the console user interface to change the default username/password**.
+- Windows users should use new *Windows Terminal* to correctly display unicode emojis.  
 
 #### More options
 
