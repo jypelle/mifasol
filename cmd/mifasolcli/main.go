@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jypelle/mifasol/cli"
+	"github.com/jypelle/mifasol/version"
 	"os"
 	"path/filepath"
 	"time"
@@ -44,6 +45,7 @@ func main() {
 		fmt.Printf("  ui        Launch the console interface\n")
 		fmt.Printf("  import    Import every flac, mp3 and ogg files from current folder to mifasol server\n")
 		fmt.Printf("  filesync  Sync a folder with mifasol server content\n")
+		fmt.Printf("  version   Show the version number\n")
 		fmt.Printf("\nRun '%s COMMAND --help' for more information on a command.\n", mainCommand)
 	}
 
@@ -112,6 +114,14 @@ func main() {
 		fmt.Printf("\nSynchronize music folder content with mifasol server\n")
 	}
 
+	// version command
+	versionCmd := flag.NewFlagSet("version", flag.ExitOnError)
+
+	versionCmd.Usage = func() {
+		fmt.Printf("\nUsage: %s version\n", mainCommand)
+		fmt.Printf("\nShow the mifasol client version information\n")
+	}
+
 	// endregion
 
 	// region Parsing
@@ -177,6 +187,13 @@ func main() {
 			fileSyncCmd.Usage()
 			os.Exit(1)
 		}
+	case "version":
+		versionCmd.Parse(flag.Args()[1:])
+		if versionCmd.NArg() > 0 {
+			fmt.Printf("\n\"%s %s\" accepts no arguments\n", mainCommand, flag.Arg(0))
+			versionCmd.Usage()
+			os.Exit(1)
+		}
 	default:
 		fmt.Printf("\n%s is not a mifasolcli command\n", flag.Args()[0])
 		flag.Usage()
@@ -225,6 +242,8 @@ func main() {
 			*configPassword,
 			*configClearCachedSelfSignedServerCertificate)
 
+	} else if versionCmd.Parsed() {
+		fmt.Printf("Version %s\n", version.Version())
 	} else {
 
 		// Init mifasol client

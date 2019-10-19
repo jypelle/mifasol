@@ -245,44 +245,6 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 				}
 				return nil
 
-			case 'e':
-				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
-					switch currentFilter.libraryType {
-					case libraryTypeAllArtists:
-						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
-						if artist != nil {
-							OpenArtistEditComponent(c.uiApp, artist.Id, &artist.ArtistMeta, c)
-						}
-					case libraryTypeAllAlbums:
-						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
-						if album != nil {
-							OpenAlbumEditComponent(c.uiApp, album.Id, &album.AlbumMeta, c)
-						}
-					case libraryTypeAllPlaylists,
-						libraryTypeFavoritePlaylistsFromUser:
-						playlist := c.playlists[c.list.GetCurrentItem()]
-						if playlist != nil {
-							OpenPlaylistEditComponent(c.uiApp, playlist, c)
-						}
-					case libraryTypeAllUsers:
-						user := c.uiApp.LocalDb().OrderedUsers[c.list.GetCurrentItem()]
-						if user != nil {
-							OpenUserEditComponent(c.uiApp, user.Id, &user.UserMeta, c)
-						}
-					case libraryTypeAllSongs,
-						libraryTypeSongsFromAlbum,
-						libraryTypeSongsFromUnknownAlbum,
-						libraryTypeSongsFromArtist,
-						libraryTypeSongsFromUnknownArtist,
-						libraryTypeSongsFromPlaylist:
-						song := c.songs[c.list.GetCurrentItem()]
-						if song != nil {
-							OpenSongEditComponent(c.uiApp, song, c)
-						}
-					}
-				}
-				return nil
-
 			case 'd':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
 					switch currentFilter.libraryType {
@@ -321,6 +283,44 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 				}
 				return nil
 
+			case 'e':
+				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
+					switch currentFilter.libraryType {
+					case libraryTypeAllArtists:
+						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+						if artist != nil {
+							OpenArtistEditComponent(c.uiApp, artist.Id, &artist.ArtistMeta, c)
+						}
+					case libraryTypeAllAlbums:
+						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+						if album != nil {
+							OpenAlbumEditComponent(c.uiApp, album.Id, &album.AlbumMeta, c)
+						}
+					case libraryTypeAllPlaylists,
+						libraryTypeFavoritePlaylistsFromUser:
+						playlist := c.playlists[c.list.GetCurrentItem()]
+						if playlist != nil {
+							OpenPlaylistEditComponent(c.uiApp, playlist, c)
+						}
+					case libraryTypeAllUsers:
+						user := c.uiApp.LocalDb().OrderedUsers[c.list.GetCurrentItem()]
+						if user != nil {
+							OpenUserEditComponent(c.uiApp, user.Id, &user.UserMeta, c)
+						}
+					case libraryTypeAllSongs,
+						libraryTypeSongsFromAlbum,
+						libraryTypeSongsFromUnknownAlbum,
+						libraryTypeSongsFromArtist,
+						libraryTypeSongsFromUnknownArtist,
+						libraryTypeSongsFromPlaylist:
+						song := c.songs[c.list.GetCurrentItem()]
+						if song != nil {
+							OpenSongEditComponent(c.uiApp, song, c)
+						}
+					}
+				}
+				return nil
+
 			case 'f':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
 					switch currentFilter.libraryType {
@@ -345,6 +345,8 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 									c.uiApp.ClientErrorMessage("Unable to remove playlist from favorites", cliErr)
 								}
 								c.uiApp.Reload()
+							}
+							if !(currentFilter.libraryType == libraryTypeFavoritePlaylistsFromUser && *currentFilter.userId == c.uiApp.ConnectedUserId()) {
 								c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)
 							}
 						}
@@ -797,7 +799,7 @@ func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fro
 	myFavoritePlaylists := c.uiApp.LocalDb().UserFavoritePlaylists[c.uiApp.ConnectedUserId()]
 	if _, ok := myFavoritePlaylists[playlist.Id]; ok {
 		text += "■ "
-		//		text += "💙"
+		//text += "💙"
 	} else {
 		text += "  "
 	}

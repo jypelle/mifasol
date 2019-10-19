@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jypelle/mifasol/srv"
+	"github.com/jypelle/mifasol/version"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -45,6 +46,7 @@ func main() {
 		fmt.Printf("\nCommands:\n")
 		fmt.Printf("  config    Configure server\n")
 		fmt.Printf("  run       Run server\n")
+		fmt.Printf("  version   Show the version number\n")
 		fmt.Printf("\nRun '%s COMMAND --help' for more information on a command.\n", mainCommand)
 	}
 
@@ -70,6 +72,15 @@ func main() {
 		fmt.Printf("\nUsage: %s run\n", mainCommand)
 		fmt.Printf("\nRun the server\n")
 	}
+
+	// version command
+	versionCmd := flag.NewFlagSet("version", flag.ExitOnError)
+
+	versionCmd.Usage = func() {
+		fmt.Printf("\nUsage: %s version\n", mainCommand)
+		fmt.Printf("\nShow the mifasol server version information\n")
+	}
+
 	// endregion
 
 	// region Parsing
@@ -98,6 +109,13 @@ func main() {
 		if runCmd.NArg() > 0 {
 			fmt.Printf("\n\"%s %s\" accepts no arguments\n", mainCommand, flag.Arg(0))
 			runCmd.Usage()
+			os.Exit(1)
+		}
+	case "version":
+		versionCmd.Parse(flag.Args()[1:])
+		if versionCmd.NArg() > 0 {
+			fmt.Printf("\n\"%s %s\" accepts no arguments\n", mainCommand, flag.Arg(0))
+			versionCmd.Usage()
 			os.Exit(1)
 		}
 	default:
@@ -135,6 +153,8 @@ func main() {
 			*configPort,
 			configSsl)
 
+	} else if versionCmd.Parsed() {
+		fmt.Printf("Version %s\n", version.Version())
 	} else {
 		if runCmd.Parsed() {
 			// Start mifasol server
