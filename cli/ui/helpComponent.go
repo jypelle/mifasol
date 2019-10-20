@@ -18,12 +18,6 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 	c := &HelpComponent{
 		uiApp: uiApp,
 	}
-	/*
-		c.title = tview.NewTextView()
-		c.title.SetDynamicColors(true)
-		c.title.SetText("[" + ColorTitleStr + "] Help")
-		c.title.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
-	*/
 	c.content = tview.NewTextView()
 	c.content.SetDynamicColors(true)
 	c.content.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
