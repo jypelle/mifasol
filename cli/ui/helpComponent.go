@@ -30,10 +30,11 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 	c.content.SetTextColor(ColorHelpText)
 	c.content.SetText(`[` + ColorHelpTitleStr + `::u]Global shortcuts
 
-'h'    : Show/Hide this sideview
+'h'    : Show / Hide this sideview
+'p'    : Play / Pause
 '+'    : Increase volume
 '-'    : Decrease Volume
-<TAB>  : Change view
+<TAB>  : Switch view
 <F5>   : Get updates from mifasolsrv
 <ESC>  : Quit
 
@@ -42,9 +43,9 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 'c'    : Create album / artist
 'e'    : Edit song / album / artist / playlist
 'd'    : Delete song / album / artist / playlist
-'a'    : Add song / album / artist / playlist to Current playlist
-'l'    : Load song / album / artist / playlist to Current playlist
-'f'    : Add to favorite songs / playlists
+'a'    : Add song / album / artist / playlist to current playlist
+'l'    : Load song / album / artist / playlist to current playlist
+'f'    : Add to / Remove from favorite songs / playlists
 <LEFT> : Previous item
 <RIGHT>: Next item
 <ENTER>: Play song / Artist's songs / Album's songs / Playlist's songs
