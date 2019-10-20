@@ -145,6 +145,13 @@ func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1
 		return nil, e
 	}
 
+	// Add incoming playlist to favorite playlist
+	favoritePlaylistMeta := &restApiV1.FavoritePlaylistMeta{restApiV1.FavoritePlaylistId{UserId: userEntity.Id, PlaylistId: restApiV1.IncomingPlaylistId}}
+	_, e = s.CreateFavoritePlaylist(txn, favoritePlaylistMeta, false)
+	if e != nil {
+		return nil, e
+	}
+
 	// Commit transaction
 	if externalTrn == nil {
 		txn.Commit()
