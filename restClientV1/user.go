@@ -25,12 +25,12 @@ func (c *RestClient) CreateUser(userMetaComplete *restApiV1.UserMetaComplete) (*
 
 }
 
-func (c *RestClient) UpdateUser(userId string, userMeta *restApiV1.UserMetaComplete) (*restApiV1.User, ClientError) {
+func (c *RestClient) UpdateUser(userId restApiV1.UserId, userMeta *restApiV1.UserMetaComplete) (*restApiV1.User, ClientError) {
 	var user *restApiV1.User
 
 	encodedUserMeta, _ := json.Marshal(userMeta)
 
-	response, cliErr := c.doPutRequest("/users/"+userId, JsonContentType, bytes.NewBuffer(encodedUserMeta))
+	response, cliErr := c.doPutRequest("/users/"+string(userId), JsonContentType, bytes.NewBuffer(encodedUserMeta))
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -43,10 +43,10 @@ func (c *RestClient) UpdateUser(userId string, userMeta *restApiV1.UserMetaCompl
 	return user, nil
 }
 
-func (c *RestClient) DeleteUser(userId string) (*restApiV1.User, ClientError) {
+func (c *RestClient) DeleteUser(userId restApiV1.UserId) (*restApiV1.User, ClientError) {
 	var user *restApiV1.User
 
-	response, cliErr := c.doDeleteRequest("/users/" + userId)
+	response, cliErr := c.doDeleteRequest("/users/" + string(userId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

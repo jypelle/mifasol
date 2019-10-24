@@ -13,8 +13,8 @@ type CurrentComponent struct {
 	title *tview.TextView
 	list  *primitive.RichList
 
-	songIds       []string
-	srcPlaylistId *string
+	songIds       []restApiV1.SongId
+	srcPlaylistId *restApiV1.PlaylistId
 	modified      bool
 
 	uiApp *UIApp
@@ -147,18 +147,18 @@ func (c *CurrentComponent) Disable() {
 	c.list.SetBackgroundColor(ColorDisabled)
 }
 
-func (c *CurrentComponent) AddSong(songId string) {
+func (c *CurrentComponent) AddSong(songId restApiV1.SongId) {
 	c.songIds = append(c.songIds, songId)
 	c.list.AddItem(c.getMainTextSong(songId, -1))
 	c.SetModified(true)
 }
 
-func (c *CurrentComponent) LoadSong(songId string) {
+func (c *CurrentComponent) LoadSong(songId restApiV1.SongId) {
 	c.Clear()
 	c.AddSong(songId)
 }
 
-func (c *CurrentComponent) getMainTextSong(songId string, highlightPosition int) string {
+func (c *CurrentComponent) getMainTextSong(songId restApiV1.SongId, highlightPosition int) string {
 	song := c.uiApp.localDb.Songs[songId]
 
 	songName := "[" + ColorSongStr + "]" + tview.Escape(song.Name) + "[white]"
@@ -226,7 +226,7 @@ func (c *CurrentComponent) LoadSongsFromPlaylist(playlist *restApiV1.Playlist) {
 	c.SetModified(false)
 }
 
-func (c *CurrentComponent) GetNextSong() *string {
+func (c *CurrentComponent) GetNextSong() *restApiV1.SongId {
 	nextPosition := c.list.GetCurrentItem() + 1
 	if nextPosition < len(c.songIds) {
 		c.list.SetCurrentItem(nextPosition)
@@ -266,7 +266,7 @@ func (c *CurrentComponent) RefreshView() {
 
 func (c *CurrentComponent) Clear() {
 	c.list.Clear()
-	c.songIds = []string{}
+	c.songIds = []restApiV1.SongId{}
 	c.srcPlaylistId = nil
 	c.list.SetCurrentItem(0)
 }

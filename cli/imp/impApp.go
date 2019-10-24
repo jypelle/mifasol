@@ -124,7 +124,7 @@ func (a *ImpApp) start() {
 	)
 
 	var lastFolder string
-	var lastAlbumId string
+	var lastAlbumId restApiV1.AlbumId
 
 	for key, fileName := range filesNameToImport {
 		if impAborded {

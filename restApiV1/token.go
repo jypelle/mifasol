@@ -9,5 +9,5 @@ type Token struct {
 	// The Type method returns either this or "Bearer", the default.
 	TokenType string `json:"token_type,omitempty"`
 
-	UserId string
+	UserId UserId `json:"userId"`
 }

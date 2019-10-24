@@ -25,12 +25,12 @@ func (c *RestClient) CreatePlaylist(playListMeta *restApiV1.PlaylistMeta) (*rest
 
 }
 
-func (c *RestClient) UpdatePlaylist(playlistId string, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, ClientError) {
+func (c *RestClient) UpdatePlaylist(playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta) (*restApiV1.Playlist, ClientError) {
 	var playlist *restApiV1.Playlist
 
 	encodedPlaylistMeta, _ := json.Marshal(playlistMeta)
 
-	response, cliErr := c.doPutRequest("/playlists/"+playlistId, JsonContentType, bytes.NewBuffer(encodedPlaylistMeta))
+	response, cliErr := c.doPutRequest("/playlists/"+string(playlistId), JsonContentType, bytes.NewBuffer(encodedPlaylistMeta))
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -43,10 +43,10 @@ func (c *RestClient) UpdatePlaylist(playlistId string, playlistMeta *restApiV1.P
 	return playlist, nil
 }
 
-func (c *RestClient) DeletePlaylist(playlistId string) (*restApiV1.Playlist, ClientError) {
+func (c *RestClient) DeletePlaylist(playlistId restApiV1.PlaylistId) (*restApiV1.Playlist, ClientError) {
 	var playlist *restApiV1.Playlist
 
-	response, cliErr := c.doDeleteRequest("/playlists/" + playlistId)
+	response, cliErr := c.doDeleteRequest("/playlists/" + string(playlistId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

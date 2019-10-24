@@ -28,7 +28,7 @@ func (c *RestClient) CreateFavoritePlaylist(favoritePlayListMeta *restApiV1.Favo
 func (c *RestClient) DeleteFavoritePlaylist(favoritePlaylistId restApiV1.FavoritePlaylistId) (*restApiV1.FavoritePlaylist, ClientError) {
 	var favoritePlaylist *restApiV1.FavoritePlaylist
 
-	response, cliErr := c.doDeleteRequest("/favoritePlaylists/" + favoritePlaylistId.UserId + "/" + favoritePlaylistId.PlaylistId)
+	response, cliErr := c.doDeleteRequest("/favoritePlaylists/" + string(favoritePlaylistId.UserId) + "/" + string(favoritePlaylistId.PlaylistId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

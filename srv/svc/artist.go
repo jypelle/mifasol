@@ -58,7 +58,7 @@ func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFi
 	return artists, nil
 }
 
-func (s *Service) ReadArtist(externalTrn storm.Node, artistId string) (*restApiV1.Artist, error) {
+func (s *Service) ReadArtist(externalTrn storm.Node, artistId restApiV1.ArtistId) (*restApiV1.Artist, error) {
 	var e error
 
 	// Check available transaction
@@ -103,7 +103,7 @@ func (s *Service) CreateArtist(externalTrn storm.Node, artistMeta *restApiV1.Art
 	now := time.Now().UnixNano()
 
 	artistEntity := entity.ArtistEntity{
-		Id:         tool.CreateUlid(),
+		Id:         restApiV1.ArtistId(tool.CreateUlid()),
 		CreationTs: now,
 		UpdateTs:   now,
 	}
@@ -126,7 +126,7 @@ func (s *Service) CreateArtist(externalTrn storm.Node, artistMeta *restApiV1.Art
 
 }
 
-func (s *Service) UpdateArtist(externalTrn storm.Node, artistId string, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, error) {
+func (s *Service) UpdateArtist(externalTrn storm.Node, artistId restApiV1.ArtistId, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, error) {
 	var e error
 
 	// Check available transaction
@@ -175,7 +175,7 @@ func (s *Service) UpdateArtist(externalTrn storm.Node, artistId string, artistMe
 	return &artist, nil
 }
 
-func (s *Service) DeleteArtist(externalTrn storm.Node, artistId string) (*restApiV1.Artist, error) {
+func (s *Service) DeleteArtist(externalTrn storm.Node, artistId restApiV1.ArtistId) (*restApiV1.Artist, error) {
 	var e error
 
 	// Check available transaction
@@ -228,10 +228,10 @@ func (s *Service) DeleteArtist(externalTrn storm.Node, artistId string) (*restAp
 	return &artist, nil
 }
 
-func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.ArtistId, error) {
 	var e error
 
-	artistIds := []string{}
+	artistIds := []restApiV1.ArtistId{}
 	deletedArtistEntities := []entity.DeletedArtistEntity{}
 
 	// Check available transaction
@@ -257,7 +257,7 @@ func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]s
 	return artistIds, nil
 }
 
-func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistNames []string) ([]string, error) {
+func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistNames []string) ([]restApiV1.ArtistId, error) {
 	var e error
 
 	// Check available transaction
@@ -270,7 +270,7 @@ func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistName
 		defer txn.Rollback()
 	}
 
-	var artistIds []string
+	var artistIds []restApiV1.ArtistId
 
 	for _, artistName := range artistNames {
 		artistName = normalizeString(artistName)
@@ -281,7 +281,7 @@ func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistName
 			if e != nil {
 				return nil, e
 			}
-			var artistId string
+			var artistId restApiV1.ArtistId
 			if len(artists) > 0 {
 				// Link the song to an existing artist
 				artistId = artists[0].Id
@@ -305,7 +305,7 @@ func (s *Service) getArtistIdsFromArtistNames(externalTrn storm.Node, artistName
 	return artistIds, nil
 }
 
-func isArtistIdsEqual(a, b []string) bool {
+func isArtistIdsEqual(a, b []restApiV1.ArtistId) bool {
 	if len(a) != len(b) {
 		return false
 	}

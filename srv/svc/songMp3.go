@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId *restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	reader := bytes.NewReader(content)
@@ -27,9 +27,9 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
 	var publicationYear *int64 = nil
-	var albumId string = ""
+	var albumId restApiV1.AlbumId = ""
 	var trackNumber *int64 = nil
-	var artistIds []string
+	var artistIds []restApiV1.ArtistId
 
 	// Check available transaction
 	txn := externalTrn

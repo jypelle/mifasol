@@ -107,7 +107,7 @@ func (c *SongEditComponent) save() {
 
 	// Album
 	selectedAlbumInd, _ := c.albumDropDown.GetCurrentOption()
-	var id string
+	var id restApiV1.AlbumId
 	if selectedAlbumInd == 0 {
 		c.song.SongMeta.AlbumId = ""
 	} else {
@@ -119,7 +119,7 @@ func (c *SongEditComponent) save() {
 	c.song.ArtistIds = nil
 	for _, artistDropDown := range c.artistDropDowns {
 		selectedArtistInd, _ := artistDropDown.GetCurrentOption()
-		var id string
+		var id restApiV1.ArtistId
 		if selectedArtistInd > 0 {
 			id = c.uiApp.localDb.OrderedArtists[selectedArtistInd].Id
 			c.song.ArtistIds = append(c.song.ArtistIds, id)
@@ -150,7 +150,7 @@ func (c *SongEditComponent) cancel() {
 	c.close()
 }
 
-func (c *SongEditComponent) addArtist(artistId string) {
+func (c *SongEditComponent) addArtist(artistId restApiV1.ArtistId) {
 	artistDropDown := tview.NewDropDown().
 		SetLabel("Artist " + strconv.Itoa(len(c.artistDropDowns)+1))
 	selectedArtistInd := 0

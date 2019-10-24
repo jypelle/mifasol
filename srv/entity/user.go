@@ -5,7 +5,7 @@ import "github.com/jypelle/mifasol/restApiV1"
 // User
 
 type UserEntity struct {
-	Id         string `storm:"id"`
+	Id         restApiV1.UserId `storm:"id"`
 	CreationTs int64
 	UpdateTs   int64  `storm:"index"`
 	Name       string `storm:"unique"`
@@ -29,6 +29,6 @@ func (e *UserEntity) LoadMeta(s *restApiV1.UserMeta) {
 }
 
 type DeletedUserEntity struct {
-	Id       string `storm:"id"`
-	DeleteTs int64  `storm:"index"`
+	Id       restApiV1.UserId `storm:"id"`
+	DeleteTs int64            `storm:"index"`
 }

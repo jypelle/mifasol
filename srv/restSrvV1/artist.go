@@ -25,7 +25,7 @@ func (s *RestServer) readArtists(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) readArtist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	artistId := vars["id"]
+	artistId := restApiV1.ArtistId(vars["id"])
 
 	logrus.Debugf("Read artist: %s", artistId)
 
@@ -61,7 +61,7 @@ func (s *RestServer) createArtist(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) updateArtist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	artistId := vars["id"]
+	artistId := restApiV1.ArtistId(vars["id"])
 
 	logrus.Debugf("Update artist: %s", artistId)
 
@@ -83,7 +83,7 @@ func (s *RestServer) updateArtist(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) deleteArtist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	artistId := vars["id"]
+	artistId := restApiV1.ArtistId(vars["id"])
 
 	logrus.Debugf("Delete artist: %s", artistId)
 

@@ -148,10 +148,10 @@ func (c *PlayerComponent) VolumeDown() {
 	c.SetVolume(c.GetVolume() - 4)
 }
 
-func (c *PlayerComponent) Play(songId string) {
+func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 	song, ok := c.uiApp.localDb.Songs[songId]
 	if !ok {
-		c.uiApp.WarningMessage("Unknown song id: " + songId)
+		c.uiApp.WarningMessage("Unknown song id: " + string(songId))
 		return
 	}
 

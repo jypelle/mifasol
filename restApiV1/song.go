@@ -69,8 +69,10 @@ func (s SongFormat) Decode() func(rc io.ReadCloser) (s beep.StreamSeekCloser, fo
 	return nil
 }
 
+type SongId string
+
 type Song struct {
-	Id         string `json:"id"`
+	Id         SongId `json:"id"`
 	CreationTs int64  `json:"creationTs"`
 	UpdateTs   int64  `json:"updateTs"`
 	SongMeta
@@ -82,9 +84,9 @@ type SongMeta struct {
 	Size            int64        `json:"size"`
 	BitDepth        SongBitDepth `json:"bitDepth"`
 	PublicationYear *int64       `json:"publicationYear"`
-	AlbumId         string       `json:"albumId"`
+	AlbumId         AlbumId      `json:"albumId"`
 	TrackNumber     *int64       `json:"trackNumber"`
-	ArtistIds       []string     `json:"artistIds"`
+	ArtistIds       []ArtistId   `json:"artistIds"`
 }
 
 type SongNew struct {

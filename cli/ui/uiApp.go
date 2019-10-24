@@ -362,7 +362,7 @@ func (a *UIApp) LocalDb() *db.LocalDb {
 	return a.localDb
 }
 
-func (a *UIApp) Play(songId string) {
+func (a *UIApp) Play(songId restApiV1.SongId) {
 	a.playerComponent.Play(songId)
 }
 
@@ -377,7 +377,7 @@ func (a *UIApp) IsConnectedUserAdmin() bool {
 	return false
 }
 
-func (a *UIApp) ConnectedUserId() string {
+func (a *UIApp) ConnectedUserId() restApiV1.UserId {
 	return a.restClient.UserId()
 }
 

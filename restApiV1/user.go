@@ -1,9 +1,10 @@
 package restApiV1
 
 // User
+type UserId string
 
 type User struct {
-	Id         string `json:"id"`
+	Id         UserId `json:"id"`
 	CreationTs int64  `json:"creationTs"`
 	UpdateTs   int64  `json:"updateTs"`
 	UserMeta

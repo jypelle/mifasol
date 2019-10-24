@@ -38,7 +38,7 @@ func (s *RestServer) readFileSyncReport(w http.ResponseWriter, r *http.Request) 
 		s.apiErrorCodeResponse(w, restApiV1.InvalideRequestErrorCode)
 		return
 	}
-	userId := vars["userId"]
+	userId := restApiV1.UserId(vars["userId"])
 
 	fileSyncReport, err := s.service.ReadFileSyncReport(fromTs, userId)
 	if err != nil {

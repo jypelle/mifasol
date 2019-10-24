@@ -24,12 +24,12 @@ func (c *RestClient) CreateAlbum(albumMeta *restApiV1.AlbumMeta) (*restApiV1.Alb
 	return album, nil
 }
 
-func (c *RestClient) UpdateAlbum(albumId string, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, ClientError) {
+func (c *RestClient) UpdateAlbum(albumId restApiV1.AlbumId, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, ClientError) {
 	var album *restApiV1.Album
 
 	encodedAlbumMeta, _ := json.Marshal(albumMeta)
 
-	response, cliErr := c.doPutRequest("/albums/"+albumId, JsonContentType, bytes.NewBuffer(encodedAlbumMeta))
+	response, cliErr := c.doPutRequest("/albums/"+string(albumId), JsonContentType, bytes.NewBuffer(encodedAlbumMeta))
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -42,10 +42,10 @@ func (c *RestClient) UpdateAlbum(albumId string, albumMeta *restApiV1.AlbumMeta)
 	return album, nil
 }
 
-func (c *RestClient) DeleteAlbum(albumId string) (*restApiV1.Album, ClientError) {
+func (c *RestClient) DeleteAlbum(albumId restApiV1.AlbumId) (*restApiV1.Album, ClientError) {
 	var album *restApiV1.Album
 
-	response, cliErr := c.doDeleteRequest("/albums/" + albumId)
+	response, cliErr := c.doDeleteRequest("/albums/" + string(albumId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

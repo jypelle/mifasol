@@ -41,7 +41,7 @@ type PlaylistFilter struct {
 	Order          PlaylistOrder
 	FromTs         *int64
 	ContentFromTs  *int64
-	FavoriteUserId *string
+	FavoriteUserId *UserId
 	FavoriteFromTs *int64
 }
 

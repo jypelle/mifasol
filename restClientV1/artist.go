@@ -25,12 +25,12 @@ func (c *RestClient) CreateArtist(artistMeta *restApiV1.ArtistMeta) (*restApiV1.
 	return artist, nil
 }
 
-func (c *RestClient) UpdateArtist(artistId string, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, ClientError) {
+func (c *RestClient) UpdateArtist(artistId restApiV1.ArtistId, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, ClientError) {
 	var artist *restApiV1.Artist
 
 	encodedArtistMeta, _ := json.Marshal(artistMeta)
 
-	response, cliErr := c.doPutRequest("/artists/"+artistId, JsonContentType, bytes.NewBuffer(encodedArtistMeta))
+	response, cliErr := c.doPutRequest("/artists/"+string(artistId), JsonContentType, bytes.NewBuffer(encodedArtistMeta))
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -44,10 +44,10 @@ func (c *RestClient) UpdateArtist(artistId string, artistMeta *restApiV1.ArtistM
 	return artist, nil
 }
 
-func (c *RestClient) DeleteArtist(artistId string) (*restApiV1.Artist, ClientError) {
+func (c *RestClient) DeleteArtist(artistId restApiV1.ArtistId) (*restApiV1.Artist, ClientError) {
 	var artist *restApiV1.Artist
 
-	response, cliErr := c.doDeleteRequest("/artists/" + artistId)
+	response, cliErr := c.doDeleteRequest("/artists/" + string(artistId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

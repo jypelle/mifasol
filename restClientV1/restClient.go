@@ -147,7 +147,7 @@ func checkStatusCode(response *http.Response) ClientError {
 	return nil
 }
 
-func (c *RestClient) UserId() string {
+func (c *RestClient) UserId() restApiV1.UserId {
 	if c.token == nil {
 		cliErr := c.refreshToken()
 		if cliErr != nil {

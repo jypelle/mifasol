@@ -76,7 +76,7 @@ func (s *Service) ReadPlaylists(externalTrn storm.Node, filter *restApiV1.Playli
 	return playlists, nil
 }
 
-func (s *Service) ReadPlaylist(externalTrn storm.Node, playlistId string) (*restApiV1.Playlist, error) {
+func (s *Service) ReadPlaylist(externalTrn storm.Node, playlistId restApiV1.PlaylistId) (*restApiV1.Playlist, error) {
 	var e error
 
 	// Check available transaction
@@ -108,7 +108,7 @@ func (s *Service) CreatePlaylist(externalTrn storm.Node, playlistMeta *restApiV1
 	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta, check)
 }
 
-func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
 	var e error
 
 	// Check available transaction
@@ -125,7 +125,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	now := time.Now().UnixNano()
 
 	if playlistId == "" {
-		playlistId = tool.CreateUlid()
+		playlistId = restApiV1.PlaylistId(tool.CreateUlid())
 	}
 
 	playlistEntity := entity.PlaylistEntity{
@@ -137,7 +137,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	playlistEntity.LoadMeta(playlistMeta)
 
 	// Clean owner list
-	playlistEntity.OwnerUserIds = tool.Deduplicate(playlistEntity.OwnerUserIds)
+	playlistEntity.OwnerUserIds = tool.DeduplicateUserId(playlistEntity.OwnerUserIds)
 	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
 		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
 	})
@@ -194,7 +194,7 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId stri
 	return &playlist, nil
 }
 
-func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
 	var e error
 
 	// Check available transaction
@@ -222,7 +222,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	playlistEntity.LoadMeta(playlistMeta)
 
 	// Clean owner list
-	playlistEntity.OwnerUserIds = tool.Deduplicate(playlistEntity.OwnerUserIds)
+	playlistEntity.OwnerUserIds = tool.DeduplicateUserId(playlistEntity.OwnerUserIds)
 	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
 		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
 	})
@@ -306,7 +306,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId string, play
 	return &playlist, nil
 }
 
-func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, songId string, check bool) (*restApiV1.Playlist, error) {
+func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId restApiV1.PlaylistId, songId restApiV1.SongId, check bool) (*restApiV1.Playlist, error) {
 	var e error
 
 	// Check available transaction
@@ -364,7 +364,7 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId string, s
 	return &playlist, nil
 }
 
-func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*restApiV1.Playlist, error) {
+func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId restApiV1.PlaylistId) (*restApiV1.Playlist, error) {
 	var e error
 
 	// Incoming playlist can't be deleted
@@ -440,10 +440,10 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*re
 	return &playlist, nil
 }
 
-func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.PlaylistId, error) {
 	var e error
 
-	playlistIds := []string{}
+	playlistIds := []restApiV1.PlaylistId{}
 	deletedPlaylistEntities := []entity.DeletedPlaylistEntity{}
 
 	// Check available transaction
@@ -470,7 +470,7 @@ func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([
 	return playlistIds, nil
 }
 
-func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string) ([]string, error) {
+func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId restApiV1.SongId) ([]restApiV1.PlaylistId, error) {
 	var e error
 
 	// Check available transaction
@@ -483,7 +483,7 @@ func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string
 		defer txn.Rollback()
 	}
 
-	var playlistIds []string
+	var playlistIds []restApiV1.PlaylistId
 	playlistSongEntities := []entity.PlaylistSongEntity{}
 
 	query := txn.Select(q.Eq("SongId", songId))
@@ -501,7 +501,7 @@ func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string
 
 }
 
-func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUserId string) ([]string, error) {
+func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUserId restApiV1.UserId) ([]restApiV1.PlaylistId, error) {
 	var e error
 
 	// Check available transaction
@@ -514,7 +514,7 @@ func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUse
 		defer txn.Rollback()
 	}
 
-	var playlistIds []string
+	var playlistIds []restApiV1.PlaylistId
 	ownedUserPlaylistEntities := []entity.OwnedUserPlaylistEntity{}
 
 	query := txn.Select(q.Eq("UserId", ownerUserId))

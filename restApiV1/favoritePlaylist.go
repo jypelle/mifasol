@@ -1,8 +1,8 @@
 package restApiV1
 
 type FavoritePlaylistId struct {
-	UserId     string `json:"userId"`
-	PlaylistId string `json:"playlistId"`
+	UserId     UserId     `json:"userId"`
+	PlaylistId PlaylistId `json:"playlistId"`
 }
 
 type FavoritePlaylistMeta struct {

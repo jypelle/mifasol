@@ -59,7 +59,7 @@ func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilt
 	return albums, nil
 }
 
-func (s *Service) ReadAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
+func (s *Service) ReadAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId) (*restApiV1.Album, error) {
 	var e error
 
 	// Check available transaction
@@ -104,7 +104,7 @@ func (s *Service) CreateAlbum(externalTrn storm.Node, albumMeta *restApiV1.Album
 	now := time.Now().UnixNano()
 
 	albumEntity := entity.AlbumEntity{
-		Id:         tool.CreateUlid(),
+		Id:         restApiV1.AlbumId(tool.CreateUlid()),
 		CreationTs: now,
 		UpdateTs:   now,
 	}
@@ -126,7 +126,7 @@ func (s *Service) CreateAlbum(externalTrn storm.Node, albumMeta *restApiV1.Album
 	return &album, nil
 }
 
-func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
+func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, error) {
 	var e error
 
 	// Check available transaction
@@ -175,7 +175,7 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId string, albumMeta 
 	return &album, nil
 }
 
-func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, updateArtistMetaArtistId *string) error {
+func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId restApiV1.AlbumId, updateArtistMetaArtistId *restApiV1.ArtistId) error {
 	var e error
 
 	// Check available transaction
@@ -202,7 +202,7 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 	albumOldArtistIds := albumEntity.ArtistIds
 
 	// Update AlbumArtists
-	artistsCount := make(map[string]int)
+	artistsCount := make(map[restApiV1.ArtistId]int)
 	for _, songId := range songIds {
 
 		song, e := s.ReadSong(txn, songId)
@@ -219,7 +219,7 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 		}
 	}
 
-	albumEntity.ArtistIds = []string{}
+	albumEntity.ArtistIds = []restApiV1.ArtistId{}
 
 	for artistId, artistCount := range artistsCount {
 		if artistCount > len(songIds)/2 {
@@ -268,7 +268,7 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId string, 
 	return nil
 }
 
-func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV1.Album, error) {
+func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId) (*restApiV1.Album, error) {
 	var e error
 
 	// Check available transaction
@@ -321,10 +321,10 @@ func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId string) (*restApiV
 	return &album, nil
 }
 
-func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.AlbumId, error) {
 	var e error
 
-	albumIds := []string{}
+	albumIds := []restApiV1.AlbumId{}
 	deletedAlbumEntities := []entity.DeletedAlbumEntity{}
 
 	// Check available transaction
@@ -351,10 +351,10 @@ func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]st
 	return albumIds, nil
 }
 
-func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId *string) (string, error) {
+func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId *restApiV1.AlbumId) (restApiV1.AlbumId, error) {
 	var e error
 
-	var albumId string
+	var albumId restApiV1.AlbumId
 
 	if albumName != "" {
 

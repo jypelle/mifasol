@@ -5,7 +5,7 @@ import "github.com/jypelle/mifasol/restApiV1"
 // Song
 
 type SongEntity struct {
-	Id              string `storm:"id"`
+	Id              restApiV1.SongId `storm:"id"`
 	CreationTs      int64
 	UpdateTs        int64  `storm:"index"`
 	Name            string `storm:"index"`
@@ -13,9 +13,9 @@ type SongEntity struct {
 	Size            int64
 	BitDepth        restApiV1.SongBitDepth
 	PublicationYear *int64
-	AlbumId         string `storm:"index"`
+	AlbumId         restApiV1.AlbumId `storm:"index"`
 	TrackNumber     *int64
-	ArtistIds       []string
+	ArtistIds       []restApiV1.ArtistId
 }
 
 func (e *SongEntity) Fill(s *restApiV1.Song) {
@@ -46,6 +46,6 @@ func (e *SongEntity) LoadMeta(s *restApiV1.SongMeta) {
 }
 
 type DeletedSongEntity struct {
-	Id       string `storm:"id"`
-	DeleteTs int64  `storm:"index"`
+	Id       restApiV1.SongId `storm:"id"`
+	DeleteTs int64            `storm:"index"`
 }

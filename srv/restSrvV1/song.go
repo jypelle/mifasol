@@ -25,7 +25,7 @@ func (s *RestServer) readSongs(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) readSong(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	songId := vars["id"]
+	songId := restApiV1.SongId(vars["id"])
 
 	logrus.Debugf("Read song: %s", songId)
 
@@ -44,7 +44,7 @@ func (s *RestServer) readSong(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	songId := vars["id"]
+	songId := restApiV1.SongId(vars["id"])
 
 	logrus.Debugf("Read song content: %s", songId)
 
@@ -89,7 +89,7 @@ func (s *RestServer) createSongContentForAlbum(w http.ResponseWriter, r *http.Re
 	logrus.Debugf("Create song from raw content and try to link it to a specific albumId")
 
 	vars := mux.Vars(r)
-	albumId := vars["id"]
+	albumId := restApiV1.AlbumId(vars["id"])
 
 	song, err := s.service.CreateSongFromRawContent(nil, r.Body, &albumId)
 
@@ -109,7 +109,7 @@ func (s *RestServer) createSongWithContent(w http.ResponseWriter, r *http.Reques
 func (s *RestServer) updateSong(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	songId := vars["id"]
+	songId := restApiV1.SongId(vars["id"])
 
 	logrus.Debugf("Update song: %s", songId)
 
@@ -131,7 +131,7 @@ func (s *RestServer) updateSong(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) deleteSong(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	songId := vars["id"]
+	songId := restApiV1.SongId(vars["id"])
 
 	logrus.Debugf("Delete song: %s", songId)
 

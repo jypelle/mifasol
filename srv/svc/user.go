@@ -62,7 +62,7 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 	return users, nil
 }
 
-func (s *Service) ReadUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
+func (s *Service) ReadUser(externalTrn storm.Node, userId restApiV1.UserId) (*restApiV1.User, error) {
 	var e error
 
 	// Check available transaction
@@ -133,7 +133,7 @@ func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1
 	now := time.Now().UnixNano()
 
 	userEntity := entity.UserEntity{
-		Id:         tool.CreateUlid(),
+		Id:         restApiV1.UserId(tool.CreateUlid()),
 		CreationTs: now,
 		UpdateTs:   now,
 		Password:   userMetaComplete.Password,
@@ -208,7 +208,7 @@ func (s *Service) UpdateUser(externalTrn storm.Node, userId string, userMetaComp
 	return &user, nil
 }
 
-func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.User, error) {
+func (s *Service) DeleteUser(externalTrn storm.Node, userId restApiV1.UserId) (*restApiV1.User, error) {
 	var e error
 
 	// Check available transaction
@@ -240,7 +240,7 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.
 			return nil, e
 		}
 
-		newOwnerUserIds := make([]string, 0)
+		newOwnerUserIds := make([]restApiV1.UserId, 0)
 		for _, currentUserId := range playList.OwnerUserIds {
 			if currentUserId != userId {
 				newOwnerUserIds = append(newOwnerUserIds, currentUserId)
@@ -276,10 +276,10 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId string) (*restApiV1.
 	return &user, nil
 }
 
-func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.UserId, error) {
 	var e error
 
-	userIds := []string{}
+	userIds := []restApiV1.UserId{}
 	deletedUserEntities := []entity.DeletedUserEntity{}
 
 	// Check available transaction

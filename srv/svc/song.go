@@ -65,7 +65,7 @@ func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter
 	return songs, nil
 }
 
-func (s *Service) ReadSong(externalTrn storm.Node, songId string) (*restApiV1.Song, error) {
+func (s *Service) ReadSong(externalTrn storm.Node, songId restApiV1.SongId) (*restApiV1.Song, error) {
 	var e error
 
 	// Check available transaction
@@ -103,16 +103,16 @@ func (s *Service) ReadSongContent(song *restApiV1.Song) ([]byte, error) {
 	return content, nil
 }
 
-func (s *Service) GetSongDirName(songId string) string {
-	return filepath.Join(s.ServerConfig.GetCompleteConfigSongsDirName(), songId[len(songId)-2:])
+func (s *Service) GetSongDirName(songId restApiV1.SongId) string {
+	return filepath.Join(s.ServerConfig.GetCompleteConfigSongsDirName(), string(songId)[len(songId)-2:])
 }
 
 func (s *Service) getSongFileName(songEntity *entity.SongEntity) string {
-	return filepath.Join(s.GetSongDirName(songEntity.Id), songEntity.Id+songEntity.Format.Extension())
+	return filepath.Join(s.GetSongDirName(songEntity.Id), string(songEntity.Id)+songEntity.Format.Extension())
 }
 
 func (s *Service) GetSongFileName(song *restApiV1.Song) string {
-	return filepath.Join(s.GetSongDirName(song.Id), song.Id+song.Format.Extension())
+	return filepath.Join(s.GetSongDirName(song.Id), string(song.Id)+song.Format.Extension())
 }
 
 func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew, check bool) (*restApiV1.Song, error) {
@@ -132,14 +132,14 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 	now := time.Now().UnixNano()
 
 	songEntity := entity.SongEntity{
-		Id:         tool.CreateUlid(),
+		Id:         restApiV1.SongId(tool.CreateUlid()),
 		CreationTs: now,
 		UpdateTs:   now,
 	}
 	songEntity.LoadMeta(&songNew.SongMeta)
 
 	// Reorder artists
-	songEntity.ArtistIds = tool.Deduplicate(songEntity.ArtistIds)
+	songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
 	sort.Slice(songEntity.ArtistIds, func(i, j int) bool {
 		artistI, _ := s.ReadArtist(txn, songEntity.ArtistIds[i])
 		artistJ, _ := s.ReadArtist(txn, songEntity.ArtistIds[j])
@@ -222,7 +222,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 	return &song, nil
 }
 
-func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCloser, lastAlbumId *string) (*restApiV1.Song, error) {
+func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCloser, lastAlbumId *restApiV1.AlbumId) (*restApiV1.Song, error) {
 	var e error
 
 	// Check available transaction
@@ -283,7 +283,7 @@ func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCl
 	return song, nil
 }
 
-func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *string, check bool) (*restApiV1.Song, error) {
+func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, songMeta *restApiV1.SongMeta, updateArtistMetaArtistId *restApiV1.ArtistId, check bool) (*restApiV1.Song, error) {
 	var e error
 
 	// Check available transaction
@@ -309,7 +309,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 
 	// Reorder artists
 	if songMeta != nil || updateArtistMetaArtistId != nil {
-		songEntity.ArtistIds = tool.Deduplicate(songEntity.ArtistIds)
+		songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
 		sort.Slice(songEntity.ArtistIds, func(i, j int) bool {
 			artistI, _ := s.ReadArtist(txn, songEntity.ArtistIds[i])
 			artistJ, _ := s.ReadArtist(txn, songEntity.ArtistIds[j])
@@ -368,7 +368,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	}
 
 	// Update playlists link
-	var playlistIds []string
+	var playlistIds []restApiV1.PlaylistId
 	playlistIds, e = s.GetPlaylistIdsFromSongId(txn, songId)
 	if e != nil {
 		return nil, e
@@ -412,7 +412,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId string, songMeta *re
 	return &song, nil
 }
 
-func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId string, artistIds []string) error {
+func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId restApiV1.SongId, artistIds []restApiV1.ArtistId) error {
 	var e error
 
 	// Check available transaction
@@ -447,7 +447,7 @@ func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId string, 
 	return nil
 }
 
-func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.Song, error) {
+func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*restApiV1.Song, error) {
 	var e error
 
 	// Check available transaction
@@ -480,7 +480,7 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.
 			return nil, e
 		}
 
-		newSongIds := make([]string, 0)
+		newSongIds := make([]restApiV1.SongId, 0)
 		for _, currentSongId := range playList.SongIds {
 			if currentSongId != songId {
 				newSongIds = append(newSongIds, currentSongId)
@@ -537,7 +537,7 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId string) (*restApiV1.
 	return &song, nil
 }
 
-func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]string, error) {
+func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.SongId, error) {
 	var e error
 
 	// Check available transaction
@@ -559,7 +559,7 @@ func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]str
 		return nil, e
 	}
 
-	songIds := []string{}
+	songIds := []restApiV1.SongId{}
 
 	for _, deletedSongEntity := range deletedSongEntities {
 		songIds = append(songIds, deletedSongEntity.Id)
@@ -568,7 +568,7 @@ func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]str
 	return songIds, nil
 }
 
-func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId string) ([]string, error) {
+func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId restApiV1.ArtistId) ([]restApiV1.SongId, error) {
 	var e error
 
 	// Check available transaction
@@ -590,7 +590,7 @@ func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId string
 		return nil, e
 	}
 
-	var songIds []string
+	var songIds []restApiV1.SongId
 
 	for _, artistSongEntity := range artistSongEntities {
 		songIds = append(songIds, artistSongEntity.SongId)
@@ -599,7 +599,7 @@ func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId string
 	return songIds, nil
 }
 
-func (s *Service) GetSongIdsFromAlbumId(externalTrn storm.Node, albumId string) ([]string, error) {
+func (s *Service) GetSongIdsFromAlbumId(externalTrn storm.Node, albumId restApiV1.AlbumId) ([]restApiV1.SongId, error) {
 	var e error
 
 	// Check available transaction
@@ -621,7 +621,7 @@ func (s *Service) GetSongIdsFromAlbumId(externalTrn storm.Node, albumId string) 
 		return nil, e
 	}
 
-	var songIds []string
+	var songIds []restApiV1.SongId
 
 	for _, songEntity := range songEntities {
 		songIds = append(songIds, songEntity.Id)

@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/jypelle/mifasol/cli/ui/model"
 	"github.com/jypelle/mifasol/primitive"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/rivo/tview"
@@ -24,10 +23,10 @@ type LibraryComponent struct {
 
 type libraryFilter struct {
 	libraryType libraryType
-	artistId    *string
-	albumId     *string
-	playlistId  *string
-	userId      *string
+	artistId    *restApiV1.ArtistId
+	albumId     *restApiV1.AlbumId
+	playlistId  *restApiV1.PlaylistId
+	userId      *restApiV1.UserId
 	index       int
 	position    int
 }
@@ -390,16 +389,16 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 					if artist == nil {
 						c.GoToSongsFromUnknownArtistFilter()
 					} else {
-						idType, id := c.getPositionnedIdArtist(c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()], c.currentFilter().position)
-						c.open(idType, id)
+						songId, artistId, albumId := c.getPositionnedIdArtist(c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()], c.currentFilter().position)
+						c.open(songId, artistId, albumId)
 					}
 				case libraryTypeAllAlbums:
 					album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
 					if album == nil {
 						c.GoToSongsFromUnknownAlbumFilter()
 					} else {
-						idType, id := c.getPositionnedIdAlbum(c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()], c.currentFilter().position)
-						c.open(idType, id)
+						songId, artistId, albumId := c.getPositionnedIdAlbum(c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()], c.currentFilter().position)
+						c.open(songId, artistId, albumId)
 					}
 				case libraryTypeAllPlaylists,
 					libraryTypeFavoritePlaylistsFromUser:
@@ -412,8 +411,8 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 					libraryTypeSongsFromUnknownArtist,
 					libraryTypeSongsFromPlaylist:
 
-					idType, id := c.getPositionnedIdSong(c.songs[c.list.GetCurrentItem()], c.currentFilter().albumId, c.currentFilter().artistId, c.currentFilter().position)
-					c.open(idType, id)
+					songId, artistId, albumId := c.getPositionnedIdSong(c.songs[c.list.GetCurrentItem()], c.currentFilter().albumId, c.currentFilter().artistId, c.currentFilter().position)
+					c.open(songId, artistId, albumId)
 				case libraryTypeAllUsers:
 				}
 			}
@@ -492,7 +491,7 @@ func (c *LibraryComponent) GoToAllUsersFilter() {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeAllUsers})
 }
 
-func (c *LibraryComponent) GoToSongsFromAlbumFilter(albumId string) {
+func (c *LibraryComponent) GoToSongsFromAlbumFilter(albumId restApiV1.AlbumId) {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromAlbum, albumId: &albumId})
 }
 
@@ -500,7 +499,7 @@ func (c *LibraryComponent) GoToSongsFromUnknownAlbumFilter() {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromUnknownAlbum})
 }
 
-func (c *LibraryComponent) GoToSongsFromArtistFilter(artistId string) {
+func (c *LibraryComponent) GoToSongsFromArtistFilter(artistId restApiV1.ArtistId) {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromArtist, artistId: &artistId})
 }
 
@@ -508,11 +507,11 @@ func (c *LibraryComponent) GoToSongsFromUnknownArtistFilter() {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromUnknownArtist})
 }
 
-func (c *LibraryComponent) GoToSongsFromPlaylistFilter(playlistId string) {
+func (c *LibraryComponent) GoToSongsFromPlaylistFilter(playlistId restApiV1.PlaylistId) {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromPlaylist, playlistId: &playlistId})
 }
 
-func (c *LibraryComponent) GoToFavoritePlaylistsFromUserFilter(userId string) {
+func (c *LibraryComponent) GoToFavoritePlaylistsFromUserFilter(userId restApiV1.UserId) {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeFavoritePlaylistsFromUser, userId: &userId})
 }
 
@@ -603,25 +602,25 @@ func (c *LibraryComponent) RefreshView() {
 	c.list.SetCurrentItem(oldIndex)
 }
 
-func (c *LibraryComponent) loadSongs(songs []*restApiV1.Song, fromAlbumId *string, fromArtistId *string) {
+func (c *LibraryComponent) loadSongs(songs []*restApiV1.Song, fromAlbumId *restApiV1.AlbumId, fromArtistId *restApiV1.ArtistId) {
 	for _, song := range songs {
 		c.list.AddItem(c.getMainTextSong(song, fromAlbumId, fromArtistId, -1))
 	}
 }
 
-func (c *LibraryComponent) getPositionnedIdSong(song *restApiV1.Song, fromAlbumId *string, fromArtistId *string, highlightPosition int) (model.IdType, string) {
+func (c *LibraryComponent) getPositionnedIdSong(song *restApiV1.Song, fromAlbumId *restApiV1.AlbumId, fromArtistId *restApiV1.ArtistId, highlightPosition int) (songId *restApiV1.SongId, artistId *restApiV1.ArtistId, albumId *restApiV1.AlbumId) {
 	currentPosition := 0
 
 	// Song name
 	if currentPosition == highlightPosition {
-		return model.IdTypeSong, song.Id
+		return &song.Id, nil, nil
 	}
 	currentPosition++
 
 	// Album name
 	if song.AlbumId != "" && fromAlbumId == nil {
 		if currentPosition == highlightPosition {
-			return model.IdTypeAlbum, song.AlbumId
+			return nil, nil, &song.AlbumId
 		}
 		currentPosition++
 	}
@@ -630,17 +629,17 @@ func (c *LibraryComponent) getPositionnedIdSong(song *restApiV1.Song, fromAlbumI
 		for _, artistId := range song.ArtistIds {
 			if fromArtistId == nil || (fromArtistId != nil && artistId != *fromArtistId) {
 				if currentPosition == highlightPosition {
-					return model.IdTypeArtist, artistId
+					return nil, &artistId, nil
 				}
 				currentPosition++
 			}
 		}
 	}
 
-	return model.IdTypeUnknown, ""
+	return nil, nil, nil
 }
 
-func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *string, fromArtistId *string, highlightPosition int) string {
+func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *restApiV1.AlbumId, fromArtistId *restApiV1.ArtistId, highlightPosition int) string {
 
 	currentPosition := 0
 	text := ""
@@ -691,31 +690,31 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *st
 	return text
 }
 
-func (c *LibraryComponent) getPositionnedIdAlbum(album *restApiV1.Album, highlightPosition int) (model.IdType, string) {
+func (c *LibraryComponent) getPositionnedIdAlbum(album *restApiV1.Album, highlightPosition int) (songId *restApiV1.SongId, artistId *restApiV1.ArtistId, albumId *restApiV1.AlbumId) {
 	currentPosition := 0
 
 	if album == nil {
 		if currentPosition >= highlightPosition {
-			return model.IdTypeUnknown, ""
+			return nil, nil, nil
 		}
 		currentPosition++
 	} else {
 		if currentPosition >= highlightPosition {
-			return model.IdTypeAlbum, album.Id
+			return nil, nil, &album.Id
 		}
 		currentPosition++
 
 		if len(album.ArtistIds) > 0 {
 			for _, artistId := range album.ArtistIds {
 				if currentPosition >= highlightPosition {
-					return model.IdTypeArtist, artistId
+					return nil, &artistId, nil
 				}
 				currentPosition++
 			}
 		}
 	}
 
-	return model.IdTypeUnknown, ""
+	return nil, nil, nil
 }
 
 func (c *LibraryComponent) getMainTextAlbum(album *restApiV1.Album, highlightPosition int) string {
@@ -749,22 +748,22 @@ func (c *LibraryComponent) getMainTextAlbum(album *restApiV1.Album, highlightPos
 	return text
 }
 
-func (c *LibraryComponent) getPositionnedIdArtist(artist *restApiV1.Artist, highlightPosition int) (model.IdType, string) {
+func (c *LibraryComponent) getPositionnedIdArtist(artist *restApiV1.Artist, highlightPosition int) (songId *restApiV1.SongId, artistId *restApiV1.ArtistId, albumId *restApiV1.AlbumId) {
 	currentPosition := 0
 
 	if artist == nil {
 		if currentPosition >= highlightPosition {
-			return model.IdTypeUnknown, ""
+			return nil, nil, nil
 		}
 		currentPosition++
 	} else {
 		if currentPosition >= highlightPosition {
-			return model.IdTypeArtist, artist.Id
+			return nil, &artist.Id, nil
 		}
 		currentPosition++
 	}
 
-	return model.IdTypeUnknown, ""
+	return nil, nil, nil
 }
 
 func (c *LibraryComponent) getMainTextArtist(artist *restApiV1.Artist, highlightPosition int) string {
@@ -786,13 +785,13 @@ func (c *LibraryComponent) getMainTextArtist(artist *restApiV1.Artist, highlight
 	return text
 }
 
-func (c *LibraryComponent) loadPlaylists(playlists []*restApiV1.Playlist, fromOwnerUserId *string) {
+func (c *LibraryComponent) loadPlaylists(playlists []*restApiV1.Playlist, fromOwnerUserId *restApiV1.UserId) {
 	for _, playlist := range playlists {
 		c.list.AddItem(c.getMainTextPlaylist(playlist, fromOwnerUserId, -1))
 	}
 }
 
-func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fromOwnerUserId *string, highlightPosition int) string {
+func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fromOwnerUserId *restApiV1.UserId, highlightPosition int) string {
 	currentPosition := 0
 	text := ""
 
@@ -837,13 +836,14 @@ func (c *LibraryComponent) Focus(delegate func(tview.Primitive)) {
 	delegate(c.list)
 }
 
-func (c *LibraryComponent) open(idType model.IdType, id string) {
-	switch idType {
-	case model.IdTypeSong:
-		c.uiApp.Play(id)
-	case model.IdTypeArtist:
-		c.GoToSongsFromArtistFilter(id)
-	case model.IdTypeAlbum:
-		c.GoToSongsFromAlbumFilter(id)
+func (c *LibraryComponent) open(songId *restApiV1.SongId, artistId *restApiV1.ArtistId, albumId *restApiV1.AlbumId) {
+	if songId != nil {
+		c.uiApp.Play(*songId)
+	}
+	if artistId != nil {
+		c.GoToSongsFromArtistFilter(*artistId)
+	}
+	if albumId != nil {
+		c.GoToSongsFromAlbumFilter(*albumId)
 	}
 }

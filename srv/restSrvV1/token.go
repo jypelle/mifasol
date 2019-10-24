@@ -12,7 +12,7 @@ import (
 )
 
 type internalToken struct {
-	userId     string
+	userId     restApiV1.UserId
 	creationTs int64
 }
 

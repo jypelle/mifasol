@@ -7,13 +7,13 @@ import (
 // Playlist
 
 type PlaylistEntity struct {
-	Id              string `storm:"id"`
+	Id              restApiV1.PlaylistId `storm:"id"`
 	CreationTs      int64
 	UpdateTs        int64  `storm:"index"`
 	ContentUpdateTs int64  `storm:"index"`
 	Name            string `storm:"index"`
-	SongIds         []string
-	OwnerUserIds    []string
+	SongIds         []restApiV1.SongId
+	OwnerUserIds    []restApiV1.UserId
 }
 
 func (e *PlaylistEntity) Fill(s *restApiV1.Playlist) {
@@ -35,38 +35,38 @@ func (e *PlaylistEntity) LoadMeta(s *restApiV1.PlaylistMeta) {
 }
 
 type DeletedPlaylistEntity struct {
-	Id       string `storm:"id"`
-	DeleteTs int64  `storm:"index"`
+	Id       restApiV1.PlaylistId `storm:"id"`
+	DeleteTs int64                `storm:"index"`
 }
 
 type PlaylistSongId struct {
-	PlaylistId string
-	SongId     string
+	PlaylistId restApiV1.PlaylistId
+	SongId     restApiV1.SongId
 }
 
 type PlaylistSongEntity struct {
-	Id         string `storm:"id"`
-	PlaylistId string `storm:"index"`
-	SongId     string `storm:"index"`
+	Id         string               `storm:"id"`
+	PlaylistId restApiV1.PlaylistId `storm:"index"`
+	SongId     restApiV1.SongId     `storm:"index"`
 }
 
-func NewPlaylistSongEntity(playlistId string, songId string) *PlaylistSongEntity {
+func NewPlaylistSongEntity(playlistId restApiV1.PlaylistId, songId restApiV1.SongId) *PlaylistSongEntity {
 	return &PlaylistSongEntity{
-		Id:         playlistId + ":" + songId,
+		Id:         string(playlistId) + ":" + string(songId),
 		PlaylistId: playlistId,
 		SongId:     songId,
 	}
 }
 
 type OwnedUserPlaylistEntity struct {
-	Id         string `storm:"id"`
-	UserId     string `storm:"index"`
-	PlaylistId string `storm:"index"`
+	Id         string               `storm:"id"`
+	UserId     restApiV1.UserId     `storm:"index"`
+	PlaylistId restApiV1.PlaylistId `storm:"index"`
 }
 
-func NewOwnedUserPlaylistEntity(userId string, playlistId string) *OwnedUserPlaylistEntity {
+func NewOwnedUserPlaylistEntity(userId restApiV1.UserId, playlistId restApiV1.PlaylistId) *OwnedUserPlaylistEntity {
 	return &OwnedUserPlaylistEntity{
-		Id:         userId + playlistId,
+		Id:         string(userId) + string(playlistId),
 		UserId:     userId,
 		PlaylistId: playlistId,
 	}

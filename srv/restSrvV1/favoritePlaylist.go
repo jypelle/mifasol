@@ -41,8 +41,8 @@ func (s *RestServer) createFavoritePlaylist(w http.ResponseWriter, r *http.Reque
 func (s *RestServer) deleteFavoritePlaylist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	userId := vars["userId"]
-	playlistId := vars["playlistId"]
+	userId := restApiV1.UserId(vars["userId"])
+	playlistId := restApiV1.PlaylistId(vars["playlistId"])
 	favoritePlaylistId := restApiV1.FavoritePlaylistId{UserId: userId, PlaylistId: playlistId}
 
 	logrus.Debugf("Delete favorite playlist: %v", favoritePlaylistId)

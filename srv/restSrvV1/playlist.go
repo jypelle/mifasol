@@ -25,7 +25,7 @@ func (s *RestServer) readPlaylist(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read playlist")
 
 	vars := mux.Vars(r)
-	playlistId := vars["id"]
+	playlistId := restApiV1.PlaylistId(vars["id"])
 
 	logrus.Debugf("Read playlist: %s", playlistId)
 
@@ -62,7 +62,7 @@ func (s *RestServer) createPlaylist(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) updatePlaylist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	playlistId := vars["id"]
+	playlistId := restApiV1.PlaylistId(vars["id"])
 
 	logrus.Debugf("Update playlist: %s", playlistId)
 
@@ -84,7 +84,7 @@ func (s *RestServer) updatePlaylist(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) deletePlaylist(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	playlistId := vars["id"]
+	playlistId := restApiV1.PlaylistId(vars["id"])
 
 	logrus.Debugf("Delete playlist: %s", playlistId)
 

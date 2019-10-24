@@ -6,12 +6,12 @@ import (
 	"github.com/jypelle/mifasol/srv/entity"
 )
 
-func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *string) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	// TODO
 
-	var artistIds []string
+	var artistIds []restApiV1.ArtistId
 
 	// Check available transaction
 	txn := externalTrn

@@ -96,7 +96,7 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 
-	e = txn.One("Id", favoritePlaylistMeta.Id.UserId+":"+favoritePlaylistMeta.Id.PlaylistId, &favoritePlaylistEntity)
+	e = txn.One("Id", string(favoritePlaylistMeta.Id.UserId)+":"+string(favoritePlaylistMeta.Id.PlaylistId), &favoritePlaylistEntity)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -116,7 +116,7 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 
 		// if previously deletedFavoritePlaylist exists
 		var deletedFavoritePlaylistEntity entity.DeletedFavoritePlaylistEntity
-		e = txn.One("Id", favoritePlaylistMeta.Id.UserId+":"+favoritePlaylistMeta.Id.PlaylistId, &deletedFavoritePlaylistEntity)
+		e = txn.One("Id", string(favoritePlaylistMeta.Id.UserId)+":"+string(favoritePlaylistMeta.Id.PlaylistId), &deletedFavoritePlaylistEntity)
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
@@ -155,7 +155,7 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 	}
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
-	e = txn.One("Id", favoritePlaylistId.UserId+":"+favoritePlaylistId.PlaylistId, &favoritePlaylistEntity)
+	e = txn.One("Id", string(favoritePlaylistId.UserId)+":"+string(favoritePlaylistId.PlaylistId), &favoritePlaylistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -213,10 +213,10 @@ func (s *Service) GetDeletedFavoritePlaylistIds(externalTrn storm.Node, fromTs i
 	return favoritePlaylistIds, nil
 }
 
-func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, fromTs int64, userId string) ([]string, error) {
+func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, fromTs int64, userId restApiV1.UserId) ([]restApiV1.PlaylistId, error) {
 	var e error
 
-	playlistIds := []string{}
+	playlistIds := []restApiV1.PlaylistId{}
 	deletedFavoritePlaylistEntities := []entity.DeletedFavoritePlaylistEntity{}
 
 	// Check available transaction

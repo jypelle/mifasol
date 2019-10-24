@@ -9,7 +9,7 @@ type AlbumEditComponent struct {
 	*tview.Form
 	nameInputField  *tview.InputField
 	uiApp           *UIApp
-	albumId         string
+	albumId         restApiV1.AlbumId
 	albumMeta       *restApiV1.AlbumMeta
 	originPrimitive tview.Primitive
 }
@@ -18,7 +18,7 @@ func OpenAlbumCreateComponent(uiApp *UIApp, originPrimitive tview.Primitive) {
 	OpenAlbumEditComponent(uiApp, "", &restApiV1.AlbumMeta{}, originPrimitive)
 }
 
-func OpenAlbumEditComponent(uiApp *UIApp, albumId string, albumMeta *restApiV1.AlbumMeta, originPrimitive tview.Primitive) {
+func OpenAlbumEditComponent(uiApp *UIApp, albumId restApiV1.AlbumId, albumMeta *restApiV1.AlbumMeta, originPrimitive tview.Primitive) {
 
 	// Only admin can create or edit an album
 	if !uiApp.IsConnectedUserAdmin() {

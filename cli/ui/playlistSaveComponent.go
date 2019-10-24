@@ -10,13 +10,13 @@ type PlaylistSaveComponent struct {
 	playlistsDropDown        *tview.DropDown
 	nameInputField           *tview.InputField
 	uiApp                    *UIApp
-	srcPlaylistId            *string
-	songIds                  []string
+	srcPlaylistId            *restApiV1.PlaylistId
+	songIds                  []restApiV1.SongId
 	orderedFilteredPlaylists []*restApiV1.Playlist
 	originPrimitive          tview.Primitive
 }
 
-func OpenPlaylistContentSaveComponent(uiApp *UIApp, songIds []string, srcPlaylistId *string, originPrimitive tview.Primitive) {
+func OpenPlaylistContentSaveComponent(uiApp *UIApp, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive tview.Primitive) {
 
 	c := &PlaylistSaveComponent{
 		uiApp:           uiApp,
@@ -71,7 +71,7 @@ func OpenPlaylistContentSaveComponent(uiApp *UIApp, songIds []string, srcPlaylis
 
 func (c *PlaylistSaveComponent) save() {
 	selectedPlaylistInd, _ := c.playlistsDropDown.GetCurrentOption()
-	var id string
+	var id restApiV1.PlaylistId
 	var playlistMeta restApiV1.PlaylistMeta
 
 	if selectedPlaylistInd == 0 {

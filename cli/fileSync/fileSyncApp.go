@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jypelle/mifasol/cli/config"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/jypelle/mifasol/tool"
 	"github.com/sirupsen/logrus"
@@ -35,8 +36,8 @@ func NewFileSyncApp(clientConfig config.ClientConfig, restClient *restClientV1.R
 		fileSyncMusicFolder: strings.Replace(fileSyncMusicFolder, "\\", "/", -1),
 		fileSyncConfig: FileSyncConfig{
 			LastFileSyncTs:         0,
-			FileSyncLocalSongs:     make(map[string]*FileSyncLocalSong),
-			FileSyncLocalPlaylists: make(map[string]*FileSyncLocalPlaylist),
+			FileSyncLocalSongs:     make(map[restApiV1.SongId]*FileSyncLocalSong),
+			FileSyncLocalPlaylists: make(map[restApiV1.PlaylistId]*FileSyncLocalPlaylist),
 		},
 		doneChannel:             make(chan bool),
 		interruptChannel:        make(chan os.Signal),

@@ -7,9 +7,9 @@ import (
 	"io"
 )
 
-func (c *RestClient) ReadSongContent(songId string) (io.ReadCloser, int64, ClientError) {
+func (c *RestClient) ReadSongContent(songId restApiV1.SongId) (io.ReadCloser, int64, ClientError) {
 
-	response, cliErr := c.doGetRequest("/songContents/" + songId)
+	response, cliErr := c.doGetRequest("/songContents/" + string(songId))
 	if cliErr != nil {
 		return nil, 0, cliErr
 	}
@@ -33,10 +33,10 @@ func (c *RestClient) CreateSongContent(format restApiV1.SongFormat, readerSource
 	return song, nil
 }
 
-func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, readerSource io.Reader, albumId string) (*restApiV1.Song, ClientError) {
+func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, readerSource io.Reader, albumId restApiV1.AlbumId) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 
-	response, cliErr := c.doPostRequest("/songContentsForAlbum/"+albumId, format.MimeType(), readerSource)
+	response, cliErr := c.doPostRequest("/songContentsForAlbum/"+string(albumId), format.MimeType(), readerSource)
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -49,12 +49,12 @@ func (c *RestClient) CreateSongContentForAlbum(format restApiV1.SongFormat, read
 	return song, nil
 }
 
-func (c *RestClient) UpdateSong(songId string, songMeta *restApiV1.SongMeta) (*restApiV1.Song, ClientError) {
+func (c *RestClient) UpdateSong(songId restApiV1.SongId, songMeta *restApiV1.SongMeta) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 
 	encodedSongMeta, _ := json.Marshal(songMeta)
 
-	response, cliErr := c.doPutRequest("/songs/"+songId, JsonContentType, bytes.NewBuffer(encodedSongMeta))
+	response, cliErr := c.doPutRequest("/songs/"+string(songId), JsonContentType, bytes.NewBuffer(encodedSongMeta))
 	if cliErr != nil {
 		return nil, cliErr
 	}
@@ -67,10 +67,10 @@ func (c *RestClient) UpdateSong(songId string, songMeta *restApiV1.SongMeta) (*r
 	return song, nil
 }
 
-func (c *RestClient) DeleteSong(songId string) (*restApiV1.Song, ClientError) {
+func (c *RestClient) DeleteSong(songId restApiV1.SongId) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 
-	response, cliErr := c.doDeleteRequest("/songs/" + songId)
+	response, cliErr := c.doDeleteRequest("/songs/" + string(songId))
 	if cliErr != nil {
 		return nil, cliErr
 	}

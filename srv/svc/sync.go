@@ -86,7 +86,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	return &syncReport, nil
 }
 
-func (s *Service) ReadFileSyncReport(fromTs int64, userId string) (*restApiV1.FileSyncReport, error) {
+func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*restApiV1.FileSyncReport, error) {
 	var fileSyncReport restApiV1.FileSyncReport
 
 	var err error

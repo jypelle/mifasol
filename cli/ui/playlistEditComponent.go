@@ -57,7 +57,7 @@ func (c *PlaylistEditComponent) save() {
 	c.playlist.OwnerUserIds = nil
 	for _, ownerDropDown := range c.ownerDropDowns {
 		selectedOwnerInd, _ := ownerDropDown.GetCurrentOption()
-		var id string
+		var id restApiV1.UserId
 		if selectedOwnerInd > 0 {
 			id = c.uiApp.localDb.OrderedUsers[selectedOwnerInd-1].Id
 			c.playlist.OwnerUserIds = append(c.playlist.OwnerUserIds, id)
@@ -78,7 +78,7 @@ func (c *PlaylistEditComponent) cancel() {
 	c.close()
 }
 
-func (c *PlaylistEditComponent) addOwner(userId string) {
+func (c *PlaylistEditComponent) addOwner(userId restApiV1.UserId) {
 	ownerDropDown := tview.NewDropDown().
 		SetLabel("Owner " + strconv.Itoa(len(c.ownerDropDowns)+1))
 	selectedOwnerInd := 0

@@ -25,7 +25,7 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read album")
 
 	vars := mux.Vars(r)
-	albumId := vars["id"]
+	albumId := restApiV1.AlbumId(vars["id"])
 
 	logrus.Debugf("Read album: %s", albumId)
 
@@ -65,7 +65,7 @@ func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	albumId := vars["id"]
+	albumId := restApiV1.AlbumId(vars["id"])
 
 	logrus.Debugf("Update album: %s", albumId)
 
@@ -87,7 +87,7 @@ func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	albumId := vars["id"]
+	albumId := restApiV1.AlbumId(vars["id"])
 
 	logrus.Debugf("Delete album: %s", albumId)
 
