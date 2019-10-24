@@ -640,7 +640,6 @@ func (s *Service) UpdateSongContentTag(externalTrn storm.Node, songEntity *entit
 		return s.updateSongContentMp3Tag(externalTrn, songEntity)
 	case restApiV1.SongFormatOgg:
 		return s.updateSongContentOggTag(externalTrn, songEntity)
-
 	}
 	return nil
 }

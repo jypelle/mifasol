@@ -154,7 +154,7 @@ func main() {
 			configSsl)
 
 	} else if versionCmd.Parsed() {
-		fmt.Printf("Version %s\n", version.Version())
+		fmt.Printf("Version %s\n", version.AppVersion.String())
 	} else {
 		if runCmd.Parsed() {
 			// Start mifasol server

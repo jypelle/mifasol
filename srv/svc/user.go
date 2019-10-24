@@ -253,6 +253,17 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId restApiV1.UserId) (*
 		}
 	}
 
+	// Delete user's favorite playlists
+	query := txn.Select(q.Eq("UserId", userId))
+	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
+	e = query.Find(&favoritePlaylistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
+		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.UserId, PlaylistId: favoritePlaylistEntity.PlaylistId})
+	}
+
 	// Delete user
 	e = txn.DeleteStruct(&userEntity)
 	if e != nil {

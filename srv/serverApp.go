@@ -7,7 +7,6 @@ import (
 	"github.com/asdine/storm/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/config"
 	"github.com/jypelle/mifasol/srv/restSrvV1"
 	"github.com/jypelle/mifasol/srv/svc"
@@ -31,7 +30,7 @@ type ServerApp struct {
 
 func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
-	logrus.Debugf("Creation of mifasol server %s ...", version.Version())
+	logrus.Debugf("Creation of mifasol server %s ...", version.AppVersion.String())
 
 	app := &ServerApp{
 		ServerConfig: config.ServerConfig{
@@ -112,46 +111,6 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
 	// Create service
 	app.service = svc.NewService(app.db, &app.ServerConfig)
-
-	// Check existence of at least one admin user
-	adminFg := true
-	users, err := app.service.ReadUsers(nil, &restApiV1.UserFilter{AdminFg: &adminFg})
-	if err != nil {
-		logrus.Fatalf("Unable to retrieve users: %v", err)
-	}
-	if len(users) == 0 {
-		// Create default admin user
-		userMetaComplete := restApiV1.UserMetaComplete{
-			UserMeta: restApiV1.UserMeta{
-				Name:    svc.DefaultUserName,
-				AdminFg: true,
-			},
-			Password: svc.DefaultUserPassword,
-		}
-		_, err := app.service.CreateUser(nil, &userMetaComplete)
-		if err != nil {
-			logrus.Fatalf("Unable to create default mifasol user: %v", err)
-		}
-		logrus.Printf("No admin user found: the default user/password 'mifasol/mifasol' has been created ...")
-	}
-
-	// Check existence of the (incoming) playlist
-	_, err = app.service.ReadPlaylist(nil, restApiV1.IncomingPlaylistId)
-	if err != nil {
-		if err != svc.ErrNotFound {
-			logrus.Fatalf("Unable to retrieve incoming playlist: %v", err)
-		}
-
-		playlistMeta := restApiV1.PlaylistMeta{
-			Name:    "(incoming)",
-			SongIds: nil,
-		}
-		_, err := app.service.CreateInternalPlaylist(nil, restApiV1.IncomingPlaylistId, &playlistMeta, false)
-		if err != nil {
-			logrus.Fatalf("Unable to create incoming playlist: %v", err)
-		}
-		logrus.Printf("(incoming) playlist has been created ...")
-	}
 
 	// Create router
 	rooter := mux.NewRouter()

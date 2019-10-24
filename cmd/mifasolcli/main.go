@@ -243,7 +243,7 @@ func main() {
 			*configClearCachedSelfSignedServerCertificate)
 
 	} else if versionCmd.Parsed() {
-		fmt.Printf("Version %s\n", version.Version())
+		fmt.Printf("Version %s\n", version.AppVersion.String())
 	} else {
 
 		// Init mifasol client

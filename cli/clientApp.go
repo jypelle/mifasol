@@ -28,7 +28,7 @@ type ClientApp struct {
 
 func NewClientApp(configDir string, debugMode bool) *ClientApp {
 
-	logrus.Debugf("Creation of mifasol client %s ...", version.Version())
+	logrus.Debugf("Creation of mifasol client %s ...", version.AppVersion.String())
 
 	app := &ClientApp{
 		config: config.ClientConfig{

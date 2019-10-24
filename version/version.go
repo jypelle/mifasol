@@ -1,13 +1,13 @@
 package version
 
-import "strconv"
-
-var (
-	MajorVersionNumber int = 0
-	MinorVersionNumber int = 1
-	PatchVersionNumber int = 1
+import (
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
-func Version() string {
-	return strconv.Itoa(MajorVersionNumber) + "." + strconv.Itoa(MinorVersionNumber) + "." + strconv.Itoa(PatchVersionNumber)
-}
+var (
+	AppVersion = restApiV1.Version{
+		MajorNumber: 0,
+		MinorNumber: 1,
+		PatchNumber: 2,
+	}
+)

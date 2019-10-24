@@ -24,7 +24,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	syncReport.SyncTs = time.Now().UnixNano()
 
 	// Songs
-	syncReport.Songs, err = s.ReadSongs(txn, &restApiV1.SongFilter{Order: restApiV1.SongOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.Songs, err = s.ReadSongs(txn, &restApiV1.SongFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read songs: %v", err)
 	}
@@ -34,7 +34,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Albums
-	syncReport.Albums, err = s.ReadAlbums(txn, &restApiV1.AlbumFilter{Order: restApiV1.AlbumOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.Albums, err = s.ReadAlbums(txn, &restApiV1.AlbumFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read albums: %v", err)
 	}
@@ -44,7 +44,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Artists
-	syncReport.Artists, err = s.ReadArtists(txn, &restApiV1.ArtistFilter{Order: restApiV1.ArtistOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.Artists, err = s.ReadArtists(txn, &restApiV1.ArtistFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read artists: %v", err)
 	}
@@ -54,7 +54,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Playlists
-	syncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}
@@ -64,7 +64,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Users
-	syncReport.Users, err = s.ReadUsers(txn, &restApiV1.UserFilter{Order: restApiV1.UserOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.Users, err = s.ReadUsers(txn, &restApiV1.UserFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read users: %v", err)
 	}
@@ -74,7 +74,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	}
 
 	// Favorite playlists
-	syncReport.FavoritePlaylists, err = s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{Order: restApiV1.FavoritePlaylistOrderByUpdateTs, FromTs: &fromTs})
+	syncReport.FavoritePlaylists, err = s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{FromTs: &fromTs})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}

@@ -145,6 +145,8 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId,
 		return nil, e
 	}
 
+	oldName := albumEntity.Name
+
 	albumEntity.LoadMeta(albumMeta)
 	albumEntity.UpdateTs = time.Now().UnixNano()
 
@@ -155,13 +157,15 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId,
 	}
 
 	// Update tags in songs content
-	songIds, e := s.GetSongIdsFromAlbumId(txn, albumId)
-	if e != nil {
-		return nil, e
-	}
+	if oldName != albumEntity.Name {
+		songIds, e := s.GetSongIdsFromAlbumId(txn, albumId)
+		if e != nil {
+			return nil, e
+		}
 
-	for _, songId := range songIds {
-		s.UpdateSong(txn, songId, nil, nil, false)
+		for _, songId := range songIds {
+			s.UpdateSong(txn, songId, nil, nil, false)
+		}
 	}
 
 	var album restApiV1.Album
@@ -337,7 +341,7 @@ func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]re
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
+	query := txn.Select(q.Gte("DeleteTs", fromTs))
 
 	e = query.Find(&deletedAlbumEntities)
 	if e != nil && e != storm.ErrNotFound {
