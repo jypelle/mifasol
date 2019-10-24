@@ -45,36 +45,29 @@ type PlaylistSongId struct {
 }
 
 type PlaylistSongEntity struct {
-	Id     PlaylistSongId `storm:"id"`
-	SongId string         `storm:"index"`
+	Id         string `storm:"id"`
+	PlaylistId string `storm:"index"`
+	SongId     string `storm:"index"`
 }
 
 func NewPlaylistSongEntity(playlistId string, songId string) *PlaylistSongEntity {
 	return &PlaylistSongEntity{
-		Id: PlaylistSongId{
-			PlaylistId: playlistId,
-			SongId:     songId,
-		},
-		SongId: songId,
+		Id:         playlistId + ":" + songId,
+		PlaylistId: playlistId,
+		SongId:     songId,
 	}
 }
 
-type OwnedUserPlaylistId struct {
-	UserId     string
-	PlaylistId string
-}
-
 type OwnedUserPlaylistEntity struct {
-	Id     OwnedUserPlaylistId `storm:"id"`
-	UserId string              `storm:"index"`
+	Id         string `storm:"id"`
+	UserId     string `storm:"index"`
+	PlaylistId string `storm:"index"`
 }
 
 func NewOwnedUserPlaylistEntity(userId string, playlistId string) *OwnedUserPlaylistEntity {
 	return &OwnedUserPlaylistEntity{
-		Id: OwnedUserPlaylistId{
-			UserId:     userId,
-			PlaylistId: playlistId,
-		},
-		UserId: userId,
+		Id:         userId + playlistId,
+		UserId:     userId,
+		PlaylistId: playlistId,
 	}
 }

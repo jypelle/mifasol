@@ -35,17 +35,14 @@ type ArtistSongId struct {
 }
 
 type ArtistSongEntity struct {
-	Id       ArtistSongId `storm:"id"`
-	ArtistId string       `storm:"index"`
-	SongId   string       `storm:"index"`
+	Id       string `storm:"id"`
+	ArtistId string `storm:"index"`
+	SongId   string `storm:"index"`
 }
 
 func NewArtistSongEntity(artistId string, songId string) *ArtistSongEntity {
 	return &ArtistSongEntity{
-		Id: ArtistSongId{
-			ArtistId: artistId,
-			SongId:   songId,
-		},
+		Id:       artistId + ":" + songId,
 		ArtistId: artistId,
 		SongId:   songId,
 	}

@@ -96,7 +96,7 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 
-	e = txn.One("Id", favoritePlaylistMeta.Id, &favoritePlaylistEntity)
+	e = txn.One("Id", favoritePlaylistMeta.Id.UserId+":"+favoritePlaylistMeta.Id.PlaylistId, &favoritePlaylistEntity)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -116,7 +116,7 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 
 		// if previously deletedFavoritePlaylist exists
 		var deletedFavoritePlaylistEntity entity.DeletedFavoritePlaylistEntity
-		e = txn.One("Id", favoritePlaylistMeta.Id, &deletedFavoritePlaylistEntity)
+		e = txn.One("Id", favoritePlaylistMeta.Id.UserId+":"+favoritePlaylistMeta.Id.PlaylistId, &deletedFavoritePlaylistEntity)
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
@@ -155,7 +155,7 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 	}
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
-	e = txn.One("Id", favoritePlaylistId, &favoritePlaylistEntity)
+	e = txn.One("Id", favoritePlaylistId.UserId+":"+favoritePlaylistId.PlaylistId, &favoritePlaylistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -167,7 +167,7 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 	}
 
 	// Archive favoritePlaylistId
-	e = txn.Save(entity.NewDeletedFavoritePlaylistEntity(favoritePlaylistEntity.Id))
+	e = txn.Save(entity.NewDeletedFavoritePlaylistEntity(favoritePlaylistId))
 	if e != nil {
 		return nil, e
 	}
@@ -207,7 +207,7 @@ func (s *Service) GetDeletedFavoritePlaylistIds(externalTrn storm.Node, fromTs i
 	}
 
 	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
-		favoritePlaylistIds = append(favoritePlaylistIds, deletedFavoritePlaylistEntity.Id)
+		favoritePlaylistIds = append(favoritePlaylistIds, restApiV1.FavoritePlaylistId{UserId: deletedFavoritePlaylistEntity.UserId, PlaylistId: deletedFavoritePlaylistEntity.PlaylistId})
 	}
 
 	return favoritePlaylistIds, nil
@@ -237,7 +237,7 @@ func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, from
 	}
 
 	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
-		playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.Id.PlaylistId)
+		playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.PlaylistId)
 	}
 
 	return playlistIds, nil

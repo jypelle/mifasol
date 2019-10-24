@@ -398,7 +398,7 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId string) (*re
 		return nil, e
 	}
 	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
-		s.DeleteFavoritePlaylist(txn, favoritePlaylistEntity.Id)
+		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.UserId, PlaylistId: favoritePlaylistEntity.PlaylistId})
 	}
 
 	// Delete ower link
@@ -494,7 +494,7 @@ func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId string
 	}
 
 	for _, playlistSongEntity := range playlistSongEntities {
-		playlistIds = append(playlistIds, playlistSongEntity.Id.PlaylistId)
+		playlistIds = append(playlistIds, playlistSongEntity.PlaylistId)
 	}
 
 	return playlistIds, nil
@@ -525,7 +525,7 @@ func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUse
 	}
 
 	for _, ownedUserPlaylistEntity := range ownedUserPlaylistEntities {
-		playlistIds = append(playlistIds, ownedUserPlaylistEntity.Id.PlaylistId)
+		playlistIds = append(playlistIds, ownedUserPlaylistEntity.PlaylistId)
 	}
 
 	return playlistIds, nil
