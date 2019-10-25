@@ -48,3 +48,12 @@ func Contains(s []string, e string) bool {
 	}
 	return false
 }
+
+func ContainsSongId(s []restApiV1.SongId, e restApiV1.SongId) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

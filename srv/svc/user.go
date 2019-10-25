@@ -163,7 +163,7 @@ func (s *Service) CreateUser(externalTrn storm.Node, userMetaComplete *restApiV1
 	return &user, nil
 }
 
-func (s *Service) UpdateUser(externalTrn storm.Node, userId string, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
+func (s *Service) UpdateUser(externalTrn storm.Node, userId restApiV1.UserId, userMetaComplete *restApiV1.UserMetaComplete) (*restApiV1.User, error) {
 	var e error
 
 	// Check available transaction

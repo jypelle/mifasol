@@ -9,7 +9,7 @@ Mifasol is a self-hosted *opinionated* music server.
 ## Key features
 
 1. Songs and playlists management on a self-hosted server for multiple users.
-2. Keeping song and playlist files synced with server content on different clients.
+2. Keeping favorite song and playlist files synced with server content on different clients.
 3. Differentiation of homonym artists and albums.
 4. Song can be linked to more than one artist.
 5. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
@@ -193,7 +193,7 @@ mifasolcli import [Location of music folder to import]
 
 *mifasolcli* will recursively loop through specified folder to import every .flac and .mp3 files to mifasol server.
 
-#### Sync local music folder content with mifasol server
+#### Sync local music folder with mifasol server's user favorite content
 
 Prepare local music folder (one-time):
 ```

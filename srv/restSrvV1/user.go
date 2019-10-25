@@ -62,7 +62,7 @@ func (s *RestServer) createUser(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	userId := vars["id"]
+	userId := restApiV1.UserId(vars["id"])
 
 	logrus.Debugf("Update user: %s", userId)
 

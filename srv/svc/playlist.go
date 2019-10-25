@@ -341,6 +341,17 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId restApiV1
 
 	playlistEntity.SongIds = append(playlistEntity.SongIds, songId)
 
+	if playlistId == restApiV1.IncomingPlaylistId && len(playlistEntity.SongIds) > 100 {
+		var songIdToRemove restApiV1.SongId
+		songIdToRemove, playlistEntity.SongIds = playlistEntity.SongIds[0], playlistEntity.SongIds[1:]
+		if !tool.ContainsSongId(playlistEntity.SongIds, songIdToRemove) {
+			e = txn.DeleteStruct(entity.NewPlaylistSongEntity(playlistId, songIdToRemove))
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+
 	// Update playlist update timestamp
 	playlistEntity.UpdateTs = now
 	playlistEntity.ContentUpdateTs = now

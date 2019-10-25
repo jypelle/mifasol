@@ -52,5 +52,5 @@ func (c *PlayerComponent) VolumeUp() {
 func (c *PlayerComponent) VolumeDown() {
 }
 
-func (c *PlayerComponent) Play(songId string) {
+func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 }

@@ -129,6 +129,23 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 			}
 		}
 
+		// Add favorite playlist songs to favorite songs
+		playlistSongEntities := []entity.PlaylistSongEntity{}
+
+		query := txn.Select(q.Eq("PlaylistId", favoritePlaylistMeta.Id.PlaylistId))
+
+		e = query.Find(&playlistSongEntities)
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
+
+		for _, playlistSongEntity := range playlistSongEntities {
+			_, e = s.CreateFavoriteSong(txn, &restApiV1.FavoriteSongMeta{Id: restApiV1.FavoriteSongId{UserId: favoritePlaylistMeta.Id.UserId, SongId: playlistSongEntity.SongId}}, false)
+			if e != nil {
+				return nil, e
+			}
+		}
+
 		// Commit transaction
 		if externalTrn == nil {
 			txn.Commit()
