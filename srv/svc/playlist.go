@@ -244,11 +244,9 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 	}
 
 	// Update owner index
-	for _, ownerUserId := range playlistOldOwnerUserIds {
-		e = txn.DeleteStruct(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
-		if e != nil && e != storm.ErrNotFound {
-			return nil, e
-		}
+	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.OwnedUserPlaylistEntity{})
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
 	for _, ownerUserId := range playlistEntity.OwnerUserIds {
@@ -271,12 +269,11 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 
 	// Update songs list
 	if songIdsUpdated {
-		for _, songId := range playlistOldSongIds {
-			e = txn.DeleteStruct(entity.NewPlaylistSongEntity(playlistId, songId))
-			if e != nil && e != storm.ErrNotFound {
-				return nil, e
-			}
+		e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.PlaylistSongEntity{})
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
 		}
+
 		for _, songId := range playlistEntity.SongIds {
 			// Check song id
 			if check {
@@ -401,20 +398,16 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.UserId, PlaylistId: favoritePlaylistEntity.PlaylistId})
 	}
 
-	// Delete ower link
-	for _, ownerUserId := range playlistEntity.OwnerUserIds {
-		e = txn.DeleteStruct(entity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
-		if e != nil && e != storm.ErrNotFound {
-			return nil, e
-		}
+	// Delete owners link
+	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.OwnedUserPlaylistEntity{})
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
 	// Delete songs link
-	for _, songId := range playlistEntity.SongIds {
-		e = txn.DeleteStruct(entity.NewPlaylistSongEntity(playlistId, songId))
-		if e != nil && e != storm.ErrNotFound {
-			return nil, e
-		}
+	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.PlaylistSongEntity{})
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
 	}
 
 	// Delete playlist

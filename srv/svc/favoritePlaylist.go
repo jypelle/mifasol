@@ -67,7 +67,7 @@ func (s *Service) ReadFavoritePlaylist(externalTrn storm.Node, favoritePlaylistI
 	}
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
-	e = txn.One("Id", favoritePlaylistId, &favoritePlaylistEntity)
+	e = txn.One("Id", string(favoritePlaylistId.UserId)+":"+string(favoritePlaylistId.PlaylistId), &favoritePlaylistEntity)
 	if e != nil {
 		if e == storm.ErrNotFound {
 			return nil, ErrNotFound
@@ -166,7 +166,7 @@ func (s *Service) DeleteFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 		return nil, e
 	}
 
-	// Archive favoritePlaylistId
+	// Archive favoritePlaylistId deletion
 	e = txn.Save(entity.NewDeletedFavoritePlaylistEntity(favoritePlaylistId))
 	if e != nil {
 		return nil, e
@@ -199,7 +199,7 @@ func (s *Service) GetDeletedFavoritePlaylistIds(externalTrn storm.Node, fromTs i
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
+	query := txn.Select(q.Gte("DeleteTs", fromTs))
 
 	e = query.Find(&deletedFavoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
@@ -229,7 +229,7 @@ func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, from
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs), q.Eq("UserId", userId)).OrderBy("DeleteTs")
+	query := txn.Select(q.Gte("DeleteTs", fromTs), q.Eq("UserId", userId))
 
 	e = query.Find(&deletedFavoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {

@@ -14,6 +14,7 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 
 	var err error
 	var txn storm.Node
+	// Force db write lock to avoid sync timestamp overlap
 	txn, err = s.Db.Begin(true)
 	if err != nil {
 		return nil, err
@@ -92,6 +93,7 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 	var err error
 
 	var txn storm.Node
+	// Force db write lock to avoid sync timestamp overlap
 	txn, err = s.Db.Begin(true)
 	if err != nil {
 		return nil, err
