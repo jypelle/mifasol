@@ -163,6 +163,13 @@ func (s *Service) CreateInternalPlaylist(externalTrn storm.Node, playlistId rest
 		if e != nil {
 			return nil, e
 		}
+
+		// Add playlist to owner favorite playlist
+		favoritePlaylistMeta := &restApiV1.FavoritePlaylistMeta{restApiV1.FavoritePlaylistId{UserId: ownerUserId, PlaylistId: playlistId}}
+		_, e = s.CreateFavoritePlaylist(txn, favoritePlaylistMeta, false)
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	// Create songs link
@@ -217,7 +224,6 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 
 	playlistOldName := playlistEntity.Name
 	playlistOldSongIds := playlistEntity.SongIds
-	playlistOldOwnerUserIds := playlistEntity.OwnerUserIds
 
 	playlistEntity.LoadMeta(playlistMeta)
 

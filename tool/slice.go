@@ -1,6 +1,8 @@
 package tool
 
-import "github.com/jypelle/mifasol/restApiV1"
+import (
+	"github.com/jypelle/mifasol/restApiV1"
+)
 
 func Deduplicate(slice []string) []string {
 	keys := make(map[string]bool)

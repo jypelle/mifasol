@@ -6,7 +6,6 @@ import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"
-	"sort"
 	"time"
 )
 
@@ -232,11 +231,10 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId restApiV
 	}
 
 	// Reorder artists
-	sort.Slice(albumEntity.ArtistIds, func(i, j int) bool {
-		artistI, _ := s.ReadArtist(txn, albumEntity.ArtistIds[i])
-		artistJ, _ := s.ReadArtist(txn, albumEntity.ArtistIds[j])
-		return artistI.Name < artistJ.Name
-	})
+	e = s.sortArtistIds(txn, albumEntity.ArtistIds)
+	if e != nil {
+		return e
+	}
 
 	artistIdsChanged := !isArtistIdsEqual(albumOldArtistIds, albumEntity.ArtistIds)
 	isUpdatedArtistMetaInAlbumArtistIds := false

@@ -6,6 +6,7 @@ import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"
+	"sort"
 	"time"
 )
 
@@ -319,4 +320,30 @@ func isArtistIdsEqual(a, b []restApiV1.ArtistId) bool {
 		}
 	}
 	return true
+}
+
+func (s *Service) sortArtistIds(txn storm.Node, artistIds []restApiV1.ArtistId) error {
+
+	var artists []*restApiV1.Artist
+
+	for _, artistId := range artistIds {
+		artist, e := s.ReadArtist(txn, artistId)
+		if e != nil {
+			return e
+		}
+		artists = append(artists, artist)
+	}
+
+	sort.Slice(artistIds, func(i, j int) bool {
+		artistI := artists[i]
+		artistJ := artists[j]
+		if artistI.Name < artistJ.Name {
+			return true
+		}
+		if artistI.Name > artistJ.Name {
+			return false
+		}
+		return artistI.Id < artistJ.Id
+	})
+	return nil
 }

@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"errors"
 	"fmt"
 	"github.com/asdine/storm"
 	"github.com/jypelle/mifasol/restApiV1"
@@ -27,61 +28,71 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	// Songs
 	syncReport.Songs, err = s.ReadSongs(txn, &restApiV1.SongFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read songs: %v", err)
+		return nil, errors.New("Unable to read songs: " + err.Error())
 	}
 	syncReport.DeletedSongIds, err = s.GetDeletedSongIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted song ids: %v", err)
+		return nil, errors.New("Unable to read deleted song ids: " + err.Error())
 	}
 
 	// Albums
 	syncReport.Albums, err = s.ReadAlbums(txn, &restApiV1.AlbumFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read albums: %v", err)
+		return nil, errors.New("Unable to read albums: " + err.Error())
 	}
 	syncReport.DeletedAlbumIds, err = s.GetDeletedAlbumIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted album ids: %v", err)
+		return nil, errors.New("Unable to read deleted album ids: " + err.Error())
 	}
 
 	// Artists
 	syncReport.Artists, err = s.ReadArtists(txn, &restApiV1.ArtistFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read artists: %v", err)
+		return nil, errors.New("Unable to read artists: " + err.Error())
 	}
 	syncReport.DeletedArtistIds, err = s.GetDeletedArtistIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted artist ids: %v", err)
+		return nil, errors.New("Unable to read deleted artist ids: " + err.Error())
 	}
 
 	// Playlists
 	syncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read playlists: %v", err)
+		return nil, errors.New("Unable to read playlists: " + err.Error())
 	}
 	syncReport.DeletedPlaylistIds, err = s.GetDeletedPlaylistIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted playlist ids: %v", err)
+		return nil, errors.New("Unable to read deleted playlist ids: " + err.Error())
 	}
 
 	// Users
 	syncReport.Users, err = s.ReadUsers(txn, &restApiV1.UserFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read users: %v", err)
+		return nil, errors.New("Unable to read users: " + err.Error())
 	}
 	syncReport.DeletedUserIds, err = s.GetDeletedUserIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted user ids: %v", err)
+		return nil, errors.New("Unable to read deleted user ids: " + err.Error())
 	}
 
 	// Favorite playlists
 	syncReport.FavoritePlaylists, err = s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{FromTs: &fromTs})
 	if err != nil {
-		logrus.Panicf("Unable to read playlists: %v", err)
+		return nil, errors.New("Unable to read favorite playlists: " + err.Error())
 	}
 	syncReport.DeletedFavoritePlaylistIds, err = s.GetDeletedFavoritePlaylistIds(txn, fromTs)
 	if err != nil {
-		logrus.Panicf("Unable to read deleted favorite playlist ids: %v", err)
+		return nil, errors.New("Unable to read deleted favorite playlist ids: " + err.Error())
+	}
+
+	// Favorite songs
+	syncReport.FavoriteSongs, err = s.ReadFavoriteSongs(txn, &restApiV1.FavoriteSongFilter{FromTs: &fromTs})
+	if err != nil {
+		return nil, errors.New("Unable to read favorite songs: " + err.Error())
+	}
+	syncReport.DeletedFavoriteSongIds, err = s.GetDeletedFavoriteSongIds(txn, fromTs)
+	if err != nil {
+		return nil, errors.New("Unable to read deleted favorite song ids: " + err.Error())
 	}
 
 	return &syncReport, nil
@@ -104,12 +115,12 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 	fileSyncReport.SyncTs = time.Now().UnixNano()
 
 	// Songs
-	fileSyncReport.FileSyncSongs, err = s.ReadFileSyncSongs(txn, fromTs)
+	fileSyncReport.FileSyncSongs, err = s.ReadFileSyncSongs(txn, fromTs, userId)
 
 	if err != nil {
 		logrus.Panicf("Unable to read songs: %v", err)
 	}
-	fileSyncReport.DeletedSongIds, err = s.GetDeletedSongIds(txn, fromTs)
+	fileSyncReport.DeletedSongIds, err = s.GetDeletedUserFavoriteSongIds(txn, fromTs, userId)
 	if err != nil {
 		logrus.Panicf("Unable to read deleted song ids: %v", err)
 	}
@@ -127,7 +138,7 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 	return &fileSyncReport, nil
 }
 
-func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, fromTs int64) ([]restApiV1.FileSyncSong, error) {
+func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, favoriteFromTs int64, favoriteUserId restApiV1.UserId) ([]restApiV1.FileSyncSong, error) {
 	fileSyncSongs := []restApiV1.FileSyncSong{}
 
 	// Check available transaction
@@ -141,7 +152,7 @@ func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, fromTs int64) ([]res
 		defer txn.Rollback()
 	}
 
-	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{Order: restApiV1.SongOrderByUpdateTs, FromTs: &fromTs})
+	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{FavoriteFromTs: &favoriteFromTs, FavoriteUserId: &favoriteUserId})
 	if err != nil {
 		return nil, err
 	}

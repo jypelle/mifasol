@@ -54,9 +54,11 @@ const (
 )
 
 type SongFilter struct {
-	Order   SongOrder
-	FromTs  *int64
-	AlbumId *string
+	Order          SongOrder
+	FromTs         *int64
+	AlbumId        *string
+	FavoriteUserId *UserId
+	FavoriteFromTs *int64
 }
 
 type UserOrder int64
@@ -82,5 +84,17 @@ const (
 
 type FavoritePlaylistFilter struct {
 	Order  FavoritePlaylistOrder
+	FromTs *int64
+}
+
+type FavoriteSongOrder int64
+
+const (
+	FavoriteSongOrderNoOrder FavoriteSongOrder = iota
+	FavoriteSongOrderByUpdateTs
+)
+
+type FavoriteSongFilter struct {
+	Order  FavoriteSongOrder
 	FromTs *int64
 }

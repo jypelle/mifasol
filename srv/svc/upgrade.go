@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var dbVersion_0_1_3 restApiV1.Version = restApiV1.Version{0, 1, 3}
+//var dbVersion_0_1_3 restApiV1.Version = restApiV1.Version{0, 1, 3}
 
 // upgrade database structures and contents accordingly to application current version
 func (s *Service) upgrade() error {

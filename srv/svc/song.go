@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"time"
 )
 
@@ -57,6 +56,18 @@ func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter
 	songs := []restApiV1.Song{}
 
 	for _, songEntity := range songEntities {
+		if filter.FavoriteUserId != nil {
+			fav, e := s.ReadFavoriteSong(txn, restApiV1.FavoriteSongId{UserId: *filter.FavoriteUserId, SongId: songEntity.Id})
+			if e != nil {
+				continue
+			}
+			if filter.FavoriteFromTs != nil {
+				if songEntity.UpdateTs < *filter.FavoriteFromTs && fav.UpdateTs < *filter.FavoriteFromTs {
+					continue
+				}
+			}
+		}
+
 		var song restApiV1.Song
 		songEntity.Fill(&song)
 		songs = append(songs, song)
@@ -140,11 +151,10 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 
 	// Reorder artists
 	songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
-	sort.Slice(songEntity.ArtistIds, func(i, j int) bool {
-		artistI, _ := s.ReadArtist(txn, songEntity.ArtistIds[i])
-		artistJ, _ := s.ReadArtist(txn, songEntity.ArtistIds[j])
-		return artistI.Name < artistJ.Name
-	})
+	e = s.sortArtistIds(txn, songEntity.ArtistIds)
+	if e != nil {
+		return nil, e
+	}
 
 	// Create album link
 	if songEntity.AlbumId != "" {
@@ -307,14 +317,17 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 
 	songEntity.LoadMeta(songMeta)
 
+	// Deduplicate artists
+	if songMeta != nil {
+		songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
+	}
+
 	// Reorder artists
 	if songMeta != nil || updateArtistMetaArtistId != nil {
-		songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
-		sort.Slice(songEntity.ArtistIds, func(i, j int) bool {
-			artistI, _ := s.ReadArtist(txn, songEntity.ArtistIds[i])
-			artistJ, _ := s.ReadArtist(txn, songEntity.ArtistIds[j])
-			return artistI.Name < artistJ.Name
-		})
+		e = s.sortArtistIds(txn, songEntity.ArtistIds)
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	songEntity.UpdateTs = time.Now().UnixNano()
@@ -337,11 +350,9 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 
 	// Update artists link
 	if songMeta != nil && artistIdsChanged {
-		for _, artistId := range songOldArtistIds {
-			e = txn.DeleteStruct(entity.NewArtistSongEntity(artistId, songEntity.Id))
-			if e != nil {
-				return nil, e
-			}
+		e = txn.Select(q.Eq("SongId", songEntity.Id)).Delete(&entity.ArtistSongEntity{})
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
 		}
 		for _, artistId := range songEntity.ArtistIds {
 			// Check artist id
@@ -388,16 +399,16 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 	}
 
 	// Refresh album artists
-	if songEntity.AlbumId != "" && (artistIdsChanged || updateArtistMetaArtistId != nil || songOldAlbumId == "" || (songOldAlbumId != "" && songEntity.AlbumId != songOldAlbumId)) {
+	if songEntity.AlbumId != "" && (artistIdsChanged || updateArtistMetaArtistId != nil || songEntity.AlbumId != songOldAlbumId) {
 		e = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, updateArtistMetaArtistId)
 		if e != nil {
 			return nil, e
 		}
-		if songOldAlbumId != "" && songEntity.AlbumId != songOldAlbumId {
-			e = s.refreshAlbumArtistIds(txn, songOldAlbumId, updateArtistMetaArtistId)
-			if e != nil {
-				return nil, e
-			}
+	}
+	if songOldAlbumId != "" && songEntity.AlbumId != songOldAlbumId {
+		e = s.refreshAlbumArtistIds(txn, songOldAlbumId, updateArtistMetaArtistId)
+		if e != nil {
+			return nil, e
 		}
 	}
 
@@ -438,6 +449,14 @@ func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId restApiV
 	if e != nil {
 		return e
 	}
+
+	/*
+		// Update song album artists tag
+		e = s.UpdateSongContentTag(txn,&songEntity)
+		if e != nil {
+			return e
+		}
+	*/
 
 	// Commit transaction
 	if externalTrn == nil {
@@ -498,6 +517,17 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*
 	e = query.Delete(new(entity.ArtistSongEntity))
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
+	}
+
+	// Delete favorite song link
+	query = txn.Select(q.Eq("SongId", songId))
+	favoriteSongEntities := []entity.FavoriteSongEntity{}
+	e = query.Find(&favoriteSongEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+	for _, favoriteSongEntity := range favoriteSongEntities {
+		s.DeleteFavoriteSong(txn, restApiV1.FavoriteSongId{UserId: favoriteSongEntity.UserId, SongId: favoriteSongEntity.SongId})
 	}
 
 	// Delete song

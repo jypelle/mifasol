@@ -13,6 +13,8 @@ type SyncReport struct {
 	DeletedUserIds             []UserId             `json:"deletedUserIds"`
 	FavoritePlaylists          []FavoritePlaylist   `json:"favoritePlaylists"`
 	DeletedFavoritePlaylistIds []FavoritePlaylistId `json:"deletedFavoritePlaylistIds"`
+	FavoriteSongs              []FavoriteSong       `json:"favoriteSongs"`
+	DeletedFavoriteSongIds     []FavoriteSongId     `json:"deletedFavoriteSongIds"`
 	SyncTs                     int64                `json:"syncTs"`
 }
 

@@ -31,7 +31,7 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 		matchers = append(matchers, q.Eq("AdminFg", *filter.AdminFg))
 	}
 
-	if filter.Order == restApiV1.UserOrderByUpdateTs {
+	if filter.FromTs != nil {
 		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
 	}
 
