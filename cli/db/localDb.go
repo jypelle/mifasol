@@ -13,13 +13,13 @@ type LocalDb struct {
 
 	LastSyncTs int64
 
-	Albums                map[restApiV1.AlbumId]*restApiV1.Album
-	Artists               map[restApiV1.ArtistId]*restApiV1.Artist
-	Playlists             map[restApiV1.PlaylistId]*restApiV1.Playlist
-	Songs                 map[restApiV1.SongId]*restApiV1.Song
-	Users                 map[restApiV1.UserId]*restApiV1.User
-	UserFavoritePlaylists map[restApiV1.UserId]map[restApiV1.PlaylistId]*restApiV1.Playlist
-	UserFavoriteSongs     map[restApiV1.UserId]map[restApiV1.SongId]*restApiV1.Song
+	Albums                  map[restApiV1.AlbumId]*restApiV1.Album
+	Artists                 map[restApiV1.ArtistId]*restApiV1.Artist
+	Playlists               map[restApiV1.PlaylistId]*restApiV1.Playlist
+	Songs                   map[restApiV1.SongId]*restApiV1.Song
+	Users                   map[restApiV1.UserId]*restApiV1.User
+	UserFavoritePlaylistIds map[restApiV1.UserId]map[restApiV1.PlaylistId]struct{}
+	UserFavoriteSongIds     map[restApiV1.UserId]map[restApiV1.SongId]struct{}
 
 	OrderedAlbums    []*restApiV1.Album
 	OrderedArtists   []*restApiV1.Artist
@@ -70,8 +70,8 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 		l.Artists = make(map[restApiV1.ArtistId]*restApiV1.Artist, len(syncReport.Artists))
 		l.Playlists = make(map[restApiV1.PlaylistId]*restApiV1.Playlist, len(syncReport.Playlists))
 		l.Users = make(map[restApiV1.UserId]*restApiV1.User, len(syncReport.Users))
-		l.UserFavoritePlaylists = make(map[restApiV1.UserId]map[restApiV1.PlaylistId]*restApiV1.Playlist, len(syncReport.Users))
-		l.UserFavoriteSongs = make(map[restApiV1.UserId]map[restApiV1.SongId]*restApiV1.Song, len(syncReport.Users))
+		l.UserFavoritePlaylistIds = make(map[restApiV1.UserId]map[restApiV1.PlaylistId]struct{}, len(syncReport.Users))
+		l.UserFavoriteSongIds = make(map[restApiV1.UserId]map[restApiV1.SongId]struct{}, len(syncReport.Users))
 	} else {
 		// Remove deleted items
 		for _, songId := range syncReport.DeletedSongIds {
@@ -88,17 +88,17 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 		}
 		for _, userId := range syncReport.DeletedUserIds {
 			delete(l.Users, userId)
-			delete(l.UserFavoritePlaylists, userId)
-			delete(l.UserFavoriteSongs, userId)
+			delete(l.UserFavoritePlaylistIds, userId)
+			delete(l.UserFavoriteSongIds, userId)
 		}
 		for _, favoritePlaylistId := range syncReport.DeletedFavoritePlaylistIds {
-			if favoritePlaylists, ok := l.UserFavoritePlaylists[favoritePlaylistId.UserId]; ok {
-				delete(favoritePlaylists, favoritePlaylistId.PlaylistId)
+			if favoritePlaylistIds, ok := l.UserFavoritePlaylistIds[favoritePlaylistId.UserId]; ok {
+				delete(favoritePlaylistIds, favoritePlaylistId.PlaylistId)
 			}
 		}
 		for _, favoriteSongId := range syncReport.DeletedFavoriteSongIds {
-			if favoriteSongs, ok := l.UserFavoriteSongs[favoriteSongId.UserId]; ok {
-				delete(favoriteSongs, favoriteSongId.SongId)
+			if favoriteSongIds, ok := l.UserFavoriteSongIds[favoriteSongId.UserId]; ok {
+				delete(favoriteSongIds, favoriteSongId.SongId)
 			}
 		}
 	}
@@ -133,24 +133,24 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	for idx := range syncReport.Users {
 		user := &syncReport.Users[idx]
 		l.Users[user.Id] = user
-		if _, ok := l.UserFavoritePlaylists[user.Id]; !ok {
-			l.UserFavoritePlaylists[user.Id] = make(map[restApiV1.PlaylistId]*restApiV1.Playlist, 2)
+		if _, ok := l.UserFavoritePlaylistIds[user.Id]; !ok {
+			l.UserFavoritePlaylistIds[user.Id] = make(map[restApiV1.PlaylistId]struct{}, 2)
 		}
-		if _, ok := l.UserFavoriteSongs[user.Id]; !ok {
-			l.UserFavoriteSongs[user.Id] = make(map[restApiV1.SongId]*restApiV1.Song, 2)
+		if _, ok := l.UserFavoriteSongIds[user.Id]; !ok {
+			l.UserFavoriteSongIds[user.Id] = make(map[restApiV1.SongId]struct{}, 2)
 		}
 	}
 
 	// Indexing favorite playlists
 	for idx := range syncReport.FavoritePlaylists {
 		favoritePlaylist := &syncReport.FavoritePlaylists[idx]
-		l.UserFavoritePlaylists[favoritePlaylist.Id.UserId][favoritePlaylist.Id.PlaylistId] = l.Playlists[favoritePlaylist.Id.PlaylistId]
+		l.UserFavoritePlaylistIds[favoritePlaylist.Id.UserId][favoritePlaylist.Id.PlaylistId] = struct{}{}
 	}
 
 	// Indexing favorite songs
 	for idx := range syncReport.FavoriteSongs {
 		favoriteSong := &syncReport.FavoriteSongs[idx]
-		l.UserFavoriteSongs[favoriteSong.Id.UserId][favoriteSong.Id.SongId] = l.Songs[favoriteSong.Id.SongId]
+		l.UserFavoriteSongIds[favoriteSong.Id.UserId][favoriteSong.Id.SongId] = struct{}{}
 	}
 
 	// OrderedSongs
@@ -338,9 +338,9 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	// UserOrderedFavoritePlaylists
 	l.UserOrderedFavoritePlaylists = make(map[restApiV1.UserId][]*restApiV1.Playlist, len(l.Users))
 	for _, user := range l.Users {
-		userOrderedPlaylists := make([]*restApiV1.Playlist, 0, len(l.UserFavoritePlaylists[user.Id]))
-		for _, playlist := range l.UserFavoritePlaylists[user.Id] {
-			userOrderedPlaylists = append(userOrderedPlaylists, playlist)
+		userOrderedPlaylists := make([]*restApiV1.Playlist, 0, len(l.UserFavoritePlaylistIds[user.Id]))
+		for playlistId, _ := range l.UserFavoritePlaylistIds[user.Id] {
+			userOrderedPlaylists = append(userOrderedPlaylists, l.Playlists[playlistId])
 		}
 
 		sort.Slice(userOrderedPlaylists, func(i, j int) bool {
@@ -358,9 +358,9 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	// UserOrderedFavoriteSongs
 	l.UserOrderedFavoriteSongs = make(map[restApiV1.UserId][]*restApiV1.Song, len(l.Users))
 	for _, user := range l.Users {
-		userOrderedSongs := make([]*restApiV1.Song, 0, len(l.UserFavoriteSongs[user.Id]))
-		for _, song := range l.UserFavoriteSongs[user.Id] {
-			userOrderedSongs = append(userOrderedSongs, song)
+		userOrderedSongs := make([]*restApiV1.Song, 0, len(l.UserFavoriteSongIds[user.Id]))
+		for songId, _ := range l.UserFavoriteSongIds[user.Id] {
+			userOrderedSongs = append(userOrderedSongs, l.Songs[songId])
 		}
 
 		sort.Slice(userOrderedSongs, func(i, j int) bool {

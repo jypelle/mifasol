@@ -340,12 +340,12 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 						libraryTypeFavoritePlaylistsFromUser:
 						playlist := c.playlists[c.list.GetCurrentItem()]
 						if playlist != nil {
-							myFavoritePlaylists := c.uiApp.LocalDb().UserFavoritePlaylists[c.uiApp.ConnectedUserId()]
+							myFavoritePlaylistIds := c.uiApp.LocalDb().UserFavoritePlaylistIds[c.uiApp.ConnectedUserId()]
 							favoritePlaylistId := restApiV1.FavoritePlaylistId{
 								UserId:     c.uiApp.ConnectedUserId(),
 								PlaylistId: playlist.Id,
 							}
-							if _, ok := myFavoritePlaylists[playlist.Id]; ok {
+							if _, ok := myFavoritePlaylistIds[playlist.Id]; ok {
 								_, cliErr := c.uiApp.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to add playlist to favorites", cliErr)
@@ -371,12 +371,12 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 						libraryTypeSongsFromPlaylist:
 						song := c.songs[c.list.GetCurrentItem()]
 						if song != nil {
-							myFavoriteSongs := c.uiApp.LocalDb().UserFavoriteSongs[c.uiApp.ConnectedUserId()]
+							myFavoriteSongIds := c.uiApp.LocalDb().UserFavoriteSongIds[c.uiApp.ConnectedUserId()]
 							favoriteSongId := restApiV1.FavoriteSongId{
 								UserId: c.uiApp.ConnectedUserId(),
 								SongId: song.Id,
 							}
-							if _, ok := myFavoriteSongs[song.Id]; ok {
+							if _, ok := myFavoriteSongIds[song.Id]; ok {
 								_, cliErr := c.uiApp.restClient.DeleteFavoriteSong(favoriteSongId)
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to add song to favorites", cliErr)
@@ -700,8 +700,8 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *re
 	currentPosition := 0
 	text := ""
 
-	myFavoriteSongs := c.uiApp.LocalDb().UserFavoriteSongs[c.uiApp.ConnectedUserId()]
-	if _, ok := myFavoriteSongs[song.Id]; ok {
+	myFavoriteSongIds := c.uiApp.LocalDb().UserFavoriteSongIds[c.uiApp.ConnectedUserId()]
+	if _, ok := myFavoriteSongIds[song.Id]; ok {
 		text += "■ "
 	} else {
 		text += "  "
@@ -858,8 +858,8 @@ func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fro
 	currentPosition := 0
 	text := ""
 
-	myFavoritePlaylists := c.uiApp.LocalDb().UserFavoritePlaylists[c.uiApp.ConnectedUserId()]
-	if _, ok := myFavoritePlaylists[playlist.Id]; ok {
+	myFavoritePlaylistIds := c.uiApp.LocalDb().UserFavoritePlaylistIds[c.uiApp.ConnectedUserId()]
+	if _, ok := myFavoritePlaylistIds[playlist.Id]; ok {
 		text += "■ "
 		//text += "💙"
 	} else {
