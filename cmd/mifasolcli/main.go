@@ -44,7 +44,7 @@ func main() {
 		fmt.Printf("  config    Configure the mifasol client\n")
 		fmt.Printf("  ui        Launch the console interface\n")
 		fmt.Printf("  import    Import every flac, mp3 and ogg files from current folder to mifasol server\n")
-		fmt.Printf("  filesync  Sync a folder with mifasol server content\n")
+		fmt.Printf("  filesync  Sync a folder with favorite mifasol server content\n")
 		fmt.Printf("  version   Show the version number\n")
 		fmt.Printf("\nRun '%s COMMAND --help' for more information on a command.\n", mainCommand)
 	}
@@ -92,10 +92,10 @@ func main() {
 
 	fileSyncCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s filesync [SUBCOMMAND]\n", mainCommand)
-		fmt.Printf("\nSync a folder with mifasol server content\n")
+		fmt.Printf("\nSync a folder with favorite mifasol server content\n")
 		fmt.Printf("\nSubcommands:\n")
 		fmt.Printf("  init    Prepare folder for synchronization with mifasol server\n")
-		fmt.Printf("  sync    Synchronize folder with mifasol server content\n")
+		fmt.Printf("  sync    Synchronize folder with favorite mifasol server content\n")
 	}
 
 	// filesync init subcommand
@@ -111,7 +111,7 @@ func main() {
 
 	fileSyncCmdSyncSubCmd.Usage = func() {
 		fmt.Printf("\nUsage: %s %s %s [Location of folder to synchronize]\n", mainCommand, fileSyncCmd.Name(), fileSyncCmdSyncSubCmd.Name())
-		fmt.Printf("\nSynchronize music folder content with mifasol server\n")
+		fmt.Printf("\nSynchronize folder with favorite mifasol server content\n")
 	}
 
 	// version command
