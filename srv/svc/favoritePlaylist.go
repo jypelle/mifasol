@@ -259,3 +259,30 @@ func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, from
 
 	return playlistIds, nil
 }
+
+func (s *Service) updateFavoritePlaylistsContainingSong(txn storm.Node, userId restApiV1.UserId, songId restApiV1.SongId) error {
+	now := time.Now().UnixNano()
+
+	query := txn.Select(q.Eq("UserId", userId))
+	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
+	e := query.Find(&favoritePlaylistEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return e
+	}
+	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
+		var playlistSongEntity entity.PlaylistSongEntity
+		e = txn.One("Id", string(favoritePlaylistEntity.PlaylistId)+":"+string(songId), &playlistSongEntity)
+		if e != nil && e != storm.ErrNotFound {
+			return e
+		}
+		if e != storm.ErrNotFound {
+			favoritePlaylistEntity.UpdateTs = now
+
+			e = txn.Save(&favoritePlaylistEntity)
+			if e != nil {
+				return e
+			}
+		}
+	}
+	return nil
+}

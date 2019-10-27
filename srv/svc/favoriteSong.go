@@ -129,6 +129,12 @@ func (s *Service) CreateFavoriteSong(externalTrn storm.Node, favoriteSongMeta *r
 			}
 		}
 
+		// Force resync on linked favoritePlaylist
+		e = s.updateFavoritePlaylistsContainingSong(txn, favoriteSongMeta.Id.UserId, favoriteSongMeta.Id.SongId)
+		if e != nil {
+			return nil, e
+		}
+
 		// Commit transaction
 		if externalTrn == nil {
 			txn.Commit()
@@ -168,6 +174,12 @@ func (s *Service) DeleteFavoriteSong(externalTrn storm.Node, favoriteSongId rest
 
 	// Archive favoriteSongId deletion
 	e = txn.Save(entity.NewDeletedFavoriteSongEntity(favoriteSongId))
+	if e != nil {
+		return nil, e
+	}
+
+	// Force resync on linked favoritePlaylist
+	e = s.updateFavoritePlaylistsContainingSong(txn, favoriteSongId.UserId, favoriteSongId.SongId)
 	if e != nil {
 		return nil, e
 	}

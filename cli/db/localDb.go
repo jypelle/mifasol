@@ -55,6 +55,16 @@ func (l *LocalDb) IsPlaylistOwnedBy(playlistId restApiV1.PlaylistId, userId rest
 	return false
 }
 
+func (l *LocalDb) AddSongToMyFavorite(songId restApiV1.SongId) {
+	l.UserFavoriteSongIds[l.restClient.UserId()][songId] = struct{}{}
+	l.refreshUserOrderedFavoriteSongs(l.restClient.UserId())
+}
+
+func (l *LocalDb) RemoveSongFromMyFavorite(songId restApiV1.SongId) {
+	delete(l.UserFavoriteSongIds[l.restClient.UserId()], songId)
+	l.refreshUserOrderedFavoriteSongs(l.restClient.UserId())
+}
+
 func (l *LocalDb) Refresh() restClientV1.ClientError {
 
 	// Retrieve library content from mifasolsrv
@@ -338,45 +348,54 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	// UserOrderedFavoritePlaylists
 	l.UserOrderedFavoritePlaylists = make(map[restApiV1.UserId][]*restApiV1.Playlist, len(l.Users))
 	for _, user := range l.Users {
-		userOrderedPlaylists := make([]*restApiV1.Playlist, 0, len(l.UserFavoritePlaylistIds[user.Id]))
-		for playlistId, _ := range l.UserFavoritePlaylistIds[user.Id] {
-			userOrderedPlaylists = append(userOrderedPlaylists, l.Playlists[playlistId])
-		}
-
-		sort.Slice(userOrderedPlaylists, func(i, j int) bool {
-			playlistNameCompare := l.collator.CompareString(userOrderedPlaylists[i].Name, userOrderedPlaylists[j].Name)
-			if playlistNameCompare != 0 {
-				return playlistNameCompare == -1
-			} else {
-				return userOrderedPlaylists[i].CreationTs < userOrderedPlaylists[j].CreationTs
-			}
-		})
-
-		l.UserOrderedFavoritePlaylists[user.Id] = userOrderedPlaylists
+		l.refreshUserOrderedFavoritePlaylists(user.Id)
 	}
 
 	// UserOrderedFavoriteSongs
 	l.UserOrderedFavoriteSongs = make(map[restApiV1.UserId][]*restApiV1.Song, len(l.Users))
 	for _, user := range l.Users {
-		userOrderedSongs := make([]*restApiV1.Song, 0, len(l.UserFavoriteSongIds[user.Id]))
-		for songId, _ := range l.UserFavoriteSongIds[user.Id] {
-			userOrderedSongs = append(userOrderedSongs, l.Songs[songId])
-		}
-
-		sort.Slice(userOrderedSongs, func(i, j int) bool {
-			songNameCompare := l.collator.CompareString(userOrderedSongs[i].Name, userOrderedSongs[j].Name)
-			if songNameCompare != 0 {
-				return songNameCompare == -1
-			} else {
-				return userOrderedSongs[i].CreationTs < userOrderedSongs[j].CreationTs
-			}
-		})
-
-		l.UserOrderedFavoriteSongs[user.Id] = userOrderedSongs
+		l.refreshUserOrderedFavoriteSongs(user.Id)
 	}
 
 	// Remember new sync timestamp
 	l.LastSyncTs = syncReport.SyncTs
 
 	return nil
+}
+
+func (l *LocalDb) refreshUserOrderedFavoritePlaylists(userId restApiV1.UserId) {
+	userOrderedPlaylists := make([]*restApiV1.Playlist, 0, len(l.UserFavoritePlaylistIds[userId]))
+	for playlistId, _ := range l.UserFavoritePlaylistIds[userId] {
+		userOrderedPlaylists = append(userOrderedPlaylists, l.Playlists[playlistId])
+	}
+
+	sort.Slice(userOrderedPlaylists, func(i, j int) bool {
+		playlistNameCompare := l.collator.CompareString(userOrderedPlaylists[i].Name, userOrderedPlaylists[j].Name)
+		if playlistNameCompare != 0 {
+			return playlistNameCompare == -1
+		} else {
+			return userOrderedPlaylists[i].CreationTs < userOrderedPlaylists[j].CreationTs
+		}
+	})
+
+	l.UserOrderedFavoritePlaylists[userId] = userOrderedPlaylists
+
+}
+
+func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
+	userOrderedSongs := make([]*restApiV1.Song, 0, len(l.UserFavoriteSongIds[userId]))
+	for songId, _ := range l.UserFavoriteSongIds[userId] {
+		userOrderedSongs = append(userOrderedSongs, l.Songs[songId])
+	}
+
+	sort.Slice(userOrderedSongs, func(i, j int) bool {
+		songNameCompare := l.collator.CompareString(userOrderedSongs[i].Name, userOrderedSongs[j].Name)
+		if songNameCompare != 0 {
+			return songNameCompare == -1
+		} else {
+			return userOrderedSongs[i].CreationTs < userOrderedSongs[j].CreationTs
+		}
+	})
+
+	l.UserOrderedFavoriteSongs[userId] = userOrderedSongs
 }

@@ -381,13 +381,15 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to add song to favorites", cliErr)
 								}
-								c.uiApp.Reload()
+								c.uiApp.LocalDb().RemoveSongFromMyFavorite(song.Id)
+								c.RefreshView()
 							} else {
 								_, cliErr := c.uiApp.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to remove song from favorites", cliErr)
 								}
-								c.uiApp.Reload()
+								c.uiApp.LocalDb().AddSongToMyFavorite(song.Id)
+								c.RefreshView()
 							}
 							if !(currentFilter.libraryType == libraryTypeFavoriteSongsFromUser && *currentFilter.userId == c.uiApp.ConnectedUserId()) {
 								c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)

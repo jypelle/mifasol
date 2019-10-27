@@ -12,17 +12,6 @@ type FavoriteSongEntity struct {
 	SongId   restApiV1.SongId `storm:"index"`
 }
 
-func NewFavoriteSongEntity(userId restApiV1.UserId, songId restApiV1.SongId) *FavoriteSongEntity {
-	now := time.Now().UnixNano()
-
-	return &FavoriteSongEntity{
-		Id:       string(userId) + ":" + string(songId),
-		UpdateTs: now,
-		UserId:   userId,
-		SongId:   songId,
-	}
-}
-
 func (e *FavoriteSongEntity) Fill(s *restApiV1.FavoriteSong) {
 	s.Id = restApiV1.FavoriteSongId{UserId: e.UserId, SongId: e.SongId}
 	s.UpdateTs = e.UpdateTs

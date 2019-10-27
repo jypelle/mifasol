@@ -114,7 +114,7 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 	// Sync timestamp
 	fileSyncReport.SyncTs = time.Now().UnixNano()
 
-	// Songs
+	// Favorite Songs
 	fileSyncReport.FileSyncSongs, err = s.ReadFileSyncSongs(txn, fromTs, userId)
 
 	if err != nil {
@@ -125,7 +125,7 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 		logrus.Panicf("Unable to read deleted song ids: %v", err)
 	}
 
-	// Playlists
+	// Favorite Playlists
 	fileSyncReport.Playlists, err = s.ReadPlaylists(txn, &restApiV1.PlaylistFilter{FavoriteFromTs: &fromTs, FavoriteUserId: &userId})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)

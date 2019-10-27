@@ -329,12 +329,6 @@ func (a *FileSyncApp) sync() {
 						default:
 						}
 					}()
-					// Continue if already updated
-					if fileSyncLocalPlaylist, ok := a.fileSyncConfig.FileSyncLocalPlaylists[playlist.Id]; ok {
-						if playlist.UpdateTs <= fileSyncLocalPlaylist.UpdateTs {
-							return
-						}
-					}
 
 					// Create playlist folder(s)
 					newpath := tool.SanitizeFilename(playlist.Name) + ".m3u8"
