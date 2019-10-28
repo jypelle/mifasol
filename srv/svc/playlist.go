@@ -13,6 +13,10 @@ import (
 )
 
 func (s *Service) ReadPlaylists(externalTrn storm.Node, filter *restApiV1.PlaylistFilter) ([]restApiV1.Playlist, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadPlaylists")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -25,30 +29,14 @@ func (s *Service) ReadPlaylists(externalTrn storm.Node, filter *restApiV1.Playli
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
-
-	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
-	}
-	if filter.ContentFromTs != nil {
-		matchers = append(matchers, q.Gte("ContentUpdateTs", *filter.ContentFromTs))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.PlaylistOrderByPlaylistName:
-		query = query.OrderBy("Name")
-	case restApiV1.PlaylistOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	case restApiV1.PlaylistOrderByContentUpdateTs:
-		query = query.OrderBy("ContentUpdateTs")
-	default:
-	}
-
 	playlistEntities := []entity.PlaylistEntity{}
 
-	e = query.Find(&playlistEntities)
+	if filter.FromTs != nil {
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &playlistEntities)
+	} else {
+		e = txn.All(&playlistEntities)
+	}
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -405,9 +393,9 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 	}
 
 	// Delete favorite playlist link
-	query := txn.Select(q.Eq("PlaylistId", playlistId))
 	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
-	e = query.Find(&favoritePlaylistEntities)
+	e = txn.Find("PlaylistId", playlistId, &favoritePlaylistEntities)
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -416,15 +404,23 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 	}
 
 	// Delete owners link
-	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.OwnedUserPlaylistEntity{})
+	ownedUserPlaylistEntities := []entity.OwnedUserPlaylistEntity{}
+	e = txn.Find("PlaylistId", playlistId, &ownedUserPlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
+	for _, ownedUserPlaylistEntity := range ownedUserPlaylistEntities {
+		txn.DeleteStruct(&ownedUserPlaylistEntity)
+	}
 
 	// Delete songs link
-	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&entity.PlaylistSongEntity{})
+	playlistSongEntities := []entity.PlaylistSongEntity{}
+	e = txn.Find("PlaylistId", playlistId, &playlistSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
+	}
+	for _, playlistSongEntity := range playlistSongEntities {
+		txn.DeleteStruct(&playlistSongEntity)
 	}
 
 	// Delete playlist
@@ -451,6 +447,10 @@ func (s *Service) DeletePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 }
 
 func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.PlaylistId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedPlaylistIds")
+	}
+
 	var e error
 
 	playlistIds := []restApiV1.PlaylistId{}
@@ -466,9 +466,8 @@ func (s *Service) GetDeletedPlaylistIds(externalTrn storm.Node, fromTs int64) ([
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedPlaylistEntities)
 
-	e = query.Find(&deletedPlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -496,9 +495,8 @@ func (s *Service) GetPlaylistIdsFromSongId(externalTrn storm.Node, songId restAp
 	var playlistIds []restApiV1.PlaylistId
 	playlistSongEntities := []entity.PlaylistSongEntity{}
 
-	query := txn.Select(q.Eq("SongId", songId))
+	e = txn.Find("SongId", songId, &playlistSongEntities)
 
-	e = query.Find(&playlistSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -527,8 +525,7 @@ func (s *Service) GetPlaylistIdsFromOwnerUserId(externalTrn storm.Node, ownerUse
 	var playlistIds []restApiV1.PlaylistId
 	ownedUserPlaylistEntities := []entity.OwnedUserPlaylistEntity{}
 
-	query := txn.Select(q.Eq("UserId", ownerUserId))
-	e = query.Find(&ownedUserPlaylistEntities)
+	e = txn.Find("UserId", ownerUserId, &ownedUserPlaylistEntities)
 
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e

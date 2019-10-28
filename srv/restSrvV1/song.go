@@ -14,7 +14,7 @@ import (
 func (s *RestServer) readSongs(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read songs")
 
-	songs, err := s.service.ReadSongs(nil, &restApiV1.SongFilter{Order: restApiV1.SongOrderBySongName})
+	songs, err := s.service.ReadSongs(nil, &restApiV1.SongFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read songs: %v", err)
 	}

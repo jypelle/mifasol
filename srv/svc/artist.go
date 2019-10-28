@@ -2,7 +2,6 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"
@@ -11,6 +10,10 @@ import (
 )
 
 func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFilter) ([]restApiV1.Artist, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadArtists")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -23,27 +26,16 @@ func (s *Service) ReadArtists(externalTrn storm.Node, filter *restApiV1.ArtistFi
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
+	artistEntities := []entity.ArtistEntity{}
 
 	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
-	}
-	if filter.Name != nil {
-		matchers = append(matchers, q.Eq("Name", *filter.Name))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.ArtistOrderByArtistName:
-		query = query.OrderBy("Name")
-	case restApiV1.ArtistOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &artistEntities)
+	} else if filter.Name != nil {
+		e = txn.Find("Name", *filter.Name, &artistEntities)
+	} else {
+		e = txn.All(&artistEntities)
 	}
 
-	artistEntities := []entity.ArtistEntity{}
-	e = query.Find(&artistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -181,6 +173,10 @@ func (s *Service) UpdateArtist(externalTrn storm.Node, artistId restApiV1.Artist
 }
 
 func (s *Service) DeleteArtist(externalTrn storm.Node, artistId restApiV1.ArtistId) (*restApiV1.Artist, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "DeleteArtist")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -234,6 +230,10 @@ func (s *Service) DeleteArtist(externalTrn storm.Node, artistId restApiV1.Artist
 }
 
 func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.ArtistId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedArtistIds")
+	}
+
 	var e error
 
 	artistIds := []restApiV1.ArtistId{}
@@ -249,8 +249,8 @@ func (s *Service) GetDeletedArtistIds(externalTrn storm.Node, fromTs int64) ([]r
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs))
-	e = query.Find(&deletedArtistEntities)
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedArtistEntities)
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}

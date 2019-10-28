@@ -15,6 +15,10 @@ import (
 )
 
 func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter) ([]restApiV1.Song, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadSongs")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -27,28 +31,16 @@ func (s *Service) ReadSongs(externalTrn storm.Node, filter *restApiV1.SongFilter
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
+	songEntities := []entity.SongEntity{}
 
 	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &songEntities)
+	} else if filter.AlbumId != nil {
+		e = txn.Find("AlbumId", *filter.AlbumId, &songEntities)
+	} else {
+		e = txn.All(&songEntities)
 	}
 
-	if filter.AlbumId != nil {
-		matchers = append(matchers, q.Eq("AlbumId", *filter.AlbumId))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.SongOrderBySongName:
-		query = query.OrderBy("Name")
-	case restApiV1.SongOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
-	}
-
-	songEntities := []entity.SongEntity{}
-	e = query.Find(&songEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -467,6 +459,10 @@ func (s *Service) updateSongAlbumArtists(externalTrn storm.Node, songId restApiV
 }
 
 func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*restApiV1.Song, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "DeleteSong")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -513,16 +509,18 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*
 	}
 
 	// Delete artists link
-	query := txn.Select(q.Eq("SongId", songEntity.Id))
-	e = query.Delete(new(entity.ArtistSongEntity))
+	artistSongEntities := []entity.ArtistSongEntity{}
+	e = txn.Find("SongId", songEntity.Id, &artistSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
+	for _, artistSongEntity := range artistSongEntities {
+		txn.DeleteStruct(&artistSongEntity)
+	}
 
 	// Delete favorite song link
-	query = txn.Select(q.Eq("SongId", songId))
 	favoriteSongEntities := []entity.FavoriteSongEntity{}
-	e = query.Find(&favoriteSongEntities)
+	e = txn.Find("SongId", songId, &favoriteSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -568,6 +566,10 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*
 }
 
 func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.SongId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedSongIds")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -580,11 +582,10 @@ func (s *Service) GetDeletedSongIds(externalTrn storm.Node, fromTs int64) ([]res
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
-
 	deletedSongEntities := []entity.DeletedSongEntity{}
 
-	e = query.Find(&deletedSongEntities)
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedSongEntities)
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -611,11 +612,10 @@ func (s *Service) GetSongIdsFromArtistId(externalTrn storm.Node, artistId restAp
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Eq("ArtistId", artistId))
-
 	artistSongEntities := []entity.ArtistSongEntity{}
 
-	e = query.Find(&artistSongEntities)
+	e = txn.Find("ArtistId", artistId, &artistSongEntities)
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -642,11 +642,9 @@ func (s *Service) GetSongIdsFromAlbumId(externalTrn storm.Node, albumId restApiV
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Eq("AlbumId", albumId))
-
 	songEntities := []entity.SongEntity{}
 
-	e = query.Find(&songEntities)
+	e = txn.Find("AlbumId", albumId, &songEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}

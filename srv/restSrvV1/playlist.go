@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readPlaylists(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read playlists")
 
-	playlists, err := s.service.ReadPlaylists(nil, &restApiV1.PlaylistFilter{Order: restApiV1.PlaylistOrderByPlaylistName})
+	playlists, err := s.service.ReadPlaylists(nil, &restApiV1.PlaylistFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}

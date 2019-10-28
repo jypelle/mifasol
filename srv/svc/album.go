@@ -2,7 +2,6 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"
@@ -10,6 +9,10 @@ import (
 )
 
 func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilter) ([]restApiV1.Album, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadAlbums")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -22,27 +25,16 @@ func (s *Service) ReadAlbums(externalTrn storm.Node, filter *restApiV1.AlbumFilt
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
+	albumEntities := []entity.AlbumEntity{}
 
 	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
-	}
-	if filter.Name != nil {
-		matchers = append(matchers, q.Eq("Name", *filter.Name))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.AlbumOrderByAlbumName:
-		query = query.OrderBy("Name")
-	case restApiV1.AlbumOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &albumEntities)
+	} else if filter.Name != nil {
+		e = txn.Find("Name", *filter.Name, &albumEntities)
+	} else {
+		e = txn.All(&albumEntities)
 	}
 
-	albumEntities := []entity.AlbumEntity{}
-	e = query.Find(&albumEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -324,6 +316,10 @@ func (s *Service) DeleteAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId)
 }
 
 func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.AlbumId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedAlbumIds")
+	}
+
 	var e error
 
 	albumIds := []restApiV1.AlbumId{}
@@ -339,9 +335,8 @@ func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]re
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs))
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedAlbumEntities)
 
-	e = query.Find(&deletedAlbumEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}

@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readArtists(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read artists")
 
-	artists, err := s.service.ReadArtists(nil, &restApiV1.ArtistFilter{Order: restApiV1.ArtistOrderByArtistName})
+	artists, err := s.service.ReadArtists(nil, &restApiV1.ArtistFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read artists: %v", err)
 	}

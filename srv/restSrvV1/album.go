@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readAlbums(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read albums")
 
-	albums, err := s.service.ReadAlbums(nil, &restApiV1.AlbumFilter{Order: restApiV1.AlbumOrderByAlbumName})
+	albums, err := s.service.ReadAlbums(nil, &restApiV1.AlbumFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read albums: %v", err)
 	}

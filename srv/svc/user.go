@@ -2,7 +2,6 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"
@@ -13,6 +12,9 @@ const DefaultUserName = "mifasol"
 const DefaultUserPassword = "mifasol"
 
 func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter) ([]restApiV1.User, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadUsers")
+	}
 	var e error
 
 	// Check available transaction
@@ -25,28 +27,14 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
-
-	if filter.AdminFg != nil {
-		matchers = append(matchers, q.Eq("AdminFg", *filter.AdminFg))
-	}
+	userEntities := []entity.UserEntity{}
 
 	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &userEntities)
+	} else {
+		e = txn.All(&userEntities)
 	}
 
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.UserOrderByUserName:
-		query = query.OrderBy("Name")
-	case restApiV1.UserOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
-	}
-
-	userEntities := []entity.UserEntity{}
-	e = query.Find(&userEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -54,6 +42,10 @@ func (s *Service) ReadUsers(externalTrn storm.Node, filter *restApiV1.UserFilter
 	users := []restApiV1.User{}
 
 	for _, userEntity := range userEntities {
+		if filter.AdminFg != nil && *filter.AdminFg != userEntity.AdminFg {
+			continue
+		}
+
 		var user restApiV1.User
 		userEntity.Fill(&user)
 		users = append(users, user)
@@ -254,9 +246,8 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId restApiV1.UserId) (*
 	}
 
 	// Delete user's favorite playlists
-	query := txn.Select(q.Eq("UserId", userId))
 	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
-	e = query.Find(&favoritePlaylistEntities)
+	e = txn.Find("UserId", userId, &favoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -288,6 +279,9 @@ func (s *Service) DeleteUser(externalTrn storm.Node, userId restApiV1.UserId) (*
 }
 
 func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.UserId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedUserIds")
+	}
 	var e error
 
 	userIds := []restApiV1.UserId{}
@@ -303,9 +297,8 @@ func (s *Service) GetDeletedUserIds(externalTrn storm.Node, fromTs int64) ([]res
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs)).OrderBy("DeleteTs")
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedUserEntities)
 
-	e = query.Find(&deletedUserEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}

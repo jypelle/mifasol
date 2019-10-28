@@ -2,13 +2,17 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
+	"github.com/jypelle/mifasol/tool"
 	"time"
 )
 
 func (s *Service) ReadFavoriteSongs(externalTrn storm.Node, filter *restApiV1.FavoriteSongFilter) ([]restApiV1.FavoriteSong, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "ReadFavoriteSongs")
+	}
+
 	var e error
 
 	// Check available transaction
@@ -21,23 +25,14 @@ func (s *Service) ReadFavoriteSongs(externalTrn storm.Node, filter *restApiV1.Fa
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
-
-	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.FavoriteSongOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
-	}
-
 	favoriteSongEntities := []entity.FavoriteSongEntity{}
 
-	e = query.Find(&favoriteSongEntities)
+	if filter.FromTs != nil {
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &favoriteSongEntities)
+	} else {
+		e = txn.All(&favoriteSongEntities)
+	}
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -196,6 +191,10 @@ func (s *Service) DeleteFavoriteSong(externalTrn storm.Node, favoriteSongId rest
 }
 
 func (s *Service) GetDeletedFavoriteSongIds(externalTrn storm.Node, fromTs int64) ([]restApiV1.FavoriteSongId, error) {
+	if s.ServerConfig.DebugMode {
+		defer tool.TimeTrack(time.Now(), "GetDeletedFavoriteSongIds")
+	}
+
 	var e error
 
 	favoriteSongIds := []restApiV1.FavoriteSongId{}
@@ -211,9 +210,8 @@ func (s *Service) GetDeletedFavoriteSongIds(externalTrn storm.Node, fromTs int64
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs))
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoriteSongEntities)
 
-	e = query.Find(&deletedFavoriteSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -241,15 +239,16 @@ func (s *Service) GetDeletedUserFavoriteSongIds(externalTrn storm.Node, fromTs i
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs), q.Eq("UserId", userId))
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoriteSongEntities)
 
-	e = query.Find(&deletedFavoriteSongEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
 	for _, deletedFavoriteSongEntity := range deletedFavoriteSongEntities {
-		songIds = append(songIds, deletedFavoriteSongEntity.SongId)
+		if deletedFavoriteSongEntity.UserId == userId {
+			songIds = append(songIds, deletedFavoriteSongEntity.SongId)
+		}
 	}
 
 	return songIds, nil

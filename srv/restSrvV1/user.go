@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readUsers(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read users")
 
-	users, err := s.service.ReadUsers(nil, &restApiV1.UserFilter{Order: restApiV1.UserOrderByUserName})
+	users, err := s.service.ReadUsers(nil, &restApiV1.UserFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read users: %v", err)
 	}

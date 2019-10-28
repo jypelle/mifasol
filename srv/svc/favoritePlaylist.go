@@ -2,7 +2,6 @@ package svc
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"time"
@@ -21,23 +20,14 @@ func (s *Service) ReadFavoritePlaylists(externalTrn storm.Node, filter *restApiV
 		defer txn.Rollback()
 	}
 
-	var matchers []q.Matcher
-
-	if filter.FromTs != nil {
-		matchers = append(matchers, q.Gte("UpdateTs", *filter.FromTs))
-	}
-
-	query := txn.Select(matchers...)
-
-	switch filter.Order {
-	case restApiV1.FavoritePlaylistOrderByUpdateTs:
-		query = query.OrderBy("UpdateTs")
-	default:
-	}
-
 	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
 
-	e = query.Find(&favoritePlaylistEntities)
+	if filter.FromTs != nil {
+		e = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &favoritePlaylistEntities)
+	} else {
+		e = txn.All(&favoritePlaylistEntities)
+	}
+
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -132,9 +122,7 @@ func (s *Service) CreateFavoritePlaylist(externalTrn storm.Node, favoritePlaylis
 		// Add favorite playlist songs to favorite songs
 		playlistSongEntities := []entity.PlaylistSongEntity{}
 
-		query := txn.Select(q.Eq("PlaylistId", favoritePlaylistMeta.Id.PlaylistId))
-
-		e = query.Find(&playlistSongEntities)
+		e = txn.Find("PlaylistId", favoritePlaylistMeta.Id.PlaylistId, &playlistSongEntities)
 		if e != nil && e != storm.ErrNotFound {
 			return nil, e
 		}
@@ -216,9 +204,8 @@ func (s *Service) GetDeletedFavoritePlaylistIds(externalTrn storm.Node, fromTs i
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs))
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoritePlaylistEntities)
 
-	e = query.Find(&deletedFavoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
@@ -246,15 +233,16 @@ func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, from
 		defer txn.Rollback()
 	}
 
-	query := txn.Select(q.Gte("DeleteTs", fromTs), q.Eq("UserId", userId))
+	e = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoritePlaylistEntities)
 
-	e = query.Find(&deletedFavoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return nil, e
 	}
 
 	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
-		playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.PlaylistId)
+		if deletedFavoritePlaylistEntity.UserId == userId {
+			playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.PlaylistId)
+		}
 	}
 
 	return playlistIds, nil
@@ -263,12 +251,13 @@ func (s *Service) GetDeletedUserFavoritePlaylistIds(externalTrn storm.Node, from
 func (s *Service) updateFavoritePlaylistsContainingSong(txn storm.Node, userId restApiV1.UserId, songId restApiV1.SongId) error {
 	now := time.Now().UnixNano()
 
-	query := txn.Select(q.Eq("UserId", userId))
 	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
-	e := query.Find(&favoritePlaylistEntities)
+
+	e := txn.Find("UserId", userId, &favoritePlaylistEntities)
 	if e != nil && e != storm.ErrNotFound {
 		return e
 	}
+
 	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
 		var playlistSongEntity entity.PlaylistSongEntity
 		e = txn.One("Id", string(favoritePlaylistEntity.PlaylistId)+":"+string(songId), &playlistSongEntity)
