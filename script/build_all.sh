@@ -12,5 +12,5 @@ GOOS=darwin GOARCH=amd64 go build -o assets/mifasolsrv-$1-darwin-amd64 ../cmd/mi
 echo "Build clients"
 GOOS=windows GOARCH=amd64 go build -o assets/mifasolcli-$1-windows-amd64.exe ../cmd/mifasolcli
 GOOS=linux GOARCH=amd64 go build -o assets/mifasolcli-$1-linux-amd64 ../cmd/mifasolcli
-GOOS=linux GOARCH=arm go build -o assets/mifasolcli-$1-linux-arm ../cmd/mifasolcli
+GOOS=linux GOARCH=arm GOARM=7 go build -o assets/mifasolcli-$1-linux-arm ../cmd/mifasolcli
 #GOOS=darwin GOARCH=amd64 go build -o assets/mifasolcli-$1-darwin-amd64 ../cmd/mifasolcli

@@ -27,6 +27,8 @@ type LocalDb struct {
 	OrderedSongs     []*restApiV1.Song
 	OrderedUsers     []*restApiV1.User
 
+	UserOrderedFavoriteArtists   map[restApiV1.UserId][]*restApiV1.Artist
+	UserOrderedFavoriteAlbums    map[restApiV1.UserId][]*restApiV1.Album
 	UserOrderedFavoritePlaylists map[restApiV1.UserId][]*restApiV1.Playlist
 	UserOrderedFavoriteSongs     map[restApiV1.UserId][]*restApiV1.Song
 
@@ -182,40 +184,16 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	for _, album := range l.Albums {
 		l.OrderedAlbums = append(l.OrderedAlbums, album)
 	}
-	sort.Slice(l.OrderedAlbums, func(i, j int) bool {
-		if l.OrderedAlbums[i] == nil {
-			return true
-		}
-		if l.OrderedAlbums[j] == nil {
-			return false
-		}
-		albumNameCompare := l.collator.CompareString(l.OrderedAlbums[i].Name, l.OrderedAlbums[j].Name)
-		if albumNameCompare != 0 {
-			return albumNameCompare == -1
-		} else {
-			return l.OrderedAlbums[i].CreationTs < l.OrderedAlbums[j].CreationTs
-		}
-	})
+
+	l.sortAlbumList(l.OrderedAlbums)
 
 	// OrderedArtists
 	l.OrderedArtists = make([]*restApiV1.Artist, 1, len(l.Artists)+1)
 	for _, artist := range l.Artists {
 		l.OrderedArtists = append(l.OrderedArtists, artist)
 	}
-	sort.Slice(l.OrderedArtists, func(i, j int) bool {
-		if l.OrderedArtists[i] == nil {
-			return true
-		}
-		if l.OrderedArtists[j] == nil {
-			return false
-		}
-		artistNameCompare := l.collator.CompareString(l.OrderedArtists[i].Name, l.OrderedArtists[j].Name)
-		if artistNameCompare != 0 {
-			return artistNameCompare == -1
-		} else {
-			return l.OrderedArtists[i].CreationTs < l.OrderedArtists[j].CreationTs
-		}
-	})
+
+	l.sortArtistList(l.OrderedArtists)
 
 	// AlbumOrderedSongs & ArtistOrderedSongs
 	l.AlbumOrderedSongs = make(map[restApiV1.AlbumId][]*restApiV1.Song, len(l.OrderedAlbums))
@@ -352,7 +330,11 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	}
 
 	// UserOrderedFavoriteSongs
+	// UserOrderedFavoriteArtists
+	// UserOrderedFavoriteAlbums
 	l.UserOrderedFavoriteSongs = make(map[restApiV1.UserId][]*restApiV1.Song, len(l.Users))
+	l.UserOrderedFavoriteArtists = make(map[restApiV1.UserId][]*restApiV1.Artist, len(l.Users))
+	l.UserOrderedFavoriteAlbums = make(map[restApiV1.UserId][]*restApiV1.Album, len(l.Users))
 	for _, user := range l.Users {
 		l.refreshUserOrderedFavoriteSongs(user.Id)
 	}
@@ -383,9 +365,22 @@ func (l *LocalDb) refreshUserOrderedFavoritePlaylists(userId restApiV1.UserId) {
 }
 
 func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
+	userArtistIds := make(map[restApiV1.ArtistId]bool, len(l.Artists))
+	userAlbumIds := make(map[restApiV1.AlbumId]bool, len(l.Albums))
+
 	userOrderedSongs := make([]*restApiV1.Song, 0, len(l.UserFavoriteSongIds[userId]))
+
 	for songId, _ := range l.UserFavoriteSongIds[userId] {
-		userOrderedSongs = append(userOrderedSongs, l.Songs[songId])
+		song := l.Songs[songId]
+		userOrderedSongs = append(userOrderedSongs, song)
+		for _, artistId := range song.ArtistIds {
+			if _, ok := userArtistIds[artistId]; !ok {
+				userArtistIds[artistId] = true
+			}
+		}
+		if _, ok := userAlbumIds[song.AlbumId]; !ok {
+			userAlbumIds[song.AlbumId] = true
+		}
 	}
 
 	sort.Slice(userOrderedSongs, func(i, j int) bool {
@@ -397,5 +392,58 @@ func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
 		}
 	})
 
+	userOrderedArtists := make([]*restApiV1.Artist, 1, len(userArtistIds)+1)
+
+	for artistId, _ := range userArtistIds {
+		artist := l.Artists[artistId]
+		userOrderedArtists = append(userOrderedArtists, artist)
+	}
+	l.sortArtistList(userOrderedArtists)
+
+	userOrderedAlbums := make([]*restApiV1.Album, 1, len(userAlbumIds)+1)
+
+	for albumId, _ := range userAlbumIds {
+		album := l.Albums[albumId]
+		userOrderedAlbums = append(userOrderedAlbums, album)
+	}
+	l.sortAlbumList(userOrderedAlbums)
+
+	l.UserOrderedFavoriteArtists[userId] = userOrderedArtists
+	l.UserOrderedFavoriteAlbums[userId] = userOrderedAlbums
 	l.UserOrderedFavoriteSongs[userId] = userOrderedSongs
+}
+
+func (l *LocalDb) sortArtistList(artistList []*restApiV1.Artist) {
+	sort.Slice(artistList, func(i, j int) bool {
+		if artistList[i] == nil {
+			return true
+		}
+		if artistList[j] == nil {
+			return false
+		}
+		artistNameCompare := l.collator.CompareString(artistList[i].Name, artistList[j].Name)
+		if artistNameCompare != 0 {
+			return artistNameCompare == -1
+		} else {
+			return artistList[i].CreationTs < artistList[j].CreationTs
+		}
+	})
+
+}
+
+func (l *LocalDb) sortAlbumList(albumList []*restApiV1.Album) {
+	sort.Slice(albumList, func(i, j int) bool {
+		if albumList[i] == nil {
+			return true
+		}
+		if albumList[j] == nil {
+			return false
+		}
+		albumNameCompare := l.collator.CompareString(albumList[i].Name, albumList[j].Name)
+		if albumNameCompare != 0 {
+			return albumNameCompare == -1
+		} else {
+			return albumList[i].CreationTs < albumList[j].CreationTs
+		}
+	})
 }

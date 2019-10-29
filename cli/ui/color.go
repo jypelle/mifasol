@@ -7,6 +7,10 @@ import (
 
 var ColorTitle = tcell.NewHexColor(0x441800)
 var ColorTitleStr = "#441800"
+
+var ColorTitleBackground = tcell.NewHexColor(0xf0f0f0)
+var ColorTitleUnfocusedBackground = tcell.NewHexColor(0xa0a0a0)
+
 var ColorArtist = tcell.NewHexColor(0xA0A9CC)
 var ColorArtistStr = "#A0A9CC"
 var ColorAlbum = tcell.NewHexColor(0x5ADFDF)
@@ -22,7 +26,7 @@ var ColorSelected = tcell.NewHexColor(0x602020)
 var ColorUnfocusedSelected = tcell.NewHexColor(0x402020)
 
 var ColorEnabled = tcell.NewHexColor(0)
-var ColorDisabled = tcell.NewHexColor(0x202028)
+var ColorDisabled = tcell.NewHexColor(0x202024)
 
 var ColorHelpTitleStr = "#402020"
 var ColorHelpTitle2Str = "#111111"

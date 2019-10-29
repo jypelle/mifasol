@@ -45,6 +45,8 @@ const (
 	libraryTypeSongsFromAlbum
 	libraryTypeSongsFromUnknownAlbum
 	libraryTypeSongsFromPlaylist
+	libraryTypeFavoriteArtistsFromUser
+	libraryTypeFavoriteAlbumsFromUser
 	libraryTypeFavoritePlaylistsFromUser
 	libraryTypeFavoriteSongsFromUser
 )
@@ -73,6 +75,10 @@ func (c libraryType) label() string {
 		return "Songs from unknown albums"
 	case libraryTypeSongsFromPlaylist:
 		return "Songs from %s playlist"
+	case libraryTypeFavoriteArtistsFromUser:
+		return "Favorite artists from %s"
+	case libraryTypeFavoriteAlbumsFromUser:
+		return "Favorite albums from %s"
 	case libraryTypeFavoritePlaylistsFromUser:
 		return "Favorite playlists from %s"
 	case libraryTypeFavoriteSongsFromUser:
@@ -84,7 +90,9 @@ func (c libraryType) label() string {
 type libraryMenu int64
 
 const (
-	libraryMenuMyFavoritePlaylists libraryMenu = iota
+	libraryMenuMyFavoriteArtists libraryMenu = iota
+	libraryMenuMyFavoriteAlbums
+	libraryMenuMyFavoritePlaylists
 	libraryMenuMyFavoriteSongs
 	libraryMenuAllArtists
 	libraryMenuAllAlbums
@@ -95,6 +103,10 @@ const (
 
 func (c libraryMenu) label() string {
 	switch c {
+	case libraryMenuMyFavoriteArtists:
+		return "Favorite artists"
+	case libraryMenuMyFavoriteAlbums:
+		return "Favorite albums"
 	case libraryMenuMyFavoritePlaylists:
 		return "Favorite playlists"
 	case libraryMenuMyFavoriteSongs:
@@ -114,6 +126,8 @@ func (c libraryMenu) label() string {
 }
 
 var libraryMenus = []libraryMenu{
+	libraryMenuMyFavoriteArtists,
+	libraryMenuMyFavoriteAlbums,
 	libraryMenuMyFavoritePlaylists,
 	libraryMenuMyFavoriteSongs,
 	libraryMenuAllArtists,
@@ -145,30 +159,27 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 		switch c.currentFilter().libraryType {
 		case libraryTypeMenu:
 			return libraryMenus[c.list.GetCurrentItem()].label()
-		case libraryTypeAllArtists:
-			return c.getMainTextArtist(c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()], c.currentFilter().position)
-		case libraryTypeAllAlbums:
-			return c.getMainTextAlbum(c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()], c.currentFilter().position)
-		case libraryTypeAllPlaylists:
+		case libraryTypeAllArtists,
+			libraryTypeFavoriteArtistsFromUser:
+			return c.getMainTextArtist(c.artists[c.list.GetCurrentItem()], c.currentFilter().position)
+		case libraryTypeAllAlbums,
+			libraryTypeFavoriteAlbumsFromUser:
+			return c.getMainTextAlbum(c.albums[c.list.GetCurrentItem()], c.currentFilter().position)
+		case libraryTypeAllPlaylists,
+			libraryTypeFavoritePlaylistsFromUser:
 			return c.getMainTextPlaylist(c.playlists[c.list.GetCurrentItem()], nil, c.currentFilter().position)
-		case libraryTypeAllSongs:
-			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], nil, nil, c.currentFilter().position)
 		case libraryTypeAllUsers:
 			return c.getMainTextUser(c.uiApp.LocalDb().OrderedUsers[c.list.GetCurrentItem()])
-		case libraryTypeSongsFromAlbum:
-			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], c.currentFilter().albumId, nil, c.currentFilter().position)
-		case libraryTypeSongsFromUnknownAlbum:
-			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], nil, nil, c.currentFilter().position)
 		case libraryTypeSongsFromArtist:
 			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], nil, c.currentFilter().artistId, c.currentFilter().position)
-		case libraryTypeSongsFromUnknownArtist:
+		case libraryTypeSongsFromAlbum:
+			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], c.currentFilter().albumId, nil, c.currentFilter().position)
+		case libraryTypeAllSongs,
+			libraryTypeSongsFromUnknownArtist,
+			libraryTypeSongsFromUnknownAlbum,
+			libraryTypeSongsFromPlaylist,
+			libraryTypeFavoriteSongsFromUser:
 			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], nil, nil, c.currentFilter().position)
-		case libraryTypeSongsFromPlaylist:
-			return c.getMainTextSong(c.songs[c.list.GetCurrentItem()], nil, nil, c.currentFilter().position)
-		case libraryTypeFavoritePlaylistsFromUser:
-			return c.getMainTextPlaylist(c.uiApp.LocalDb().UserOrderedFavoritePlaylists[*c.currentFilter().userId][c.list.GetCurrentItem()], nil, c.currentFilter().position)
-		case libraryTypeFavoriteSongsFromUser:
-			return c.getMainTextSong(c.uiApp.LocalDb().UserOrderedFavoriteSongs[*c.currentFilter().userId][c.list.GetCurrentItem()], nil, nil, c.currentFilter().position)
 		}
 		return ""
 	})
@@ -192,11 +203,13 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 			case 'a':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu && currentFilter.libraryType != libraryTypeAllUsers {
 					switch currentFilter.libraryType {
-					case libraryTypeAllArtists:
-						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+					case libraryTypeAllArtists,
+						libraryTypeFavoriteArtistsFromUser:
+						artist := c.artists[c.list.GetCurrentItem()]
 						c.uiApp.CurrentComponent().AddSongsFromArtist(artist)
-					case libraryTypeAllAlbums:
-						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+					case libraryTypeAllAlbums,
+						libraryTypeFavoriteAlbumsFromUser:
+						album := c.albums[c.list.GetCurrentItem()]
 						c.uiApp.CurrentComponent().AddSongsFromAlbum(album)
 					case libraryTypeAllPlaylists,
 						libraryTypeFavoritePlaylistsFromUser:
@@ -219,11 +232,13 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 			case 'l':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu && currentFilter.libraryType != libraryTypeAllUsers {
 					switch currentFilter.libraryType {
-					case libraryTypeAllArtists:
-						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+					case libraryTypeAllArtists,
+						libraryTypeFavoriteArtistsFromUser:
+						artist := c.artists[c.list.GetCurrentItem()]
 						c.uiApp.CurrentComponent().LoadSongsFromArtist(artist)
-					case libraryTypeAllAlbums:
-						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+					case libraryTypeAllAlbums,
+						libraryTypeFavoriteAlbumsFromUser:
+						album := c.albums[c.list.GetCurrentItem()]
 						c.uiApp.CurrentComponent().LoadSongsFromAlbum(album)
 					case libraryTypeAllPlaylists,
 						libraryTypeFavoritePlaylistsFromUser:
@@ -258,13 +273,15 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 			case 'd':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
 					switch currentFilter.libraryType {
-					case libraryTypeAllArtists:
-						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+					case libraryTypeAllArtists,
+						libraryTypeFavoriteArtistsFromUser:
+						artist := c.artists[c.list.GetCurrentItem()]
 						if artist != nil {
 							c.uiApp.ConfirmArtistDelete(artist)
 						}
-					case libraryTypeAllAlbums:
-						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+					case libraryTypeAllAlbums,
+						libraryTypeFavoriteAlbumsFromUser:
+						album := c.albums[c.list.GetCurrentItem()]
 						if album != nil {
 							c.uiApp.ConfirmAlbumDelete(album)
 						}
@@ -297,13 +314,15 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 			case 'e':
 				if c.list.GetItemCount() > 0 && currentFilter.libraryType != libraryTypeMenu {
 					switch currentFilter.libraryType {
-					case libraryTypeAllArtists:
-						artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+					case libraryTypeAllArtists,
+						libraryTypeFavoriteArtistsFromUser:
+						artist := c.artists[c.list.GetCurrentItem()]
 						if artist != nil {
 							OpenArtistEditComponent(c.uiApp, artist.Id, &artist.ArtistMeta, c)
 						}
-					case libraryTypeAllAlbums:
-						album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+					case libraryTypeAllAlbums,
+						libraryTypeFavoriteAlbumsFromUser:
+						album := c.albums[c.list.GetCurrentItem()]
 						if album != nil {
 							OpenAlbumEditComponent(c.uiApp, album.Id, &album.AlbumMeta, c)
 						}
@@ -417,6 +436,10 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 				case libraryTypeMenu:
 					libraryMenu := libraryMenus[c.list.GetCurrentItem()]
 					switch libraryMenu {
+					case libraryMenuMyFavoriteArtists:
+						c.GoToFavoriteArtistsFromUserFilter(c.uiApp.ConnectedUserId())
+					case libraryMenuMyFavoriteAlbums:
+						c.GoToFavoriteAlbumsFromUserFilter(c.uiApp.ConnectedUserId())
 					case libraryMenuMyFavoritePlaylists:
 						c.GoToFavoritePlaylistsFromUserFilter(c.uiApp.ConnectedUserId())
 					case libraryMenuMyFavoriteSongs:
@@ -432,20 +455,22 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 					case libraryMenuAllUsers:
 						c.GoToAllUsersFilter()
 					}
-				case libraryTypeAllArtists:
-					artist := c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()]
+				case libraryTypeAllArtists,
+					libraryTypeFavoriteArtistsFromUser:
+					artist := c.artists[c.list.GetCurrentItem()]
 					if artist == nil {
 						c.GoToSongsFromUnknownArtistFilter()
 					} else {
-						songId, artistId, albumId := c.getPositionnedIdArtist(c.uiApp.LocalDb().OrderedArtists[c.list.GetCurrentItem()], c.currentFilter().position)
+						songId, artistId, albumId := c.getPositionnedIdArtist(c.artists[c.list.GetCurrentItem()], c.currentFilter().position)
 						c.open(songId, artistId, albumId)
 					}
-				case libraryTypeAllAlbums:
-					album := c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()]
+				case libraryTypeAllAlbums,
+					libraryTypeFavoriteAlbumsFromUser:
+					album := c.albums[c.list.GetCurrentItem()]
 					if album == nil {
 						c.GoToSongsFromUnknownAlbumFilter()
 					} else {
-						songId, artistId, albumId := c.getPositionnedIdAlbum(c.uiApp.LocalDb().OrderedAlbums[c.list.GetCurrentItem()], c.currentFilter().position)
+						songId, artistId, albumId := c.getPositionnedIdAlbum(c.albums[c.list.GetCurrentItem()], c.currentFilter().position)
 						c.open(songId, artistId, albumId)
 					}
 				case libraryTypeAllPlaylists,
@@ -479,12 +504,12 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 }
 
 func (c *LibraryComponent) Enable() {
-	c.title.SetBackgroundColor(tcell.NewHexColor(0xe0e0e0))
+	c.title.SetBackgroundColor(ColorTitleBackground)
 	c.list.SetBackgroundColor(ColorEnabled)
 }
 
 func (c *LibraryComponent) Disable() {
-	c.title.SetBackgroundColor(tcell.NewHexColor(0xc0c0c0))
+	c.title.SetBackgroundColor(ColorTitleUnfocusedBackground)
 	c.list.SetBackgroundColor(ColorDisabled)
 }
 
@@ -520,12 +545,12 @@ func (c *LibraryComponent) GoToMenuFilter() {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeMenu})
 }
 
-func (c *LibraryComponent) GoToAllAlbumsFilter() {
-	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeAllAlbums})
-}
-
 func (c *LibraryComponent) GoToAllArtistsFilter() {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeAllArtists})
+}
+
+func (c *LibraryComponent) GoToAllAlbumsFilter() {
+	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeAllAlbums})
 }
 
 func (c *LibraryComponent) GoToAllPlaylistsFilter() {
@@ -558,6 +583,14 @@ func (c *LibraryComponent) GoToSongsFromUnknownArtistFilter() {
 
 func (c *LibraryComponent) GoToSongsFromPlaylistFilter(playlistId restApiV1.PlaylistId) {
 	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeSongsFromPlaylist, playlistId: &playlistId})
+}
+
+func (c *LibraryComponent) GoToFavoriteArtistsFromUserFilter(userId restApiV1.UserId) {
+	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeFavoriteArtistsFromUser, userId: &userId})
+}
+
+func (c *LibraryComponent) GoToFavoriteAlbumsFromUserFilter(userId restApiV1.UserId) {
+	c.historizeLibraryFilter(&libraryFilter{libraryType: libraryTypeFavoriteAlbumsFromUser, userId: &userId})
 }
 
 func (c *LibraryComponent) GoToFavoritePlaylistsFromUserFilter(userId restApiV1.UserId) {
@@ -603,13 +636,15 @@ func (c *LibraryComponent) RefreshView() {
 		for _, libraryMenu := range libraryMenus {
 			c.list.AddItem(libraryMenu.label())
 		}
-	case libraryTypeAllAlbums:
-		for _, album := range c.uiApp.LocalDb().OrderedAlbums {
-			c.list.AddItem(c.getMainTextAlbum(album, -1))
-		}
 	case libraryTypeAllArtists:
-		for _, artist := range c.uiApp.LocalDb().OrderedArtists {
+		c.artists = c.uiApp.LocalDb().OrderedArtists
+		for _, artist := range c.artists {
 			c.list.AddItem(c.getMainTextArtist(artist, -1))
+		}
+	case libraryTypeAllAlbums:
+		c.albums = c.uiApp.LocalDb().OrderedAlbums
+		for _, album := range c.albums {
+			c.list.AddItem(c.getMainTextAlbum(album, -1))
 		}
 	case libraryTypeAllPlaylists:
 		c.playlists = c.uiApp.LocalDb().OrderedPlaylists
@@ -645,6 +680,20 @@ func (c *LibraryComponent) RefreshView() {
 			c.songs = append(c.songs, c.uiApp.LocalDb().Songs[songId])
 		}
 		c.loadSongs(c.songs, nil, nil)
+	case libraryTypeFavoriteArtistsFromUser:
+		user := c.uiApp.LocalDb().Users[*currentFilter.userId]
+		title = fmt.Sprintf(title, user.Name)
+		c.artists = c.uiApp.LocalDb().UserOrderedFavoriteArtists[*currentFilter.userId]
+		for _, artist := range c.artists {
+			c.list.AddItem(c.getMainTextArtist(artist, -1))
+		}
+	case libraryTypeFavoriteAlbumsFromUser:
+		user := c.uiApp.LocalDb().Users[*currentFilter.userId]
+		title = fmt.Sprintf(title, user.Name)
+		c.albums = c.uiApp.LocalDb().UserOrderedFavoriteAlbums[*currentFilter.userId]
+		for _, album := range c.albums {
+			c.list.AddItem(c.getMainTextAlbum(album, -1))
+		}
 	case libraryTypeFavoritePlaylistsFromUser:
 		user := c.uiApp.LocalDb().Users[*currentFilter.userId]
 		title = fmt.Sprintf(title, user.Name)

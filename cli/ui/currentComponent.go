@@ -138,12 +138,12 @@ func (c *CurrentComponent) SetModified(modified bool) {
 }
 
 func (c *CurrentComponent) Enable() {
-	c.title.SetBackgroundColor(tcell.NewHexColor(0xe0e0e0))
+	c.title.SetBackgroundColor(ColorTitleBackground)
 	c.list.SetBackgroundColor(ColorEnabled)
 }
 
 func (c *CurrentComponent) Disable() {
-	c.title.SetBackgroundColor(tcell.NewHexColor(0xc0c0c0))
+	c.title.SetBackgroundColor(ColorTitleUnfocusedBackground)
 	c.list.SetBackgroundColor(ColorDisabled)
 }
 

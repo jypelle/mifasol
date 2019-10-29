@@ -213,7 +213,7 @@ Run console user interface to manage and listen mifasol server content:
 mifasolcli ui
 ```
 
-Press `H` to display available shortcuts to navigate through the interface.
+Press `h` to display available shortcuts to navigate through the interface.
 
 ##### Tips:
 - **After a fresh server installation, use the console user interface to change the default username/password**.

@@ -44,7 +44,7 @@ func NewPlayerComponent(uiApp *UIApp, volume int) *PlayerComponent {
 	c.volumeBox = tview.NewTextView()
 	c.volumeBox.SetDynamicColors(true)
 	c.SetVolume(volume)
-	c.volumeBox.SetBackgroundColor(tcell.NewHexColor(0xe0e0e0))
+	c.volumeBox.SetBackgroundColor(ColorTitleBackground)
 	c.volumeBox.SetTextAlign(tview.AlignRight)
 
 	c.progressBox = tview.NewBox()
