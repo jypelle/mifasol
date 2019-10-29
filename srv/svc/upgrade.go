@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//var dbVersion_0_1_3 restApiV1.Version = restApiV1.Version{0, 1, 3}
+//var dbVersion_0_2_2 restApiV1.Version = restApiV1.Version{0, 2, 2}
 
 // upgrade database structures and contents accordingly to application current version
 func (s *Service) upgrade() error {
@@ -23,38 +23,45 @@ func (s *Service) upgrade() error {
 	if e == storm.ErrNotFound {
 		dbVersion = version.AppVersion
 		logrus.Printf("Initializing database version to %s", dbVersion.String())
+
+		dbVersionEntity.LoadMeta(&dbVersion)
+		e = s.Db.Set("dbProperties", "version", &dbVersionEntity)
+		if e != nil {
+			return e
+		}
 	} else {
 		dbVersionEntity.Fill(&dbVersion)
 		logrus.Printf("Current database version: %s", dbVersion.String())
 	}
 	dbVersionOrigin := dbVersion
-
-	txn, e := s.Db.Begin(true)
-	if e != nil {
-		return e
-	}
-	songEntities := []entity.SongEntity{}
-	e = txn.All(&songEntities)
-	if e != nil && e != storm.ErrNotFound {
-		return e
-	}
-	for _, songEntity := range songEntities {
-		if songEntity.AlbumId == "" {
-			songEntity.AlbumId = restApiV1.UnknownAlbumId
-		}
-		txn.Save(&songEntity)
+	/*
+		txn, e := s.Db.Begin(true)
 		if e != nil {
 			return e
 		}
-	}
+		songEntities := []entity.SongEntity{}
+		e = txn.All(&songEntities)
+		if e != nil && e != storm.ErrNotFound {
+			return e
+		}
+		for _, songEntity := range songEntities {
+			if songEntity.AlbumId == "" {
+				songEntity.AlbumId = restApiV1.UnknownAlbumId
+			}
+			txn.Save(&songEntity)
+			if e != nil {
+				return e
+			}
+		}
 
-	txn.Commit()
-	//// Upgrade database to 0_1_3
-	//if dbVersion.LowerThan(dbVersion_0_1_3) {
+		txn.Commit()
+	*/
+	//// Upgrade database to 0_2_2
+	//if dbVersion.LowerThan(dbVersion_0_2_2) {
 	//
 	//	//...
 	//
-	//	dbVersion = dbVersion_0_1_3
+	//	dbVersion = dbVersion_0_2_2
 	//	logrus.Printf("Upgrading database version to %s",dbVersion.String())
 	//}
 
