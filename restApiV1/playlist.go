@@ -2,7 +2,7 @@ package restApiV1
 
 // Playlist
 
-const IncomingPlaylistId = "00000000000000000000000000"
+const IncomingPlaylistId PlaylistId = "00000000000000000000000000"
 
 type PlaylistId string
 

@@ -1,6 +1,8 @@
 package restApiV1
 
 // Album
+const UnknownAlbumId AlbumId = "00000000000000000000000000"
+
 type AlbumId string
 
 type Album struct {

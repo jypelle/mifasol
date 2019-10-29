@@ -29,6 +29,26 @@ func (s *Service) upgrade() error {
 	}
 	dbVersionOrigin := dbVersion
 
+	txn, e := s.Db.Begin(true)
+	if e != nil {
+		return e
+	}
+	songEntities := []entity.SongEntity{}
+	e = txn.All(&songEntities)
+	if e != nil && e != storm.ErrNotFound {
+		return e
+	}
+	for _, songEntity := range songEntities {
+		if songEntity.AlbumId == "" {
+			songEntity.AlbumId = restApiV1.UnknownAlbumId
+		}
+		txn.Save(&songEntity)
+		if e != nil {
+			return e
+		}
+	}
+
+	txn.Commit()
 	//// Upgrade database to 0_1_3
 	//if dbVersion.LowerThan(dbVersion_0_1_3) {
 	//

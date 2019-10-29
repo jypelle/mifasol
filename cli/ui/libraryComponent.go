@@ -725,7 +725,7 @@ func (c *LibraryComponent) getPositionnedIdSong(song *restApiV1.Song, fromAlbumI
 	currentPosition++
 
 	// Album name
-	if song.AlbumId != "" && fromAlbumId == nil {
+	if song.AlbumId != restApiV1.UnknownAlbumId && fromAlbumId == nil {
 		if currentPosition == highlightPosition {
 			return nil, nil, &song.AlbumId
 		}
@@ -769,7 +769,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *re
 	currentPosition++
 
 	// Album name
-	if song.AlbumId != "" && fromAlbumId == nil {
+	if song.AlbumId != restApiV1.UnknownAlbumId && fromAlbumId == nil {
 		if currentPosition >= highlightPosition {
 			if currentPosition > highlightPosition {
 				text += " [::b]/[::-] "

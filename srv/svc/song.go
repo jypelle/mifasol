@@ -149,7 +149,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 	}
 
 	// Create album link
-	if songEntity.AlbumId != "" {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		if check {
 			// Check album id
 			var albumEntity entity.AlbumEntity
@@ -206,7 +206,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 	}
 
 	// Refresh album artists
-	if songEntity.AlbumId != "" {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		e = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, nil)
 		if e != nil {
 			return nil, e
@@ -224,7 +224,7 @@ func (s *Service) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew,
 	return &song, nil
 }
 
-func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCloser, lastAlbumId *restApiV1.AlbumId) (*restApiV1.Song, error) {
+func (s *Service) CreateSongFromRawContent(externalTrn storm.Node, raw io.ReadCloser, lastAlbumId restApiV1.AlbumId) (*restApiV1.Song, error) {
 	var e error
 
 	// Check available transaction
@@ -326,7 +326,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 
 	// Update album link
 	if songOldAlbumId != songEntity.AlbumId {
-		if songEntity.AlbumId != "" {
+		if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 			// Check album id
 			if check {
 				var albumEntity entity.AlbumEntity
@@ -391,13 +391,13 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 	}
 
 	// Refresh album artists
-	if songEntity.AlbumId != "" && (artistIdsChanged || updateArtistMetaArtistId != nil || songEntity.AlbumId != songOldAlbumId) {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId && (artistIdsChanged || updateArtistMetaArtistId != nil || songEntity.AlbumId != songOldAlbumId) {
 		e = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, updateArtistMetaArtistId)
 		if e != nil {
 			return nil, e
 		}
 	}
-	if songOldAlbumId != "" && songEntity.AlbumId != songOldAlbumId {
+	if songOldAlbumId != restApiV1.UnknownAlbumId && songEntity.AlbumId != songOldAlbumId {
 		e = s.refreshAlbumArtistIds(txn, songOldAlbumId, updateArtistMetaArtistId)
 		if e != nil {
 			return nil, e
@@ -547,7 +547,7 @@ func (s *Service) DeleteSong(externalTrn storm.Node, songId restApiV1.SongId) (*
 	}
 
 	// Refresh album artists
-	if songEntity.AlbumId != "" {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		e = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, nil)
 		if e != nil {
 			return nil, e

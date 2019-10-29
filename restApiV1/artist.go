@@ -1,6 +1,9 @@
 package restApiV1
 
 // Artist
+
+const UnknownArtistId ArtistId = "00000000000000000000000000"
+
 type ArtistId string
 
 type Artist struct {

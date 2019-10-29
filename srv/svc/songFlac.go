@@ -16,7 +16,7 @@ type MifasolMetaDataBlockVorbisComment struct {
 	flacvorbis.MetaDataBlockVorbisComment
 }
 
-func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content []byte, lastAlbumId *restApiV1.AlbumId) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	flacFile, err := flac.ParseMetadata(bytes.NewBuffer(content))
@@ -41,7 +41,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content [
 
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
-	var albumId restApiV1.AlbumId = ""
+	var albumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
 	var trackNumber *int64 = nil
 	var publicationYear *int64 = nil
 	var artistIds []restApiV1.ArtistId
@@ -99,7 +99,7 @@ func (s *Service) createSongNewFromFlacContent(externalTrn storm.Node, content [
 	logrus.Debugf("Album: %s", albumName)
 
 	// Extract track number
-	if albumId != "" {
+	if albumId != restApiV1.UnknownAlbumId {
 		trackNumbers, err := cmt.Get(flacvorbis.FIELD_TRACKNUMBER)
 		if err != nil {
 			return nil, err
@@ -224,7 +224,7 @@ func (s *Service) updateSongContentFlacTag(externalTrn storm.Node, songEntity *e
 	// Set album & track number
 	vorbisClean(cmt, flacvorbis.FIELD_ALBUM)
 	vorbisClean(cmt, flacvorbis.FIELD_TRACKNUMBER)
-	if songEntity.AlbumId != "" {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		album, err := s.ReadAlbum(txn, songEntity.AlbumId)
 		if err != nil {
 			return err

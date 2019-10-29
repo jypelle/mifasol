@@ -56,7 +56,7 @@ func OpenSongEditComponent(uiApp *UIApp, song *restApiV1.Song, originPrimitive t
 			c.albumDropDown.AddOption("(Unknown album)", nil)
 		} else {
 			c.albumDropDown.AddOption(album.Name, nil)
-			if song.AlbumId != "" && song.AlbumId == album.Id {
+			if song.AlbumId != restApiV1.UnknownAlbumId && song.AlbumId == album.Id {
 				selectedAlbumInd = ind
 			}
 		}
@@ -109,7 +109,7 @@ func (c *SongEditComponent) save() {
 	selectedAlbumInd, _ := c.albumDropDown.GetCurrentOption()
 	var id restApiV1.AlbumId
 	if selectedAlbumInd == 0 {
-		c.song.SongMeta.AlbumId = ""
+		c.song.SongMeta.AlbumId = restApiV1.UnknownAlbumId
 	} else {
 		id = c.uiApp.localDb.OrderedAlbums[selectedAlbumInd].Id
 		c.song.SongMeta.AlbumId = id

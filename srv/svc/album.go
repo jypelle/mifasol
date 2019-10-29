@@ -348,7 +348,7 @@ func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]re
 	return albumIds, nil
 }
 
-func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId *restApiV1.AlbumId) (restApiV1.AlbumId, error) {
+func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId restApiV1.AlbumId) (restApiV1.AlbumId, error) {
 	var e error
 
 	var albumId restApiV1.AlbumId
@@ -360,7 +360,7 @@ func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName stri
 		if txn == nil {
 			txn, e = s.Db.Begin(true)
 			if e != nil {
-				return "", e
+				return restApiV1.UnknownAlbumId, e
 			}
 			defer txn.Rollback()
 		}
@@ -368,23 +368,23 @@ func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName stri
 		var albums []restApiV1.Album
 		albums, e = s.ReadAlbums(txn, &restApiV1.AlbumFilter{Name: &albumName})
 		if e != nil {
-			return "", e
+			return restApiV1.UnknownAlbumId, e
 		}
 		if len(albums) > 0 {
 			// Link the song to an existing album
-			if lastAlbumId == nil {
+			if lastAlbumId == restApiV1.UnknownAlbumId {
 				albumId = albums[0].Id
 			} else {
 				for _, album := range albums {
-					if album.Id == *lastAlbumId {
-						albumId = *lastAlbumId
+					if album.Id == lastAlbumId {
+						albumId = lastAlbumId
 					}
 				}
-				if albumId == "" {
+				if albumId == restApiV1.UnknownAlbumId {
 					// Create the album before linking it to the song
 					var album, e = s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
 					if e != nil {
-						return "", e
+						return restApiV1.UnknownAlbumId, e
 					}
 					albumId = album.Id
 				}
@@ -393,7 +393,7 @@ func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName stri
 			// Create the album before linking it to the song
 			var album, e = s.CreateAlbum(txn, &restApiV1.AlbumMeta{Name: albumName})
 			if e != nil {
-				return "", e
+				return restApiV1.UnknownAlbumId, e
 			}
 			albumId = album.Id
 		}

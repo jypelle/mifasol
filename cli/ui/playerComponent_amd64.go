@@ -214,7 +214,7 @@ func (c *PlayerComponent) getMainTextSong(song *restApiV1.Song) string {
 	songName := tview.Escape(song.Name)
 
 	albumName := ""
-	if song.AlbumId != "" {
+	if song.AlbumId != restApiV1.UnknownAlbumId {
 		albumName = " / " + tview.Escape(c.uiApp.localDb.Albums[song.AlbumId].Name)
 	}
 	artistsName := ""

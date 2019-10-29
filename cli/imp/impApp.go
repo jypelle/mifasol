@@ -124,7 +124,7 @@ func (a *ImpApp) start() {
 	)
 
 	var lastFolder string
-	var lastAlbumId restApiV1.AlbumId
+	var lastAlbumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
 
 	for key, fileName := range filesNameToImport {
 		if impAborded {
@@ -144,7 +144,7 @@ func (a *ImpApp) start() {
 
 			// Reset last album id on new folder
 			if lastFolder != fileName[:indexLastSeparator] {
-				lastAlbumId = ""
+				lastAlbumId = restApiV1.UnknownAlbumId
 			}
 
 			songFormat := filesSongFormatToImport[key]

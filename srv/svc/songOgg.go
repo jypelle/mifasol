@@ -6,7 +6,7 @@ import (
 	"github.com/jypelle/mifasol/srv/entity"
 )
 
-func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId *restApiV1.AlbumId) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	// TODO
@@ -30,7 +30,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []
 			Format:          restApiV1.SongFormatOgg,
 			Size:            int64(len(content)),
 			PublicationYear: nil,
-			AlbumId:         "",
+			AlbumId:         restApiV1.UnknownAlbumId,
 			TrackNumber:     nil,
 			ArtistIds:       artistIds,
 		},

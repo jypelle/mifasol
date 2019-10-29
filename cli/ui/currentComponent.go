@@ -164,7 +164,7 @@ func (c *CurrentComponent) getMainTextSong(songId restApiV1.SongId, highlightPos
 	songName := "[" + ColorSongStr + "]" + tview.Escape(song.Name) + "[white]"
 
 	albumName := ""
-	if song.AlbumId != "" {
+	if song.AlbumId != restApiV1.UnknownAlbumId {
 		albumName = " [::b]/[::-] [" + ColorAlbumStr + "]" + tview.Escape(c.uiApp.localDb.Albums[song.AlbumId].Name) + "[white]"
 	}
 	artistsName := ""

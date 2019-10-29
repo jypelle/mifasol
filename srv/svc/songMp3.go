@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId *restApiV1.AlbumId) (*restApiV1.SongNew, error) {
+func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	reader := bytes.NewReader(content)
@@ -27,7 +27,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
 	var publicationYear *int64 = nil
-	var albumId restApiV1.AlbumId = ""
+	var albumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
 	var trackNumber *int64 = nil
 	var artistIds []restApiV1.ArtistId
 
@@ -57,7 +57,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	logrus.Debugf("Album: %s", albumName)
 
 	// Extract track number
-	if albumId != "" {
+	if albumId != restApiV1.UnknownAlbumId {
 		rawTrackNumber := strings.Split(tag.GetTextFrame(tag.CommonID("Track number/Position in set")).Text, "/")
 		if len(rawTrackNumber) > 0 {
 			parsedTrackNumber, _ := strconv.ParseInt(normalizeString(rawTrackNumber[0]), 10, 64)
@@ -141,7 +141,7 @@ func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, songEntity *en
 	}
 
 	// Set album & track number
-	if songEntity.AlbumId != "" {
+	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		album, err := s.ReadAlbum(txn, songEntity.AlbumId)
 		if err != nil {
 			return err

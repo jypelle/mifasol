@@ -202,7 +202,7 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 	l.UnknownArtistSongs = nil
 
 	for _, song := range l.OrderedSongs {
-		if song.AlbumId != "" {
+		if song.AlbumId != restApiV1.UnknownAlbumId {
 			l.AlbumOrderedSongs[song.AlbumId] = append(l.AlbumOrderedSongs[song.AlbumId], song)
 		} else {
 			l.UnknownAlbumSongs = append(l.UnknownAlbumSongs, song)
@@ -250,8 +250,8 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 
 	for _, songs := range l.ArtistOrderedSongs {
 		sort.Slice(songs, func(i, j int) bool {
-			if songs[i].AlbumId != "" {
-				if songs[j].AlbumId != "" {
+			if songs[i].AlbumId != restApiV1.UnknownAlbumId {
+				if songs[j].AlbumId != restApiV1.UnknownAlbumId {
 					if songs[i].AlbumId != songs[j].AlbumId {
 						return l.collator.CompareString(l.Albums[songs[i].AlbumId].Name, l.Albums[songs[j].AlbumId].Name) == -1
 					} else {
@@ -273,7 +273,7 @@ func (l *LocalDb) Refresh() restClientV1.ClientError {
 					return false
 				}
 			} else {
-				if songs[j].AlbumId != "" {
+				if songs[j].AlbumId != restApiV1.UnknownAlbumId {
 					return true
 				}
 			}
@@ -373,10 +373,14 @@ func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
 	for songId, _ := range l.UserFavoriteSongIds[userId] {
 		song := l.Songs[songId]
 		userOrderedSongs = append(userOrderedSongs, song)
-		for _, artistId := range song.ArtistIds {
-			if _, ok := userArtistIds[artistId]; !ok {
-				userArtistIds[artistId] = true
+		if len(song.ArtistIds) > 0 {
+			for _, artistId := range song.ArtistIds {
+				if _, ok := userArtistIds[artistId]; !ok {
+					userArtistIds[artistId] = true
+				}
 			}
+		} else {
+			userArtistIds[restApiV1.UnknownArtistId] = true
 		}
 		if _, ok := userAlbumIds[song.AlbumId]; !ok {
 			userAlbumIds[song.AlbumId] = true
@@ -392,7 +396,7 @@ func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
 		}
 	})
 
-	userOrderedArtists := make([]*restApiV1.Artist, 1, len(userArtistIds)+1)
+	userOrderedArtists := make([]*restApiV1.Artist, 0, len(userArtistIds))
 
 	for artistId, _ := range userArtistIds {
 		artist := l.Artists[artistId]
@@ -400,7 +404,7 @@ func (l *LocalDb) refreshUserOrderedFavoriteSongs(userId restApiV1.UserId) {
 	}
 	l.sortArtistList(userOrderedArtists)
 
-	userOrderedAlbums := make([]*restApiV1.Album, 1, len(userAlbumIds)+1)
+	userOrderedAlbums := make([]*restApiV1.Album, 0, len(userAlbumIds))
 
 	for albumId, _ := range userAlbumIds {
 		album := l.Albums[albumId]

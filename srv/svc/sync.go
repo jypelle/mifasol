@@ -162,7 +162,7 @@ func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, favoriteFromTs int64
 
 		fileSyncSong.Id = song.Id
 		fileSyncSong.UpdateTs = song.UpdateTs
-		if song.AlbumId == "" {
+		if song.AlbumId == restApiV1.UnknownAlbumId {
 			fileSyncSong.Filepath += tool.SanitizeFilename("(Unknown)") + "/"
 			for ind, artistId := range song.ArtistIds {
 				artist, _ := s.ReadArtist(txn, artistId)
