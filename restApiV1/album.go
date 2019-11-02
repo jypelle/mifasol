@@ -1,7 +1,7 @@
 package restApiV1
 
 // Album
-const UnknownAlbumId AlbumId = "00000000000000000000000000"
+var UnknownAlbumId AlbumId = "00000000000000000000000000"
 
 type AlbumId string
 
