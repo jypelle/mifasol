@@ -1,6 +1,6 @@
 # 💿 Mifasol
 
-⚠ *Right now Mifasol is in an alpha stage.*
+⚠ *Right now Mifasol is in a beta stage.*
 
 Mifasol is a self-hosted *opinionated* music server.
 
