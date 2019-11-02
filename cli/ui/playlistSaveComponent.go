@@ -18,6 +18,12 @@ type PlaylistSaveComponent struct {
 
 func OpenPlaylistContentSaveComponent(uiApp *UIApp, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive tview.Primitive) {
 
+	// Only admin or playlist owner can edit playlist content
+	if srcPlaylistId != nil && !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(*srcPlaylistId, uiApp.ConnectedUserId()) {
+		uiApp.WarningMessage("Only administrator or playlist owner can edit playlist content")
+		return
+	}
+
 	c := &PlaylistSaveComponent{
 		uiApp:           uiApp,
 		srcPlaylistId:   srcPlaylistId,

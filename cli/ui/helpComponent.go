@@ -40,6 +40,7 @@ func NewHelpComponent(uiApp *UIApp) *HelpComponent {
 'a'    : Add song / album / artist / playlist to current playlist
 'l'    : Load song / album / artist / playlist to current playlist
 'f'    : Add to / Remove from favorite songs / playlists
+'/'    : Filter by song / album / artist name
 <LEFT> : Previous item
 <RIGHT>: Next item
 <ENTER>: Play song / Artist's songs / Album's songs / Playlist's songs
