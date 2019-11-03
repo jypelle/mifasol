@@ -5,6 +5,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/jypelle/mifasol/primitive"
 	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/tool"
 	"github.com/rivo/tview"
 	"strconv"
 	"strings"
@@ -12,14 +13,15 @@ import (
 
 type LibraryComponent struct {
 	*tview.Flex
-	title         *tview.TextView
-	list          *primitive.RichList
-	uiApp         *UIApp
-	historyFilter []*libraryFilter
-	songs         []*restApiV1.Song
-	albums        []*restApiV1.Album
-	artists       []*restApiV1.Artist
-	playlists     []*restApiV1.Playlist
+	title                *tview.TextView
+	list                 *primitive.RichList
+	nameFilterInputField *tview.InputField
+	uiApp                *UIApp
+	historyFilter        []*libraryFilter
+	songs                []*restApiV1.Song
+	albums               []*restApiV1.Album
+	artists              []*restApiV1.Artist
+	playlists            []*restApiV1.Playlist
 }
 
 type libraryFilter struct {
@@ -28,7 +30,7 @@ type libraryFilter struct {
 	albumId     *restApiV1.AlbumId
 	playlistId  *restApiV1.PlaylistId
 	userId      *restApiV1.UserId
-	contains    *string
+	nameFilter  *string
 
 	index    int
 	position int
@@ -187,10 +189,22 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 		c.currentFilter().position = 0
 	})
 
-	c.Flex = tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(c.title, 1, 0, false).
-		AddItem(c.list, 0, 1, false)
+	c.nameFilterInputField = tview.NewInputField().
+		SetLabel("Filter: ").
+		SetText("")
+	c.nameFilterInputField.SetDoneFunc(
+		func(key tcell.Key) {
+			c.uiApp.tviewApp.SetFocus(uiApp.libraryComponent)
+			if c.currentFilter().nameFilter != nil && *c.currentFilter().nameFilter == "" {
+				c.currentFilter().nameFilter = nil
+			}
+			c.refreshNameFilter()
+		})
+	c.nameFilterInputField.SetChangedFunc(
+		func(text string) {
+			c.currentFilter().nameFilter = &text
+			c.RefreshList()
+		})
 
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		currentFilter := c.currentFilter()
@@ -357,14 +371,14 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 									c.uiApp.ClientErrorMessage("Unable to add song to favorites", cliErr)
 								}
 								c.uiApp.LocalDb().RemoveSongFromMyFavorite(song.Id)
-								c.RefreshView()
+								c.RefreshList()
 							} else {
 								_, cliErr := c.uiApp.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to remove song from favorites", cliErr)
 								}
 								c.uiApp.LocalDb().AddSongToMyFavorite(song.Id)
-								c.RefreshView()
+								c.RefreshList()
 							}
 							if !(currentFilter.userId != nil && *currentFilter.userId == c.uiApp.ConnectedUserId()) {
 								c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)
@@ -378,7 +392,12 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 				case libraryTypeSongs,
 					libraryTypeAlbums,
 					libraryTypeArtists:
-					OpenNameFilterComponent(c.uiApp)
+					if c.currentFilter().nameFilter == nil {
+						initNameFilter := ""
+						c.currentFilter().nameFilter = &initNameFilter
+						c.refreshNameFilter()
+					}
+					c.uiApp.tviewApp.SetFocus(c.nameFilterInputField)
 				}
 				return nil
 			}
@@ -454,6 +473,24 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 	c.ResetToMenuFilter()
 
 	return c
+}
+
+func (c *LibraryComponent) refreshNameFilter() {
+	if !c.nameFilterInputField.HasFocus() {
+		if c.currentFilter().nameFilter != nil {
+			c.nameFilterInputField.SetText(*c.currentFilter().nameFilter)
+			c.Flex = tview.NewFlex().
+				SetDirection(tview.FlexRow).
+				AddItem(c.title, 1, 0, false).
+				AddItem(c.list, 0, 1, false).
+				AddItem(c.nameFilterInputField, 1, 0, false)
+		} else {
+			c.Flex = tview.NewFlex().
+				SetDirection(tview.FlexRow).
+				AddItem(c.title, 1, 0, false).
+				AddItem(c.list, 0, 1, false)
+		}
+	}
 }
 
 func (c *LibraryComponent) Enable() {
@@ -555,27 +592,37 @@ func (c *LibraryComponent) GoToFavoriteSongsFromUserFilter(userId restApiV1.User
 }
 
 func (c *LibraryComponent) RefreshView() {
-	// Redirection to menu when filter references obsolete artist/album/playlist id
+	c.RefreshList()
+	c.refreshNameFilter()
+
+}
+
+func (c *LibraryComponent) RefreshList() {
+	// Redirection to menu when filter references obsolete artist/album/playlist/user id
 	currentFilter := c.currentFilter()
 
 	if currentFilter.albumId != nil && *currentFilter.albumId != restApiV1.UnknownAlbumId {
 		if _, ok := c.uiApp.LocalDb().Albums[*currentFilter.albumId]; !ok {
 			c.ResetToMenuFilter()
+			return
 		}
 	}
 	if currentFilter.artistId != nil && *currentFilter.artistId != restApiV1.UnknownArtistId {
 		if _, ok := c.uiApp.LocalDb().Artists[*currentFilter.artistId]; !ok {
 			c.ResetToMenuFilter()
+			return
 		}
 	}
 	if currentFilter.playlistId != nil {
 		if _, ok := c.uiApp.LocalDb().Playlists[*currentFilter.playlistId]; !ok {
 			c.ResetToMenuFilter()
+			return
 		}
 	}
 	if currentFilter.userId != nil {
 		if _, ok := c.uiApp.LocalDb().Users[*currentFilter.userId]; !ok {
 			c.ResetToMenuFilter()
+			return
 		}
 	}
 
@@ -599,10 +646,11 @@ func (c *LibraryComponent) RefreshView() {
 		}
 
 		// Remove non-matching artist names
-		if currentFilter.contains != nil {
+		if currentFilter.nameFilter != nil {
+			searchNameFilter := tool.SearchLib(*currentFilter.nameFilter)
 			var filteredArtists []*restApiV1.Artist
 			for _, artist := range c.artists {
-				if artist == nil || strings.Contains(strings.ToLower(artist.Name), *currentFilter.contains) {
+				if artist == nil || strings.Contains(tool.SearchLib(artist.Name), searchNameFilter) {
 					filteredArtists = append(filteredArtists, artist)
 				}
 			}
@@ -622,10 +670,11 @@ func (c *LibraryComponent) RefreshView() {
 		}
 
 		// Remove non-matching album names
-		if currentFilter.contains != nil {
+		if currentFilter.nameFilter != nil {
+			searchNameFilter := tool.SearchLib(*currentFilter.nameFilter)
 			var filteredAlbums []*restApiV1.Album
 			for _, album := range c.albums {
-				if album == nil || strings.Contains(strings.ToLower(album.Name), *currentFilter.contains) {
+				if album == nil || strings.Contains(tool.SearchLib(album.Name), searchNameFilter) {
 					filteredAlbums = append(filteredAlbums, album)
 				}
 			}
@@ -680,10 +729,11 @@ func (c *LibraryComponent) RefreshView() {
 			}
 		}
 		// Remove non-matching song names
-		if currentFilter.contains != nil {
+		if currentFilter.nameFilter != nil {
+			searchNameFilter := tool.SearchLib(*currentFilter.nameFilter)
 			var filteredSongs []*restApiV1.Song
 			for _, song := range c.songs {
-				if strings.Contains(strings.ToLower(song.Name), *currentFilter.contains) {
+				if strings.Contains(tool.SearchLib(song.Name), searchNameFilter) {
 					filteredSongs = append(filteredSongs, song)
 				}
 			}
