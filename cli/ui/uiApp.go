@@ -76,7 +76,7 @@ func NewUIApp(clientConfig config.ClientConfig, restClient *restClientV1.RestCli
 			0, 2, true)
 
 	uiApp.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if uiApp.mainLayout.HasFocus() {
+		if uiApp.mainLayout.HasFocus() && !uiApp.libraryComponent.nameFilterInputField.HasFocus() {
 			switch {
 			case event.Key() == tcell.KeyF5:
 				uiApp.Reload()
