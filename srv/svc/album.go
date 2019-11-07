@@ -351,7 +351,7 @@ func (s *Service) GetDeletedAlbumIds(externalTrn storm.Node, fromTs int64) ([]re
 func (s *Service) getAlbumIdFromAlbumName(externalTrn storm.Node, albumName string, lastAlbumId restApiV1.AlbumId) (restApiV1.AlbumId, error) {
 	var e error
 
-	var albumId restApiV1.AlbumId
+	var albumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
 
 	if albumName != "" {
 
