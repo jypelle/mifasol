@@ -192,6 +192,9 @@ func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
 	c.nameFilterInputField = tview.NewInputField().
 		SetLabel("Filter: ").
 		SetText("")
+
+		//	c.nameFilterInputField.SetBackgroundColor(tcell.NewHexColor(0x1111C0))
+		//	c.nameFilterInputField.SetFieldBackgroundColor(tcell.NewHexColor(0x3333C0))
 	c.nameFilterInputField.SetDoneFunc(
 		func(key tcell.Key) {
 			c.uiApp.tviewApp.SetFocus(uiApp.libraryComponent)

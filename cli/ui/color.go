@@ -36,13 +36,13 @@ var ColorHelpTextStr = "#000000"
 func init() {
 	tview.Styles = tview.Theme{
 		PrimitiveBackgroundColor:    tcell.ColorBlack,
-		ContrastBackgroundColor:     ColorSelected,
+		ContrastBackgroundColor:     tcell.NewHexColor(0x403030),
 		MoreContrastBackgroundColor: tcell.ColorGreen,
 		BorderColor:                 tcell.NewHexColor(0x808080),
 		TitleColor:                  tcell.ColorWhite,
 		GraphicsColor:               tcell.ColorWhite,
 		PrimaryTextColor:            tcell.ColorWhite,
-		SecondaryTextColor:          tcell.ColorYellow,
+		SecondaryTextColor:          tcell.NewHexColor(0xFF6040),
 		TertiaryTextColor:           tcell.ColorGreen,
 		InverseTextColor:            tcell.ColorBlue,
 		ContrastSecondaryTextColor:  tcell.ColorDarkCyan,
