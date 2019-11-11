@@ -15,6 +15,7 @@ type SongEntity struct {
 	PublicationYear *int64
 	AlbumId         restApiV1.AlbumId `storm:"index"`
 	TrackNumber     *int64
+	ExplicitFg      bool
 	ArtistIds       []restApiV1.ArtistId
 }
 
@@ -29,6 +30,7 @@ func (e *SongEntity) Fill(s *restApiV1.Song) {
 	s.PublicationYear = e.PublicationYear
 	s.AlbumId = e.AlbumId
 	s.TrackNumber = e.TrackNumber
+	s.ExplicitFg = e.ExplicitFg
 	s.ArtistIds = e.ArtistIds
 }
 
@@ -41,6 +43,7 @@ func (e *SongEntity) LoadMeta(s *restApiV1.SongMeta) {
 		e.PublicationYear = s.PublicationYear
 		e.AlbumId = s.AlbumId
 		e.TrackNumber = s.TrackNumber
+		e.ExplicitFg = s.ExplicitFg
 		e.ArtistIds = s.ArtistIds
 	}
 }

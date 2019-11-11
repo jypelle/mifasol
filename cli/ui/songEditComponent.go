@@ -12,6 +12,7 @@ type SongEditComponent struct {
 	publicationYearInputField *tview.InputField
 	albumDropDown             *tview.DropDown
 	trackNumberInputField     *tview.InputField
+	explicitFgCheckbox        *tview.Checkbox
 	artistDropDowns           []*tview.DropDown
 	uiApp                     *UIApp
 	song                      *restApiV1.Song
@@ -72,11 +73,17 @@ func OpenSongEditComponent(uiApp *UIApp, song *restApiV1.Song, originPrimitive t
 		c.trackNumberInputField.SetText(strconv.FormatInt(*song.TrackNumber, 10))
 	}
 
+	// Explicit flag
+	c.explicitFgCheckbox = tview.NewCheckbox().
+		SetLabel("Explicit").
+		SetChecked(song.ExplicitFg)
+
 	c.Form = tview.NewForm()
 	c.Form.AddFormItem(c.nameInputField)
 	c.Form.AddFormItem(c.publicationYearInputField)
 	c.Form.AddFormItem(c.albumDropDown)
 	c.Form.AddFormItem(c.trackNumberInputField)
+	c.Form.AddFormItem(c.explicitFgCheckbox)
 
 	for _, artistId := range c.song.ArtistIds {
 		c.addArtist(artistId)
@@ -135,6 +142,9 @@ func (c *SongEditComponent) save() {
 			c.song.SongMeta.TrackNumber = &trackNumber
 		}
 	}
+
+	// Explicit flag
+	c.song.SongMeta.ExplicitFg = c.explicitFgCheckbox.IsChecked()
 
 	_, cliErr := c.uiApp.restClient.UpdateSong(c.song.Id, &c.song.SongMeta)
 	if cliErr != nil {

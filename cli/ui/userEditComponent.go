@@ -9,6 +9,7 @@ type UserEditComponent struct {
 	*tview.Form
 	nameInputField     *tview.InputField
 	passwordInputField *tview.InputField
+	hideExplicitBox    *tview.Checkbox
 	adminCheckBox      *tview.Checkbox
 	uiApp              *UIApp
 	userId             restApiV1.UserId
@@ -48,6 +49,11 @@ func OpenUserEditComponent(uiApp *UIApp, userId restApiV1.UserId, userMeta *rest
 		SetFieldWidth(50)
 	c.Form.AddFormItem(c.passwordInputField)
 
+	c.hideExplicitBox = tview.NewCheckbox().
+		SetLabel("Hide explicit songs").
+		SetChecked(userMeta.HideExplicitFg)
+	c.Form.AddFormItem(c.hideExplicitBox)
+
 	c.adminCheckBox = tview.NewCheckbox().
 		SetLabel("Administrator").
 		SetChecked(userMeta.AdminFg)
@@ -70,9 +76,10 @@ func (c *UserEditComponent) save() {
 	userMetaComplete := &restApiV1.UserMetaComplete{*c.userMeta, c.passwordInputField.GetText()}
 	userMetaComplete.Name = c.nameInputField.GetText()
 
-	// Non-admin user can't change admin user flag
+	// Non-admin user can't change hide explicit or admin user flag
 	if c.uiApp.IsConnectedUserAdmin() {
 		userMetaComplete.AdminFg = c.adminCheckBox.IsChecked()
+		userMetaComplete.HideExplicitFg = c.hideExplicitBox.IsChecked()
 	}
 
 	if c.userId != "" {

@@ -53,8 +53,9 @@ func NewService(db *storm.DB, serverConfig *config.ServerConfig) *Service {
 		// Create default admin user
 		userMetaComplete := restApiV1.UserMetaComplete{
 			UserMeta: restApiV1.UserMeta{
-				Name:    DefaultUserName,
-				AdminFg: true,
+				Name:           DefaultUserName,
+				HideExplicitFg: false,
+				AdminFg:        true,
 			},
 			Password: DefaultUserPassword,
 		}

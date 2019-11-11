@@ -32,6 +32,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []
 			PublicationYear: nil,
 			AlbumId:         restApiV1.UnknownAlbumId,
 			TrackNumber:     nil,
+			ExplicitFg:      false,
 			ArtistIds:       artistIds,
 		},
 		Content: content,

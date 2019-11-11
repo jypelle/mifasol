@@ -11,8 +11,9 @@ type User struct {
 }
 
 type UserMeta struct {
-	Name    string `json:"name"`
-	AdminFg bool   `json:"adminFlag"`
+	Name           string `json:"name"`
+	AdminFg        bool   `json:"adminFlag"`
+	HideExplicitFg bool   `json:"hideExplicitFg"`
 }
 
 type UserMetaComplete struct {

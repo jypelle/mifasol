@@ -104,6 +104,7 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 			PublicationYear: publicationYear,
 			AlbumId:         albumId,
 			TrackNumber:     trackNumber,
+			ExplicitFg:      false,
 			ArtistIds:       artistIds,
 		},
 		Content: content,

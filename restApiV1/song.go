@@ -87,6 +87,7 @@ type SongMeta struct {
 	AlbumId         AlbumId      `json:"albumId"`
 	TrackNumber     *int64       `json:"trackNumber"`
 	ArtistIds       []ArtistId   `json:"artistIds"`
+	ExplicitFg      bool         `json:"explicitFg"`
 }
 
 type SongNew struct {
