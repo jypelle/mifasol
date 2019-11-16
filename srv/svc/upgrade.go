@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//var dbVersion_0_2_2 restApiV1.Version = restApiV1.Version{0, 2, 2}
+var dbVersion_0_2_3 restApiV1.Version = restApiV1.Version{0, 2, 3}
 
 // upgrade database structures and contents accordingly to application current version
 func (s *Service) upgrade() error {
@@ -33,8 +33,12 @@ func (s *Service) upgrade() error {
 		dbVersionEntity.Fill(&dbVersion)
 		logrus.Printf("Current database version: %s", dbVersion.String())
 	}
-	dbVersionOrigin := dbVersion
-	/*
+
+	// Upgrade database to 0_2_3
+	//	if dbVersion.LowerThan(dbVersion_0_2_3) {
+	if true {
+
+		// Update songEntity structure
 		txn, e := s.Db.Begin(true)
 		if e != nil {
 			return e
@@ -45,28 +49,22 @@ func (s *Service) upgrade() error {
 			return e
 		}
 		for _, songEntity := range songEntities {
-			if songEntity.AlbumId == "" {
-				songEntity.AlbumId = restApiV1.UnknownAlbumId
+			txn.DeleteStruct(&songEntity)
+			if e != nil {
+				return e
 			}
-			txn.Save(&songEntity)
+			txn.Update(&songEntity)
 			if e != nil {
 				return e
 			}
 		}
 
 		txn.Commit()
-	*/
-	//// Upgrade database to 0_2_2
-	//if dbVersion.LowerThan(dbVersion_0_2_2) {
-	//
-	//	//...
-	//
-	//	dbVersion = dbVersion_0_2_2
-	//	logrus.Printf("Upgrading database version to %s",dbVersion.String())
-	//}
 
-	// Update db version
-	if dbVersionOrigin != dbVersion {
+		dbVersion = dbVersion_0_2_3
+		logrus.Printf("Upgrading database version to %s", dbVersion.String())
+
+		// Update db version
 		dbVersionEntity.LoadMeta(&dbVersion)
 		e = s.Db.Set("dbProperties", "version", &dbVersionEntity)
 		if e != nil {
