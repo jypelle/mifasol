@@ -35,43 +35,35 @@ func (s *Service) upgrade() error {
 	}
 
 	// Upgrade database to 0_2_3
-	//	if dbVersion.LowerThan(dbVersion_0_2_3) {
-	if true {
-		s.Db.ReIndex(&entity.SongEntity{})
-		/*
-			// Update songEntity structure
-			songEntities := []entity.SongEntity{}
-			e = s.Db.All(&songEntities)
-			if e != nil && e != storm.ErrNotFound {
-				return e
-			}
-			s.Db.Drop(&entity.SongEntity{})
-			for _, songEntity := range songEntities {
-				txn, e := s.Db.Begin(true)
-				if e != nil {
-					return e
-				}
-				txn.DeleteStruct(&songEntity)
-				if e != nil {
-					return e
-				}
-				txn.Update(&songEntity)
-				if e != nil {
-					return e
-				}
-				txn.Commit()
-			}
-		*/
-		dbVersion = dbVersion_0_2_3
-		logrus.Printf("Upgrading database version to %s", dbVersion.String())
-
-		// Update db version
-		dbVersionEntity.LoadMeta(&dbVersion)
-		e = s.Db.Set("dbProperties", "version", &dbVersionEntity)
-		if e != nil {
-			return e
-		}
-	}
+	//if dbVersion.LowerThan(dbVersion_0_2_3) {
+	//	// Update songEntity structure
+	//	songEntities := []entity.SongEntity{}
+	//	e = s.Db.All(&songEntities)
+	//	if e != nil && e != storm.ErrNotFound {
+	//		return e
+	//	}
+	//	s.Db.Drop(&entity.SongEntity{})
+	//	for _, songEntity := range songEntities {
+	//		txn, e := s.Db.Begin(true)
+	//		if e != nil {
+	//			return e
+	//		}
+	//		txn.Save(&songEntity)
+	//		if e != nil {
+	//			return e
+	//		}
+	//		txn.Commit()
+	//	}
+	//	dbVersion = dbVersion_0_2_3
+	//	logrus.Printf("Upgrading database version to %s", dbVersion.String())
+	//
+	//	// Update db version
+	//	dbVersionEntity.LoadMeta(&dbVersion)
+	//	e = s.Db.Set("dbProperties", "version", &dbVersionEntity)
+	//	if e != nil {
+	//		return e
+	//	}
+	//}
 
 	return nil
 }
