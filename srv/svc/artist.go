@@ -144,7 +144,7 @@ func (s *Service) UpdateArtist(externalTrn storm.Node, artistId restApiV1.Artist
 	artistEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update artist
-	e = txn.Update(&artistEntity)
+	e = txn.Save(&artistEntity)
 	if e != nil {
 		return nil, e
 	}

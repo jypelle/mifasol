@@ -142,7 +142,7 @@ func (s *Service) UpdateAlbum(externalTrn storm.Node, albumId restApiV1.AlbumId,
 	albumEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update album
-	e = txn.Update(&albumEntity)
+	e = txn.Save(&albumEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -248,7 +248,7 @@ func (s *Service) refreshAlbumArtistIds(externalTrn storm.Node, albumId restApiV
 		// Update album
 		albumEntity.UpdateTs = time.Now().UnixNano()
 
-		e := txn.Update(&albumEntity)
+		e := txn.Save(&albumEntity)
 		if e != nil {
 			return e
 		}

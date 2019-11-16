@@ -365,7 +365,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 	}
 
 	// Update song
-	e = txn.Update(&songEntity)
+	e = txn.Save(&songEntity)
 	if e != nil {
 		return nil, e
 	}

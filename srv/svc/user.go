@@ -184,7 +184,7 @@ func (s *Service) UpdateUser(externalTrn storm.Node, userId restApiV1.UserId, us
 	userEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update user
-	e = txn.Update(&userEntity)
+	e = txn.Save(&userEntity)
 	if e != nil {
 		return nil, e
 	}
