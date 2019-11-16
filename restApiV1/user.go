@@ -12,7 +12,7 @@ type User struct {
 
 type UserMeta struct {
 	Name           string `json:"name"`
-	AdminFg        bool   `json:"adminFlag"`
+	AdminFg        bool   `json:"adminFg"`
 	HideExplicitFg bool   `json:"hideExplicitFg"`
 }
 
