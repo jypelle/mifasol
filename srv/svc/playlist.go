@@ -232,7 +232,7 @@ func (s *Service) UpdatePlaylist(externalTrn storm.Node, playlistId restApiV1.Pl
 		playlistEntity.ContentUpdateTs = now
 	}
 
-	e = txn.Update(&playlistEntity)
+	e = txn.Save(&playlistEntity)
 	if e != nil {
 		return nil, e
 	}
@@ -344,7 +344,7 @@ func (s *Service) AddSongToPlaylist(externalTrn storm.Node, playlistId restApiV1
 	playlistEntity.UpdateTs = now
 	playlistEntity.ContentUpdateTs = now
 
-	e = txn.Update(&playlistEntity)
+	e = txn.Save(&playlistEntity)
 	if e != nil {
 		return nil, e
 	}

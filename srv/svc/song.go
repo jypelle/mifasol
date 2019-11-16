@@ -365,13 +365,7 @@ func (s *Service) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, so
 	}
 
 	// Update song
-	/*
-		e = txn.DeleteStruct(&songEntity)
-		if e != nil {
-			return nil, e
-		}
-	*/
-	e = txn.Update(&songEntity)
+	e = txn.Save(&songEntity)
 	if e != nil {
 		return nil, e
 	}
