@@ -742,6 +742,16 @@ func (c *LibraryComponent) RefreshList() {
 			}
 			c.songs = filteredSongs
 		}
+		// Remove explicit songs if user profile ask for it
+		if c.uiApp.HideExplicitSongForConnectedUser() {
+			var filteredSongs []*restApiV1.Song
+			for _, song := range c.songs {
+				if !song.ExplicitFg {
+					filteredSongs = append(filteredSongs, song)
+				}
+			}
+			c.songs = filteredSongs
+		}
 		c.loadSongs(c.songs, currentFilter.albumId, currentFilter.artistId)
 	case libraryTypeUsers:
 		for _, user := range c.uiApp.LocalDb().OrderedUsers {

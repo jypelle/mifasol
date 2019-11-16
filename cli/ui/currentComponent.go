@@ -148,6 +148,13 @@ func (c *CurrentComponent) Disable() {
 }
 
 func (c *CurrentComponent) AddSong(songId restApiV1.SongId) {
+	// Exclude explicit song if user profile ask for it
+	if c.uiApp.HideExplicitSongForConnectedUser() {
+		if c.uiApp.localDb.Songs[songId].ExplicitFg {
+			return
+		}
+	}
+
 	c.songIds = append(c.songIds, songId)
 	c.list.AddItem(c.getMainTextSong(songId, -1))
 	c.SetModified(true)

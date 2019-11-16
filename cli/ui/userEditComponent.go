@@ -52,7 +52,9 @@ func OpenUserEditComponent(uiApp *UIApp, userId restApiV1.UserId, userMeta *rest
 	c.hideExplicitBox = tview.NewCheckbox().
 		SetLabel("Hide explicit songs").
 		SetChecked(userMeta.HideExplicitFg)
-	c.Form.AddFormItem(c.hideExplicitBox)
+	if uiApp.IsConnectedUserAdmin() {
+		c.Form.AddFormItem(c.hideExplicitBox)
+	}
 
 	c.adminCheckBox = tview.NewCheckbox().
 		SetLabel("Administrator").

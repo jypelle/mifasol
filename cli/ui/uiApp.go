@@ -377,6 +377,13 @@ func (a *UIApp) IsConnectedUserAdmin() bool {
 	return false
 }
 
+func (a *UIApp) HideExplicitSongForConnectedUser() bool {
+	if user, ok := a.localDb.Users[a.ConnectedUserId()]; ok == true {
+		return user.HideExplicitFg
+	}
+	return false
+}
+
 func (a *UIApp) ConnectedUserId() restApiV1.UserId {
 	return a.restClient.UserId()
 }
