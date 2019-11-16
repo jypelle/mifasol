@@ -37,30 +37,31 @@ func (s *Service) upgrade() error {
 	// Upgrade database to 0_2_3
 	//	if dbVersion.LowerThan(dbVersion_0_2_3) {
 	if true {
-
-		// Update songEntity structure
-		txn, e := s.Db.Begin(true)
-		if e != nil {
-			return e
-		}
-		songEntities := []entity.SongEntity{}
-		e = txn.All(&songEntities)
-		if e != nil && e != storm.ErrNotFound {
-			return e
-		}
-		for _, songEntity := range songEntities {
-			txn.DeleteStruct(&songEntity)
-			if e != nil {
+		s.Db.ReIndex(&entity.SongEntity{})
+		/*
+			// Update songEntity structure
+			songEntities := []entity.SongEntity{}
+			e = s.Db.All(&songEntities)
+			if e != nil && e != storm.ErrNotFound {
 				return e
 			}
-			txn.Update(&songEntity)
-			if e != nil {
-				return e
+			s.Db.Drop(&entity.SongEntity{})
+			for _, songEntity := range songEntities {
+				txn, e := s.Db.Begin(true)
+				if e != nil {
+					return e
+				}
+				txn.DeleteStruct(&songEntity)
+				if e != nil {
+					return e
+				}
+				txn.Update(&songEntity)
+				if e != nil {
+					return e
+				}
+				txn.Commit()
 			}
-		}
-
-		txn.Commit()
-
+		*/
 		dbVersion = dbVersion_0_2_3
 		logrus.Printf("Upgrading database version to %s", dbVersion.String())
 
