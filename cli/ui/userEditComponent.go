@@ -78,7 +78,7 @@ func (c *UserEditComponent) save() {
 	userMetaComplete := &restApiV1.UserMetaComplete{*c.userMeta, c.passwordInputField.GetText()}
 	userMetaComplete.Name = c.nameInputField.GetText()
 
-	// Non-admin user can't change hide explicit or admin user flag
+	// Non-admin user can't change *hide explicit* or *admin user* flag
 	if c.uiApp.IsConnectedUserAdmin() {
 		userMetaComplete.AdminFg = c.adminCheckBox.IsChecked()
 		userMetaComplete.HideExplicitFg = c.hideExplicitBox.IsChecked()
