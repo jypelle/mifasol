@@ -60,7 +60,9 @@ func (s SongFormat) Extension() string {
 func (s SongFormat) Decode() func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
 	switch s {
 	case SongFormatFlac:
-		return flac.Decode
+		return func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
+			return flac.Decode(rc)
+		}
 	case SongFormatOgg:
 		return vorbis.Decode
 	case SongFormatMp3:
