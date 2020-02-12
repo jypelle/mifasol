@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/asdine/storm/v3 v3.0.0
-	github.com/bogem/id3v2 v1.1.1
+	github.com/bogem/id3v2 v1.1.2-0.20200212194809-ae64e79b609f
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0
 	github.com/go-flac/flacvorbis v0.1.0
