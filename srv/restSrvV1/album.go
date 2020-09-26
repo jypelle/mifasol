@@ -93,7 +93,7 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 
 	album, err := s.service.DeleteAlbum(nil, albumId)
 	if err != nil {
-		if err == svc.ErrDeleteArtistWithSongs {
+		if err == svc.ErrDeleteAlbumWithSongs {
 			s.apiErrorCodeResponse(w, restApiV1.DeleteAlbumWithSongsErrorCode)
 			return
 		}

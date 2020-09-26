@@ -229,8 +229,16 @@ func (a *App) ConfirmArtistDelete(artist *restApiV1.Artist) {
 			AddButtons([]string{"Yes", "Cancel"}).
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 				if buttonLabel == "Yes" {
-					a.restClient.DeleteArtist(artist.Id)
-					a.Reload()
+					_, cliErr := a.restClient.DeleteArtist(artist.Id)
+					if cliErr != nil {
+						if cliErr.Code() == restApiV1.DeleteArtistWithSongsErrorCode {
+							a.WarningMessage("You should first delete or unlink artist's songs")
+						} else {
+							a.ClientErrorMessage("Unable to delete the artist", cliErr)
+						}
+					} else {
+						a.Reload()
+					}
 				}
 				a.pagesComponent.HidePage("artistDeleteConfirm").RemovePage("artistDeleteConfirm")
 				a.tviewApp.SetFocus(currentFocus)
@@ -255,8 +263,16 @@ func (a *App) ConfirmAlbumDelete(album *restApiV1.Album) {
 			AddButtons([]string{"Yes", "Cancel"}).
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 				if buttonLabel == "Yes" {
-					a.restClient.DeleteAlbum(album.Id)
-					a.Reload()
+					_, cliErr := a.restClient.DeleteAlbum(album.Id)
+					if cliErr != nil {
+						if cliErr.Code() == restApiV1.DeleteAlbumWithSongsErrorCode {
+							a.WarningMessage("You should first delete or unlink album's songs")
+						} else {
+							a.ClientErrorMessage("Unable to delete the album", cliErr)
+						}
+					} else {
+						a.Reload()
+					}
 				}
 				a.pagesComponent.HidePage("albumDeleteConfirm").RemovePage("albumDeleteConfirm")
 				a.tviewApp.SetFocus(currentFocus)
