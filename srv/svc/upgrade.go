@@ -1,7 +1,7 @@
 package svc
 
 import (
-	"github.com/asdine/storm"
+	"github.com/asdine/storm/v3"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/version"

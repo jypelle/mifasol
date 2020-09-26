@@ -2,8 +2,8 @@ package svc
 
 import (
 	"errors"
-	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
+	"github.com/asdine/storm/v3"
+	"github.com/asdine/storm/v3/q"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"
 	"github.com/jypelle/mifasol/tool"

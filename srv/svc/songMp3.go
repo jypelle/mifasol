@@ -2,7 +2,7 @@ package svc
 
 import (
 	"bytes"
-	"github.com/asdine/storm"
+	"github.com/asdine/storm/v3"
 	"github.com/bogem/id3v2"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/srv/entity"

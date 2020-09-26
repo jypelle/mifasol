@@ -3,7 +3,7 @@ package svc
 import (
 	"errors"
 	"fmt"
-	"github.com/asdine/storm"
+	"github.com/asdine/storm/v3"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/tool"
 	"github.com/sirupsen/logrus"

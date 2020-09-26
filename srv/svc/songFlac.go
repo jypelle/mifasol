@@ -2,7 +2,7 @@ package svc
 
 import (
 	"bytes"
-	"github.com/asdine/storm"
+	"github.com/asdine/storm/v3"
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
 	"github.com/jypelle/mifasol/restApiV1"

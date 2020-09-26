@@ -3,8 +3,8 @@ package srv
 import (
 	"context"
 	"encoding/json"
-	"github.com/asdine/storm"
-	"github.com/asdine/storm/codec/gob"
+	"github.com/asdine/storm/v3"
+	"github.com/asdine/storm/v3/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/srv/config"
