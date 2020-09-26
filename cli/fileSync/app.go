@@ -18,7 +18,7 @@ import (
 	"syscall"
 )
 
-type FileSyncApp struct {
+type App struct {
 	config.ClientConfig
 	restClient *restClientV1.RestClient
 
@@ -29,8 +29,8 @@ type FileSyncApp struct {
 	interruptRequestChannel chan bool
 }
 
-func NewFileSyncApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, fileSyncMusicFolder string) *FileSyncApp {
-	fileSyncApp := &FileSyncApp{
+func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, fileSyncMusicFolder string) *App {
+	app := &App{
 		ClientConfig:        clientConfig,
 		restClient:          restClient,
 		fileSyncMusicFolder: strings.Replace(fileSyncMusicFolder, "\\", "/", -1),
@@ -44,10 +44,10 @@ func NewFileSyncApp(clientConfig config.ClientConfig, restClient *restClientV1.R
 		interruptRequestChannel: make(chan bool),
 	}
 
-	return fileSyncApp
+	return app
 }
 
-func (a *FileSyncApp) Sync() {
+func (a *App) Sync() {
 	signal.Notify(a.interruptChannel, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go a.sync()
@@ -63,7 +63,7 @@ func (a *FileSyncApp) Sync() {
 
 }
 
-func (a *FileSyncApp) sync() {
+func (a *App) sync() {
 	defer func() { a.doneChannel <- true }()
 	synchroAborded := false
 
@@ -415,7 +415,7 @@ func deleteVoidParentFolder(filename string) {
 	}
 }
 
-func (a *FileSyncApp) saveFileSyncConfig() {
+func (a *App) saveFileSyncConfig() {
 	logrus.Debugf("Save: %s", a.getCompleteFileSyncFilename())
 	rawConfig, err := json.MarshalIndent(a.fileSyncConfig, "", "\t")
 	if err != nil {
@@ -427,11 +427,11 @@ func (a *FileSyncApp) saveFileSyncConfig() {
 	}
 }
 
-func (a *FileSyncApp) getCompleteFileSyncFilename() string {
+func (a *App) getCompleteFileSyncFilename() string {
 	return a.fileSyncMusicFolder + "/" + FileSyncFilename
 }
 
-func (a *FileSyncApp) Init() {
+func (a *App) Init() {
 	// Check music folder
 	_, err := os.Stat(a.fileSyncMusicFolder)
 	if err != nil {

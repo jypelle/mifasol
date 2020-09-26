@@ -16,7 +16,7 @@ type LibraryComponent struct {
 	title                *tview.TextView
 	list                 *primitive.RichList
 	nameFilterInputField *tview.InputField
-	uiApp                *UIApp
+	uiApp                *App
 	historyFilter        []*libraryFilter
 	songs                []*restApiV1.Song
 	albums               []*restApiV1.Album
@@ -149,7 +149,7 @@ var libraryMenus = []libraryMenu{
 	libraryMenuAllUsers,
 }
 
-func NewLibraryComponent(uiApp *UIApp) *LibraryComponent {
+func NewLibraryComponent(uiApp *App) *LibraryComponent {
 
 	c := &LibraryComponent{
 		uiApp: uiApp,

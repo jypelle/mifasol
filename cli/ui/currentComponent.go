@@ -17,10 +17,10 @@ type CurrentComponent struct {
 	srcPlaylistId *restApiV1.PlaylistId
 	modified      bool
 
-	uiApp *UIApp
+	uiApp *App
 }
 
-func NewCurrentComponent(uiApp *UIApp) *CurrentComponent {
+func NewCurrentComponent(uiApp *App) *CurrentComponent {
 
 	c := &CurrentComponent{
 		uiApp: uiApp,

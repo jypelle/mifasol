@@ -8,17 +8,17 @@ import (
 type ArtistEditComponent struct {
 	*tview.Form
 	nameInputField  *tview.InputField
-	uiApp           *UIApp
+	uiApp           *App
 	artistId        restApiV1.ArtistId
 	artistMeta      *restApiV1.ArtistMeta
 	originPrimitive tview.Primitive
 }
 
-func OpenArtistCreateComponent(uiApp *UIApp, originPrimitive tview.Primitive) {
+func OpenArtistCreateComponent(uiApp *App, originPrimitive tview.Primitive) {
 	OpenArtistEditComponent(uiApp, "", &restApiV1.ArtistMeta{}, originPrimitive)
 }
 
-func OpenArtistEditComponent(uiApp *UIApp, artistId restApiV1.ArtistId, artistMeta *restApiV1.ArtistMeta, originPrimitive tview.Primitive) {
+func OpenArtistEditComponent(uiApp *App, artistId restApiV1.ArtistId, artistMeta *restApiV1.ArtistMeta, originPrimitive tview.Primitive) {
 
 	// Only admin can create or edit an artist
 	if !uiApp.IsConnectedUserAdmin() {

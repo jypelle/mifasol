@@ -10,10 +10,10 @@ type HelpComponent struct {
 	//	title   *tview.TextView
 	content *tview.TextView
 
-	uiApp *UIApp
+	uiApp *App
 }
 
-func NewHelpComponent(uiApp *UIApp) *HelpComponent {
+func NewHelpComponent(uiApp *App) *HelpComponent {
 
 	c := &HelpComponent{
 		uiApp: uiApp,

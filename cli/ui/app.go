@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-type UIApp struct {
+type App struct {
 	config.ClientConfig
 	restClient *restClientV1.RestClient
 
@@ -33,111 +33,111 @@ type UIApp struct {
 	showHelp bool
 }
 
-func NewUIApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient) *UIApp {
-	uiApp := &UIApp{
+func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient) *App {
+	app := &App{
 		ClientConfig: clientConfig,
 		restClient:   restClient,
 		localDb:      db.NewLocalDb(restClient, clientConfig.Collator()),
 	}
 
-	uiApp.tviewApp = tview.NewApplication()
+	app.tviewApp = tview.NewApplication()
 
-	uiApp.libraryComponent = NewLibraryComponent(uiApp)
+	app.libraryComponent = NewLibraryComponent(app)
 
-	uiApp.currentComponent = NewCurrentComponent(uiApp)
+	app.currentComponent = NewCurrentComponent(app)
 
-	uiApp.helpComponent = NewHelpComponent(uiApp)
+	app.helpComponent = NewHelpComponent(app)
 
-	uiApp.playerComponent = NewPlayerComponent(uiApp, 100)
+	app.playerComponent = NewPlayerComponent(app, 100)
 
-	uiApp.messageComponent = NewMessageComponent(uiApp)
+	app.messageComponent = NewMessageComponent(app)
 
-	uiApp.pagesComponent = tview.NewPages()
+	app.pagesComponent = tview.NewPages()
 
-	uiApp.mainLayout = tview.NewFlex().
+	app.mainLayout = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().
 				SetDirection(tview.FlexColumn).
-				AddItem(uiApp.libraryComponent, 0, 1, true).
-				AddItem(uiApp.currentComponent, 0, 1, false),
+				AddItem(app.libraryComponent, 0, 1, true).
+				AddItem(app.currentComponent, 0, 1, false),
 			0, 1, false).
-		AddItem(uiApp.playerComponent, 2, 0, false)
+		AddItem(app.playerComponent, 2, 0, false)
 
-	uiApp.pagesComponent.AddAndSwitchToPage("main", uiApp.mainLayout, true)
+	app.pagesComponent.AddAndSwitchToPage("main", app.mainLayout, true)
 
-	uiApp.globalLayout = tview.NewFlex().
+	app.globalLayout = tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(
 			tview.NewFlex().
 				SetDirection(tview.FlexRow).
-				AddItem(uiApp.pagesComponent, 0, 1, true).
-				AddItem(uiApp.messageComponent, 1, 0, false),
+				AddItem(app.pagesComponent, 0, 1, true).
+				AddItem(app.messageComponent, 1, 0, false),
 			0, 2, true)
 
-	uiApp.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if uiApp.mainLayout.HasFocus() && !uiApp.libraryComponent.nameFilterInputField.HasFocus() {
+	app.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if app.mainLayout.HasFocus() && !app.libraryComponent.nameFilterInputField.HasFocus() {
 			switch {
 			case event.Key() == tcell.KeyF5:
-				uiApp.Reload()
+				app.Reload()
 			case event.Key() == tcell.KeyEsc:
-				uiApp.ConfirmExit()
+				app.ConfirmExit()
 				return nil
 			case event.Key() == tcell.KeyRune:
 				switch event.Rune() {
 				case 'h':
-					uiApp.switchHelpView()
+					app.switchHelpView()
 					return nil
 				case 'p':
-					uiApp.playerComponent.PauseResume()
+					app.playerComponent.PauseResume()
 					return nil
 				case '+':
-					uiApp.playerComponent.VolumeUp()
+					app.playerComponent.VolumeUp()
 					return nil
 				case '-':
-					uiApp.playerComponent.VolumeDown()
+					app.playerComponent.VolumeDown()
 					return nil
 				}
 			case event.Key() == tcell.KeyTab:
 				switch {
-				case uiApp.libraryComponent.HasFocus():
-					uiApp.libraryComponent.Disable()
-					uiApp.currentComponent.Enable()
-					uiApp.playerComponent.Disable()
-					uiApp.tviewApp.SetFocus(uiApp.currentComponent)
+				case app.libraryComponent.HasFocus():
+					app.libraryComponent.Disable()
+					app.currentComponent.Enable()
+					app.playerComponent.Disable()
+					app.tviewApp.SetFocus(app.currentComponent)
 					return nil
-				case uiApp.currentComponent.HasFocus():
-					uiApp.libraryComponent.Disable()
-					uiApp.currentComponent.Disable()
-					uiApp.playerComponent.Enable()
-					uiApp.tviewApp.SetFocus(uiApp.playerComponent)
+				case app.currentComponent.HasFocus():
+					app.libraryComponent.Disable()
+					app.currentComponent.Disable()
+					app.playerComponent.Enable()
+					app.tviewApp.SetFocus(app.playerComponent)
 					return nil
-				case uiApp.playerComponent.HasFocus():
-					uiApp.libraryComponent.Enable()
-					uiApp.currentComponent.Disable()
-					uiApp.playerComponent.Disable()
-					uiApp.tviewApp.SetFocus(uiApp.libraryComponent)
+				case app.playerComponent.HasFocus():
+					app.libraryComponent.Enable()
+					app.currentComponent.Disable()
+					app.playerComponent.Disable()
+					app.tviewApp.SetFocus(app.libraryComponent)
 					return nil
 				}
 			case event.Key() == tcell.KeyBacktab:
 				switch {
-				case uiApp.playerComponent.HasFocus():
-					uiApp.libraryComponent.Disable()
-					uiApp.currentComponent.Enable()
-					uiApp.playerComponent.Disable()
-					uiApp.tviewApp.SetFocus(uiApp.currentComponent)
+				case app.playerComponent.HasFocus():
+					app.libraryComponent.Disable()
+					app.currentComponent.Enable()
+					app.playerComponent.Disable()
+					app.tviewApp.SetFocus(app.currentComponent)
 					return nil
-				case uiApp.currentComponent.HasFocus():
-					uiApp.libraryComponent.Enable()
-					uiApp.currentComponent.Disable()
-					uiApp.playerComponent.Disable()
-					uiApp.tviewApp.SetFocus(uiApp.libraryComponent)
+				case app.currentComponent.HasFocus():
+					app.libraryComponent.Enable()
+					app.currentComponent.Disable()
+					app.playerComponent.Disable()
+					app.tviewApp.SetFocus(app.libraryComponent)
 					return nil
-				case uiApp.libraryComponent.HasFocus():
-					uiApp.libraryComponent.Disable()
-					uiApp.currentComponent.Disable()
-					uiApp.playerComponent.Enable()
-					uiApp.tviewApp.SetFocus(uiApp.playerComponent)
+				case app.libraryComponent.HasFocus():
+					app.libraryComponent.Disable()
+					app.currentComponent.Disable()
+					app.playerComponent.Enable()
+					app.tviewApp.SetFocus(app.playerComponent)
 					return nil
 				}
 			}
@@ -145,17 +145,17 @@ func NewUIApp(clientConfig config.ClientConfig, restClient *restClientV1.RestCli
 		return event
 	})
 
-	uiApp.tviewApp.SetRoot(uiApp.globalLayout, true)
+	app.tviewApp.SetRoot(app.globalLayout, true)
 
-	uiApp.libraryComponent.Enable()
-	uiApp.currentComponent.Disable()
-	uiApp.playerComponent.Disable()
-	uiApp.tviewApp.SetFocus(uiApp.libraryComponent)
+	app.libraryComponent.Enable()
+	app.currentComponent.Disable()
+	app.playerComponent.Disable()
+	app.tviewApp.SetFocus(app.libraryComponent)
 
-	return uiApp
+	return app
 }
 
-func (a *UIApp) Start() {
+func (a *App) Start() {
 	logrus.Debugf("Starting console user interface ...")
 
 	// Refresh Db from Server
@@ -168,7 +168,7 @@ func (a *UIApp) Start() {
 
 }
 
-func (a *UIApp) ConfirmExit() {
+func (a *App) ConfirmExit() {
 	currentFocus := a.tviewApp.GetFocus()
 	a.pagesComponent.AddPage(
 		"exitConfirm",
@@ -188,7 +188,7 @@ func (a *UIApp) ConfirmExit() {
 	)
 }
 
-func (a *UIApp) ConfirmSongDelete(song *restApiV1.Song) {
+func (a *App) ConfirmSongDelete(song *restApiV1.Song) {
 	// Only admin can delete a song
 	if !a.IsConnectedUserAdmin() {
 		a.WarningMessage("Only administrator can delete this song")
@@ -214,7 +214,7 @@ func (a *UIApp) ConfirmSongDelete(song *restApiV1.Song) {
 	)
 }
 
-func (a *UIApp) ConfirmArtistDelete(artist *restApiV1.Artist) {
+func (a *App) ConfirmArtistDelete(artist *restApiV1.Artist) {
 	// Only admin can delete an artist
 	if !a.IsConnectedUserAdmin() {
 		a.WarningMessage("Only administrator can delete this artist")
@@ -240,7 +240,7 @@ func (a *UIApp) ConfirmArtistDelete(artist *restApiV1.Artist) {
 	)
 }
 
-func (a *UIApp) ConfirmAlbumDelete(album *restApiV1.Album) {
+func (a *App) ConfirmAlbumDelete(album *restApiV1.Album) {
 	// Only admin can delete an album
 	if !a.IsConnectedUserAdmin() {
 		a.WarningMessage("Only administrator can delete this album")
@@ -266,7 +266,7 @@ func (a *UIApp) ConfirmAlbumDelete(album *restApiV1.Album) {
 	)
 }
 
-func (a *UIApp) ConfirmPlaylistDelete(playlist *restApiV1.Playlist) {
+func (a *App) ConfirmPlaylistDelete(playlist *restApiV1.Playlist) {
 	// Only admin or playlist owner can delete a playlist
 	if !a.IsConnectedUserAdmin() && !a.localDb.IsPlaylistOwnedBy(playlist.Id, a.ConnectedUserId()) {
 		a.WarningMessage("Only administrator or owner can delete this playlist")
@@ -297,7 +297,7 @@ func (a *UIApp) ConfirmPlaylistDelete(playlist *restApiV1.Playlist) {
 	)
 }
 
-func (a *UIApp) ConfirmUserDelete(user *restApiV1.User) {
+func (a *App) ConfirmUserDelete(user *restApiV1.User) {
 	// Only admin can delete a user
 	if !a.IsConnectedUserAdmin() {
 		a.WarningMessage("Only administrator can delete a user")
@@ -328,21 +328,21 @@ func (a *UIApp) ConfirmUserDelete(user *restApiV1.User) {
 	)
 }
 
-func (a *UIApp) Message(message string) {
+func (a *App) Message(message string) {
 	a.messageComponent.SetMessage(message)
 }
-func (a *UIApp) ForceMessage(message string) {
+func (a *App) ForceMessage(message string) {
 	a.Message(message)
 	a.tviewApp.ForceDraw()
 }
-func (a *UIApp) WarningMessage(message string) {
+func (a *App) WarningMessage(message string) {
 	a.messageComponent.SetWarningMessage("! " + message)
 }
-func (a *UIApp) ClientErrorMessage(message string, cliErr restClientV1.ClientError) {
+func (a *App) ClientErrorMessage(message string, cliErr restClientV1.ClientError) {
 	a.messageComponent.SetWarningMessage("! " + message + " (" + cliErr.Code().String() + ")")
 }
 
-func (a *UIApp) Reload() {
+func (a *App) Reload() {
 
 	a.ForceMessage("Syncing...")
 	// Refresh In memory Db
@@ -358,37 +358,37 @@ func (a *UIApp) Reload() {
 	a.Message(strconv.Itoa(len(a.localDb.Songs)) + " songs, " + strconv.Itoa(len(a.localDb.Artists)) + " artists, " + strconv.Itoa(len(a.localDb.Albums)) + " albums, " + strconv.Itoa(len(a.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(a.localDb.Users)) + " users.")
 }
 
-func (a *UIApp) LocalDb() *db.LocalDb {
+func (a *App) LocalDb() *db.LocalDb {
 	return a.localDb
 }
 
-func (a *UIApp) Play(songId restApiV1.SongId) {
+func (a *App) Play(songId restApiV1.SongId) {
 	a.playerComponent.Play(songId)
 }
 
-func (a *UIApp) CurrentComponent() *CurrentComponent {
+func (a *App) CurrentComponent() *CurrentComponent {
 	return a.currentComponent
 }
 
-func (a *UIApp) IsConnectedUserAdmin() bool {
+func (a *App) IsConnectedUserAdmin() bool {
 	if user, ok := a.localDb.Users[a.ConnectedUserId()]; ok == true {
 		return user.AdminFg
 	}
 	return false
 }
 
-func (a *UIApp) HideExplicitSongForConnectedUser() bool {
+func (a *App) HideExplicitSongForConnectedUser() bool {
 	if user, ok := a.localDb.Users[a.ConnectedUserId()]; ok == true {
 		return user.HideExplicitFg
 	}
 	return false
 }
 
-func (a *UIApp) ConnectedUserId() restApiV1.UserId {
+func (a *App) ConnectedUserId() restApiV1.UserId {
 	return a.restClient.UserId()
 }
 
-func (a *UIApp) switchHelpView() {
+func (a *App) switchHelpView() {
 	if a.showHelp {
 		a.globalLayout.RemoveItem(a.helpComponent)
 	} else {

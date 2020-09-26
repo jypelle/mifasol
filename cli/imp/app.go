@@ -16,7 +16,7 @@ import (
 	"syscall"
 )
 
-type ImpApp struct {
+type App struct {
 	config.ClientConfig
 	restClient *restClientV1.RestClient
 
@@ -28,8 +28,8 @@ type ImpApp struct {
 	interruptRequestChannel chan bool
 }
 
-func NewImpApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, importDir string, importOneFolderPerAlbumDisabled bool) *ImpApp {
-	impApp := &ImpApp{
+func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClient, importDir string, importOneFolderPerAlbumDisabled bool) *App {
+	app := &App{
 		ClientConfig:                    clientConfig,
 		restClient:                      restClient,
 		importDir:                       importDir,
@@ -39,10 +39,10 @@ func NewImpApp(clientConfig config.ClientConfig, restClient *restClientV1.RestCl
 		interruptRequestChannel:         make(chan bool),
 	}
 
-	return impApp
+	return app
 }
 
-func (a *ImpApp) Start() {
+func (a *App) Start() {
 	signal.Notify(a.interruptChannel, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go a.start()
@@ -58,7 +58,7 @@ func (a *ImpApp) Start() {
 
 }
 
-func (a *ImpApp) start() {
+func (a *App) start() {
 	defer func() { a.doneChannel <- true }()
 
 	impAborded := false

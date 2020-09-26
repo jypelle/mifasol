@@ -6,10 +6,10 @@ import (
 
 type MessageComponent struct {
 	*tview.TextView
-	uiApp *UIApp
+	uiApp *App
 }
 
-func NewMessageComponent(uiApp *UIApp) *MessageComponent {
+func NewMessageComponent(uiApp *App) *MessageComponent {
 
 	c := &MessageComponent{
 		uiApp: uiApp,

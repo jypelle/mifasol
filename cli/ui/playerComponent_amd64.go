@@ -16,7 +16,7 @@ type PlayerComponent struct {
 	titleBox    *tview.TextView
 	volumeBox   *tview.TextView
 	progressBox *tview.Box
-	uiApp       *UIApp
+	uiApp       *App
 
 	volume          int
 	musicStreamer   beep.StreamSeekCloser
@@ -27,7 +27,7 @@ type PlayerComponent struct {
 	playingSong *restApiV1.Song
 }
 
-func NewPlayerComponent(uiApp *UIApp, volume int) *PlayerComponent {
+func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 
 	// Init soundcard
 	var sampleRate beep.SampleRate = 44100

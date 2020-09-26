@@ -11,17 +11,17 @@ type UserEditComponent struct {
 	passwordInputField *tview.InputField
 	hideExplicitBox    *tview.Checkbox
 	adminCheckBox      *tview.Checkbox
-	uiApp              *UIApp
+	uiApp              *App
 	userId             restApiV1.UserId
 	userMeta           *restApiV1.UserMeta
 	originPrimitive    tview.Primitive
 }
 
-func OpenUserCreateComponent(uiApp *UIApp, originPrimitive tview.Primitive) {
+func OpenUserCreateComponent(uiApp *App, originPrimitive tview.Primitive) {
 	OpenUserEditComponent(uiApp, "", &restApiV1.UserMeta{}, originPrimitive)
 }
 
-func OpenUserEditComponent(uiApp *UIApp, userId restApiV1.UserId, userMeta *restApiV1.UserMeta, originPrimitive tview.Primitive) {
+func OpenUserEditComponent(uiApp *App, userId restApiV1.UserId, userMeta *restApiV1.UserMeta, originPrimitive tview.Primitive) {
 
 	// Only admin can create or edit another user
 	if uiApp.ConnectedUserId() != userId && !uiApp.IsConnectedUserAdmin() {

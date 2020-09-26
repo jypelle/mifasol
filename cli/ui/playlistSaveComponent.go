@@ -9,14 +9,14 @@ type PlaylistSaveComponent struct {
 	*tview.Form
 	playlistsDropDown        *tview.DropDown
 	nameInputField           *tview.InputField
-	uiApp                    *UIApp
+	uiApp                    *App
 	srcPlaylistId            *restApiV1.PlaylistId
 	songIds                  []restApiV1.SongId
 	orderedFilteredPlaylists []*restApiV1.Playlist
 	originPrimitive          tview.Primitive
 }
 
-func OpenPlaylistContentSaveComponent(uiApp *UIApp, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive tview.Primitive) {
+func OpenPlaylistContentSaveComponent(uiApp *App, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive tview.Primitive) {
 
 	// Only admin or playlist owner can edit playlist content
 	if srcPlaylistId != nil && !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(*srcPlaylistId, uiApp.ConnectedUserId()) {

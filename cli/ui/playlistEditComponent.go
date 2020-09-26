@@ -10,12 +10,12 @@ type PlaylistEditComponent struct {
 	*tview.Form
 	nameInputField  *tview.InputField
 	ownerDropDowns  []*tview.DropDown
-	uiApp           *UIApp
+	uiApp           *App
 	playlist        *restApiV1.Playlist
 	originPrimitive tview.Primitive
 }
 
-func OpenPlaylistEditComponent(uiApp *UIApp, playlist *restApiV1.Playlist, originPrimitive tview.Primitive) {
+func OpenPlaylistEditComponent(uiApp *App, playlist *restApiV1.Playlist, originPrimitive tview.Primitive) {
 
 	// Only admin or playlist owner can edit a playlist
 	if !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(playlist.Id, uiApp.ConnectedUserId()) {

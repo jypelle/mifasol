@@ -14,12 +14,12 @@ type SongEditComponent struct {
 	trackNumberInputField     *tview.InputField
 	explicitFgCheckbox        *tview.Checkbox
 	artistDropDowns           []*tview.DropDown
-	uiApp                     *UIApp
+	uiApp                     *App
 	song                      *restApiV1.Song
 	originPrimitive           tview.Primitive
 }
 
-func OpenSongEditComponent(uiApp *UIApp, song *restApiV1.Song, originPrimitive tview.Primitive) {
+func OpenSongEditComponent(uiApp *App, song *restApiV1.Song, originPrimitive tview.Primitive) {
 
 	// Only admin can edit a song
 	if !uiApp.IsConnectedUserAdmin() {

@@ -10,12 +10,12 @@ type PlayerComponent struct {
 	titleBox    *tview.TextView
 	volumeBox   *tview.TextView
 	progressBox *tview.Box
-	uiApp       *UIApp
+	uiApp       *App
 
 	playingSong *restApiV1.Song
 }
 
-func NewPlayerComponent(uiApp *UIApp, volume int) *PlayerComponent {
+func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 	c := &PlayerComponent{
 		uiApp: uiApp,
 	}

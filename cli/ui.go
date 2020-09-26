@@ -5,6 +5,6 @@ import (
 )
 
 func (c *ClientApp) UI() {
-	uiApp := ui.NewUIApp(c.config, c.restClient)
+	uiApp := ui.NewApp(c.config, c.restClient)
 	uiApp.Start()
 }
