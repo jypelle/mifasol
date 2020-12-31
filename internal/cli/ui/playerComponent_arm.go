@@ -24,9 +24,9 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 	c.volumeBox = cview.NewTextView()
 	c.progressBox = cview.NewBox()
 
-	c.Flex = cview.NewFlex().
-		SetDirection(cview.FlexRow).
-		AddItem(c.progressBox, 1, 0, false)
+	c.Flex = cview.NewFlex()
+	c.Flex.SetDirection(cview.FlexRow)
+	c.Flex.AddItem(c.progressBox, 1, 0, false)
 
 	return c
 
