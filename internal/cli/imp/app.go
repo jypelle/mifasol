@@ -111,91 +111,96 @@ func (a *App) start() {
 	// Try to import every song files previously identified
 	importedSongs := 0
 
-	fmt.Printf("Trying to import %d songs\n", len(filesNameToImport))
+	if len(filesNameToImport) == 0 {
+		fmt.Println("No files to import")
+	} else {
+		fmt.Printf("Trying to import %d songs\n", len(filesNameToImport))
 
-	progressContainer := mpb.New()
-	bar := progressContainer.AddBar(int64(len(filesNameToImport)),
-		mpb.PrependDecorators(
-			// simple name decorator
-			decor.Name("Import songs"),
-			// decor.DSyncWidth bit enables column width synchronization
-			decor.Percentage(decor.WCSyncSpace),
-		),
-	)
+		progressContainer := mpb.New()
+		bar := progressContainer.AddBar(int64(len(filesNameToImport)),
+			mpb.PrependDecorators(
+				// simple name decorator
+				decor.Name("Import songs"),
+				// decor.DSyncWidth bit enables column width synchronization
+				decor.Percentage(decor.WCSyncSpace),
+			),
+		)
 
-	var lastFolder string
-	var lastAlbumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
+		var lastFolder string
+		var lastAlbumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
 
-	for key, fileName := range filesNameToImport {
-		if impAborded {
-			break
-		}
-		func() {
-			defer func() {
-				select {
-				case <-a.interruptRequestChannel:
-					impAborded = true
-					bar.Abort(false)
-				default:
+		for key, fileName := range filesNameToImport {
+			if impAborded {
+				break
+			}
+			func() {
+				defer func() {
+					select {
+					case <-a.interruptRequestChannel:
+						impAborded = true
+						bar.Abort(false)
+					default:
+					}
+				}()
+
+				indexLastSeparator := strings.LastIndex(fileName, string(filepath.Separator))
+
+				// Reset last album id on new folder
+				if lastFolder != fileName[:indexLastSeparator] {
+					lastAlbumId = restApiV1.UnknownAlbumId
 				}
+
+				songFormat := filesSongFormatToImport[key]
+
+				var err error
+				var reader *os.File
+				reader, err = os.Open(fileName)
+				if err == nil {
+					defer reader.Close()
+
+					truncatedFilePath := tool.CharacterTruncate(fileName[indexLastSeparator+1:], 23)
+
+					songBar := progressContainer.AddBar(filesSize[key],
+						mpb.PrependDecorators(
+							decor.Name("Uploading   "),
+							decor.Percentage(decor.WCSyncSpace),
+						),
+						mpb.AppendDecorators(
+							decor.CountersKibiByte("%6.1f / %6.1f"),
+							decor.Name(" "+truncatedFilePath),
+						),
+						mpb.BarRemoveOnComplete(),
+					)
+
+					proxyReader := songBar.ProxyReader(reader)
+
+					var apiErr restClientV1.ClientError
+					var song *restApiV1.Song
+
+					if a.importOneFolderPerAlbumDisabled {
+						song, apiErr = a.restClient.CreateSongContent(songFormat, proxyReader)
+					} else {
+						song, apiErr = a.restClient.CreateSongContentForAlbum(songFormat, proxyReader, lastAlbumId)
+					}
+					if apiErr == nil {
+						importedSongs++
+						lastAlbumId = song.AlbumId
+					} else {
+						songBar.Abort(true)
+						logrus.Warnf("Unable to import file %s: %v", fileName, apiErr)
+					}
+				} else {
+					logrus.Warnf("Unable to upload file %s: %v", fileName, err)
+				}
+
+				lastFolder = fileName[:indexLastSeparator]
+				bar.Increment()
+
 			}()
+		}
+		progressContainer.Wait()
 
-			indexLastSeparator := strings.LastIndex(fileName, string(filepath.Separator))
-
-			// Reset last album id on new folder
-			if lastFolder != fileName[:indexLastSeparator] {
-				lastAlbumId = restApiV1.UnknownAlbumId
-			}
-
-			songFormat := filesSongFormatToImport[key]
-
-			var err error
-			var reader *os.File
-			reader, err = os.Open(fileName)
-			if err == nil {
-				defer reader.Close()
-
-				truncatedFilePath := tool.CharacterTruncate(fileName[indexLastSeparator+1:], 23)
-
-				songBar := progressContainer.AddBar(filesSize[key],
-					mpb.PrependDecorators(
-						decor.Name("Uploading   "),
-						decor.Percentage(decor.WCSyncSpace),
-					),
-					mpb.AppendDecorators(
-						decor.CountersKibiByte("%6.1f / %6.1f"),
-						decor.Name(" "+truncatedFilePath),
-					),
-					mpb.BarRemoveOnComplete(),
-				)
-
-				proxyReader := songBar.ProxyReader(reader)
-
-				var apiErr restClientV1.ClientError
-				var song *restApiV1.Song
-
-				if a.importOneFolderPerAlbumDisabled {
-					song, apiErr = a.restClient.CreateSongContent(songFormat, proxyReader)
-				} else {
-					song, apiErr = a.restClient.CreateSongContentForAlbum(songFormat, proxyReader, lastAlbumId)
-				}
-				if apiErr == nil {
-					importedSongs++
-					lastAlbumId = song.AlbumId
-				} else {
-					songBar.Abort(true)
-					logrus.Warnf("Unable to import file %s: %v", fileName, apiErr)
-				}
-			} else {
-				logrus.Warnf("Unable to upload file %s: %v", fileName, err)
-			}
-
-			lastFolder = fileName[:indexLastSeparator]
-			bar.Increment()
-
-		}()
 	}
-	progressContainer.Wait()
 
 	// Report
 	if impAborded {
