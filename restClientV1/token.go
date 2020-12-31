@@ -8,7 +8,7 @@ import (
 func (c *RestClient) refreshToken() ClientError {
 	c.token = nil
 
-	req, err := http.NewRequest("POST", c.getServerUrl()+"/token", nil)
+	req, err := http.NewRequest("POST", c.getServerApiUrl()+"/token", nil)
 	if err != nil {
 		return NewClientError(err)
 	}

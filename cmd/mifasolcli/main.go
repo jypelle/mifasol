@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/jypelle/mifasol/cli"
-	"github.com/jypelle/mifasol/version"
+	"github.com/jypelle/mifasol/internal/cli"
+	"github.com/jypelle/mifasol/internal/version"
 	"os"
 	"path/filepath"
 	"time"

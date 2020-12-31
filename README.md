@@ -56,10 +56,10 @@ Drop the dedicated `mifasolsrv` binary on your server and you are done.
 
 #### From sources
 
-You need golang >= 1.13
+You need golang >= 1.15
 
 ```
-go install mifasol/cmd/mifasolsrv
+go install ./cmd/mifasolsrv
 ```
 
 ### Usage
@@ -167,7 +167,7 @@ You need golang >= 1.13 and
 - `AudioToolbox.framework` on mac
 
 ```
-go install mifasol/cmd/mifasolcli
+go install ./cmd/mifasolcli
 ```
 
 ### Usage
