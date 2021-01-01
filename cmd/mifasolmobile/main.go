@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gioui.org/app"
 	"github.com/jypelle/mifasol/internal/mobilecli"
 	"os"
 	"path/filepath"
@@ -28,10 +27,12 @@ func main() {
 
 	// User config dir
 	defaultConfigDir := "./." + configSuffix
-	userConfigDir, err := app.DataDir()
-	if err == nil {
-		defaultConfigDir = filepath.Join(userConfigDir, configSuffix)
-	}
+	/*
+		userConfigDir, err := app.DataDir()
+		if err == nil {
+			defaultConfigDir = filepath.Join(userConfigDir, configSuffix)
+		}
+	*/
 	configDir := flag.String("c", defaultConfigDir, "Location of mifasolmobile config folder")
 
 	// Usage
