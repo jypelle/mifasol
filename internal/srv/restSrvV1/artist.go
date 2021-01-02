@@ -44,6 +44,11 @@ func (s *RestServer) readArtist(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) createArtist(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Create artist")
 
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
+
 	var artistMeta restApiV1.ArtistMeta
 	err := json.NewDecoder(r.Body).Decode(&artistMeta)
 	if err != nil {
@@ -64,6 +69,11 @@ func (s *RestServer) updateArtist(w http.ResponseWriter, r *http.Request) {
 	artistId := restApiV1.ArtistId(vars["id"])
 
 	logrus.Debugf("Update artist: %s", artistId)
+
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
 
 	var artistMeta restApiV1.ArtistMeta
 	err := json.NewDecoder(r.Body).Decode(&artistMeta)
@@ -86,6 +96,11 @@ func (s *RestServer) deleteArtist(w http.ResponseWriter, r *http.Request) {
 	artistId := restApiV1.ArtistId(vars["id"])
 
 	logrus.Debugf("Delete artist: %s", artistId)
+
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
 
 	artist, err := s.service.DeleteArtist(nil, artistId)
 	if err != nil {

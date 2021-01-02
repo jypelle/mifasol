@@ -11,27 +11,29 @@ type PlaylistEditComponent struct {
 	nameInputField  *cview.InputField
 	ownerDropDowns  []*cview.DropDown
 	uiApp           *App
-	playlist        *restApiV1.Playlist
+	playlistId      restApiV1.PlaylistId
+	playlistMeta    *restApiV1.PlaylistMeta
 	originPrimitive cview.Primitive
 }
 
-func OpenPlaylistEditComponent(uiApp *App, playlist *restApiV1.Playlist, originPrimitive cview.Primitive) {
+func OpenPlaylistEditComponent(uiApp *App, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, originPrimitive cview.Primitive) {
 
 	// Only admin or playlist owner can edit a playlist
-	if !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(playlist.Id, uiApp.ConnectedUserId()) {
+	if !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(playlistId, uiApp.ConnectedUserId()) {
 		uiApp.WarningMessage("Only administrator or playlist owner can edit a playlist")
 		return
 	}
 
 	c := &PlaylistEditComponent{
 		uiApp:           uiApp,
-		playlist:        playlist,
+		playlistId:      playlistId,
+		playlistMeta:    playlistMeta,
 		originPrimitive: originPrimitive,
 	}
 
 	c.nameInputField = cview.NewInputField()
 	c.nameInputField.SetLabel("Name")
-	c.nameInputField.SetText(playlist.Name)
+	c.nameInputField.SetText(playlistMeta.Name)
 	c.nameInputField.SetFieldWidth(50)
 
 	c.Form = cview.NewForm()
@@ -39,7 +41,7 @@ func OpenPlaylistEditComponent(uiApp *App, playlist *restApiV1.Playlist, originP
 	c.Form.SetFieldBackgroundColorFocused(cview.Styles.PrimaryTextColor)
 
 	c.Form.AddFormItem(c.nameInputField)
-	for _, userId := range c.playlist.OwnerUserIds {
+	for _, userId := range c.playlistMeta.OwnerUserIds {
 		c.addOwner(userId)
 	}
 	c.addOwner("")
@@ -55,22 +57,23 @@ func OpenPlaylistEditComponent(uiApp *App, playlist *restApiV1.Playlist, originP
 
 func (c *PlaylistEditComponent) save() {
 	// Name
-	c.playlist.PlaylistMeta.Name = c.nameInputField.GetText()
+	c.playlistMeta.Name = c.nameInputField.GetText()
 
 	// Owners
-	c.playlist.OwnerUserIds = nil
+	c.playlistMeta.OwnerUserIds = nil
 	for _, ownerDropDown := range c.ownerDropDowns {
 		selectedOwnerInd, _ := ownerDropDown.GetCurrentOption()
 		var id restApiV1.UserId
 		if selectedOwnerInd > 0 {
 			id = c.uiApp.localDb.OrderedUsers[selectedOwnerInd-1].Id
-			c.playlist.OwnerUserIds = append(c.playlist.OwnerUserIds, id)
+			c.playlistMeta.OwnerUserIds = append(c.playlistMeta.OwnerUserIds, id)
 		}
 	}
 
-	_, cliErr := c.uiApp.restClient.UpdatePlaylist(c.playlist.Id, &c.playlist.PlaylistMeta)
+	_, cliErr := c.uiApp.restClient.UpdatePlaylist(c.playlistId, c.playlistMeta)
 	if cliErr != nil {
 		c.uiApp.ClientErrorMessage("Unable to update the playlist", cliErr)
+		return
 	}
 
 	c.uiApp.Reload()

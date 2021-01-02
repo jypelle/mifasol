@@ -8,6 +8,6 @@ var (
 	AppVersion = restApiV1.Version{
 		MajorNumber: 0,
 		MinorNumber: 2,
-		PatchNumber: 4,
+		PatchNumber: 5,
 	}
 )

@@ -1,6 +1,6 @@
 module github.com/jypelle/mifasol
 
-go 1.13
+go 1.15
 
 require (
 	github.com/asdine/storm/v3 v3.2.1

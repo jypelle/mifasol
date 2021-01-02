@@ -113,6 +113,11 @@ func (s *RestServer) updateSong(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Update song: %s", songId)
 
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
+
 	var songMeta restApiV1.SongMeta
 	err := json.NewDecoder(r.Body).Decode(&songMeta)
 	if err != nil {
@@ -134,6 +139,11 @@ func (s *RestServer) deleteSong(w http.ResponseWriter, r *http.Request) {
 	songId := restApiV1.SongId(vars["id"])
 
 	logrus.Debugf("Delete song: %s", songId)
+
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
 
 	song, err := s.service.DeleteSong(nil, songId)
 	if err != nil {
