@@ -1,6 +1,6 @@
 module github.com/jypelle/mifasol
 
-go 1.13
+go 1.15
 
 require (
 	gioui.org v0.0.0-20210101111935-62a1d8ae6e78

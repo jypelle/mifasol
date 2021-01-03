@@ -316,7 +316,7 @@ func NewLibraryComponent(uiApp *App) *LibraryComponent {
 					case libraryTypePlaylists:
 						playlist := c.playlists[c.list.GetCurrentItem()]
 						if playlist != nil {
-							OpenPlaylistEditComponent(c.uiApp, playlist, c)
+							OpenPlaylistEditComponent(c.uiApp, playlist.Id, &playlist.PlaylistMeta, c)
 						}
 					case libraryTypeUsers:
 						user := c.uiApp.LocalDb().OrderedUsers[c.list.GetCurrentItem()]

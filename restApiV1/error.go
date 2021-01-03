@@ -15,8 +15,12 @@ const (
 	UnsupportedGrantTypeErrorCode ErrorCode = "unsupported_grant_type"
 	InvalideGrantErrorCode        ErrorCode = "invalid_grant"
 
-	DeleteArtistWithSongsErrorCode ErrorCode = "delete_artist_with_songs"
-	DeleteAlbumWithSongsErrorCode  ErrorCode = "delete_album_with_songs"
+	DeleteArtistWithSongsErrorCode  ErrorCode = "delete_artist_with_songs"
+	DeleteAlbumWithSongsErrorCode   ErrorCode = "delete_album_with_songs"
+	DeleteUserYourselfErrorCode     ErrorCode = "delete_user_yourself"
+	CreateNotOwnedPlaylistErrorCode ErrorCode = "create_not_owned_playlist"
+
+	ForbiddenErrorCode ErrorCode = "forbidden"
 
 	// Client Error
 	UnknownErrorCode ErrorCode = "unknown_error"
@@ -45,6 +49,12 @@ func (e ErrorCode) StatusCode() int {
 		return http.StatusInternalServerError
 	case DeleteAlbumWithSongsErrorCode:
 		return http.StatusInternalServerError
+	case DeleteUserYourselfErrorCode:
+		return http.StatusInternalServerError
+	case CreateNotOwnedPlaylistErrorCode:
+		return http.StatusBadRequest
+	case ForbiddenErrorCode:
+		return http.StatusForbidden
 	}
 
 	return http.StatusInternalServerError
