@@ -1,6 +1,6 @@
 module github.com/jypelle/mifasol
 
-go 1.13
+go 1.15
 
 require (
 	fyne.io/fyne v1.4.2

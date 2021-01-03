@@ -44,14 +44,16 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Create album")
 
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
+
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to interpret data to create the album: %v", err)
 	}
-
-	// Check credential
-	// TODO
 
 	album, err := s.service.CreateAlbum(nil, &albumMeta)
 	if err != nil {
@@ -68,6 +70,11 @@ func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 	albumId := restApiV1.AlbumId(vars["id"])
 
 	logrus.Debugf("Update album: %s", albumId)
+
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
 
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
@@ -90,6 +97,11 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 	albumId := restApiV1.AlbumId(vars["id"])
 
 	logrus.Debugf("Delete album: %s", albumId)
+
+	// Only admin
+	if !s.CheckAdmin(w, r) {
+		return
+	}
 
 	album, err := s.service.DeleteAlbum(nil, albumId)
 	if err != nil {
