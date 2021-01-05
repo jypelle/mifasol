@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/oklog/ulid/v2 v2.0.2
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/vbauerster/mpb/v5 v5.3.0
 	gitlab.com/tslocum/cview v1.5.2

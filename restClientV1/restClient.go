@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jypelle/mifasol/internal/tool"
+	"github.com/jypelle/mifasol/internal/version"
 	"github.com/jypelle/mifasol/restApiV1"
 	"io"
 	"io/ioutil"
@@ -195,6 +196,8 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 
 	// Embed the token in the request
 	req.Header.Add("Authorization", "Bearer "+c.token.AccessToken)
+	// And rest client revision
+	req.Header.Add("x-mifasol-client-version", version.AppVersion.String())
 
 	// Add optional body content for POST & PUT request
 	if body != nil {
