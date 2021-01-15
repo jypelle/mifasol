@@ -1,6 +1,6 @@
 module github.com/jypelle/mifasol
 
-go 1.15
+go 1.16
 
 require (
 	github.com/asdine/storm/v3 v3.2.1
@@ -11,8 +11,12 @@ require (
 	github.com/go-flac/go-flac v0.3.1
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/jmoiron/sqlx v1.2.0
+	github.com/markbates/pkger v0.17.1
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
+	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
 	github.com/sirupsen/logrus v1.7.0
 	github.com/vbauerster/mpb/v5 v5.3.0
 	gitlab.com/tslocum/cview v1.5.2

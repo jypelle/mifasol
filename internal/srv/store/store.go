@@ -1,74 +1,44 @@
 package store
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/config"
 	"github.com/sirupsen/logrus"
 )
 
 type Store struct {
-	Db           *sql.DB
-	ServerConfig *config.ServerConfig
+	db           *sqlx.DB
+	serverConfig *config.ServerConfig
 }
 
-func NewStore(db *sql.DB, serverConfig *config.ServerConfig) *Store {
+func NewStore(serverConfig *config.ServerConfig) *Store {
+
+	// Open database connection
+	db, err := sqlx.Open("sqlite3", serverConfig.GetCompleteConfigDbFilename())
+	if err != nil {
+		logrus.Fatalf("Unable to connect to the database: %v", err)
+	}
 
 	store := &Store{
-		Db:           db,
-		ServerConfig: serverConfig,
+		db:           db,
+		serverConfig: serverConfig,
+	}
+
+	// Execute database migration scripts
+	if err := store.migrateDatabase(); err != nil {
+		logrus.Fatalf("Unable to migrate the database: %v", err)
 	}
 
 	// Database upgrade
-	if _, err := db.Exec(`
-drop table if exists album;
-create table album
-(
-    id text not null primary key,
-    creation_ts integer not null,
-    update_ts integer not null,
-    name text not null
-);
+	/*
+			if _, err := db.Exec(`
+		drop table if exists album;
 
-drop table if exists artist;
-create table artist
-(
-    id text not null primary key,
-    creation_ts integer not null,
-    update_ts integer not null,
-    name text not null
-);
 
-drop table if exists song;
-create table song
-(
-    id text not null primary key,
-    creation_ts integer not null,
-    update_ts integer not null,
-    name text not null,
-	format integer not null,
-	size integer not null,
-	bit_depth integer not null,
-	publication_year integer,
-	album_id integer not null,
-	track_number integer,
-	explicit_fg bool not null
-);
-
-drop table if exists user;
-create table user
-(
-    id text not null primary key,
-    creation_ts integer not null,
-    update_ts integer not null,
-    name text not null,
-	hide_explicit_fg bool not null,
-	admin_fg bool not null,
-	password text not null
-);
-
-`); err != nil {
-		logrus.Fatalf("Unable to migrate the database: %v", err)
-	}
+		`); err != nil {
+				logrus.Fatalf("Unable to migrate the database: %v", err)
+			}
+	*/
 
 	/*
 		e := service.upgrade()
@@ -118,4 +88,8 @@ create table user
 		}
 	*/
 	return store
+}
+
+func (s *Store) Close() error {
+	return s.db.Close()
 }

@@ -2,18 +2,16 @@ package srv
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"github.com/asdine/storm/v3"
-	"github.com/asdine/storm/v3/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/internal/srv/config"
+	"github.com/jypelle/mifasol/internal/srv/oldstore"
 	"github.com/jypelle/mifasol/internal/srv/restSrvV1"
 	"github.com/jypelle/mifasol/internal/srv/store"
-	"github.com/jypelle/mifasol/internal/srv/svc"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/internal/version"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	_ "modernc.org/sqlite"
@@ -25,9 +23,7 @@ import (
 
 type ServerApp struct {
 	config.ServerConfig
-	oldDb      *storm.DB
-	db         *sql.DB
-	oldService *svc.Service
+	oldStore   *oldstore.OldStore
 	store      *store.Store
 	restApiV1  *restSrvV1.RestServer
 	httpServer *http.Server
@@ -108,28 +104,24 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
 	}
 
-	// Open database connection
-	app.oldDb, err = storm.Open(app.ServerConfig.GetCompleteConfigOldDbFilename(), storm.Codec(gob.Codec))
-	if err != nil {
-		logrus.Fatalf("Unable to connect to the old database: %v", err)
-	}
-
-	app.db, err = sql.Open("sqlite", app.ServerConfig.GetCompleteConfigDbFilename())
-	if err != nil {
-		logrus.Fatalf("Unable to connect to the database: %v", err)
-	}
+	// Create store
+	app.store = store.NewStore(&app.ServerConfig)
 
 	// Create old store
-	app.oldService = svc.NewService(app.oldDb, &app.ServerConfig)
-
-	// Create store
-	app.store = store.NewStore(app.db, &app.ServerConfig)
+	app.oldStore = oldstore.NewOldStore(&app.ServerConfig)
+	if _, err := os.Stat(app.ServerConfig.GetCompleteConfigOldDbFilename()); err == nil {
+		logrus.Info("Migration of old database...")
+		err = app.store.OldStoreMigration(app.oldStore)
+		if err != nil {
+			logrus.Fatalf("Unable to migrate old store : %v\n", err)
+		}
+	}
 
 	// Create router
 	rooter := mux.NewRouter()
 
 	// Create REST API
-	app.restApiV1 = restSrvV1.NewRestServer(app.oldService, rooter.PathPrefix("/api/v1").Subrouter())
+	app.restApiV1 = restSrvV1.NewRestServer(app.store, app.oldStore, rooter.PathPrefix("/api/v1").Subrouter())
 
 	// Create server check endpoint
 	rooter.HandleFunc("/isalive",
@@ -186,12 +178,14 @@ func (s *ServerApp) Stop() {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.httpServer.Shutdown(ctx)
 
-	// Close database connection
-	err := s.oldDb.Close()
-	if err != nil {
-		logrus.Fatalf("Unable to close the old database: %v", err)
+	// Close store
+	if s.oldStore != nil {
+		err := s.oldStore.Close()
+		if err != nil {
+			logrus.Fatalf("Unable to close the old store: %v", err)
+		}
 	}
-	err = s.db.Close()
+	err := s.store.Close()
 	if err != nil {
 		logrus.Fatalf("Unable to close the database: %v", err)
 	}

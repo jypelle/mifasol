@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/svc"
+	"github.com/jypelle/mifasol/internal/srv/oldstore"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readAlbums(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read albums")
 
-	albums, err := s.service.ReadAlbums(nil, &restApiV1.AlbumFilter{})
+	albums, err := s.store.ReadAlbums(nil, &restApiV1.AlbumFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read albums: %v", err)
 	}
@@ -29,9 +29,9 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read album: %s", albumId)
 
-	album, err := s.service.ReadAlbum(nil, albumId)
+	album, err := s.oldStore.ReadAlbum(nil, albumId)
 	if err != nil {
-		if err == svc.ErrNotFound {
+		if err == oldstore.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -44,18 +44,16 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Create album")
 
-	// Only admin
-	if !s.CheckAdmin(w, r) {
-		return
-	}
-
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to interpret data to create the album: %v", err)
 	}
 
-	album, err := s.service.CreateAlbum(nil, &albumMeta)
+	// Check credential
+	// TODO
+
+	album, err := s.oldStore.CreateAlbum(nil, &albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to create the album: %v", err)
 	}
@@ -71,18 +69,13 @@ func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Update album: %s", albumId)
 
-	// Only admin
-	if !s.CheckAdmin(w, r) {
-		return
-	}
-
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to interpret data to update the album: %v", err)
 	}
 
-	album, err := s.service.UpdateAlbum(nil, albumId, &albumMeta)
+	album, err := s.oldStore.UpdateAlbum(nil, albumId, &albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to update the album: %v", err)
 	}
@@ -98,14 +91,9 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete album: %s", albumId)
 
-	// Only admin
-	if !s.CheckAdmin(w, r) {
-		return
-	}
-
-	album, err := s.service.DeleteAlbum(nil, albumId)
+	album, err := s.oldStore.DeleteAlbum(nil, albumId)
 	if err != nil {
-		if err == svc.ErrDeleteAlbumWithSongs {
+		if err == oldstore.ErrDeleteAlbumWithSongs {
 			s.apiErrorCodeResponse(w, restApiV1.DeleteAlbumWithSongsErrorCode)
 			return
 		}
