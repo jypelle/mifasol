@@ -5,6 +5,7 @@ type ArtistOrder int64
 type ArtistFilter struct {
 	FromTs *int64
 	Name   *string
+	SongId *SongId
 }
 
 type AlbumFilter struct {
@@ -20,7 +21,8 @@ type PlaylistFilter struct {
 
 type SongFilter struct {
 	FromTs         *int64
-	AlbumId        *string
+	AlbumId        *AlbumId
+	ArtistId       *ArtistId
 	FavoriteUserId *UserId
 	FavoriteFromTs *int64
 }

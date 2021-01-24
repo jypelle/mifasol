@@ -23,7 +23,6 @@ import (
 
 type ServerApp struct {
 	config.ServerConfig
-	oldStore   *oldstore.OldStore
 	store      *store.Store
 	restApiV1  *restSrvV1.RestServer
 	httpServer *http.Server
@@ -107,13 +106,17 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	// Create store
 	app.store = store.NewStore(&app.ServerConfig)
 
-	// Create old store
-	app.oldStore = oldstore.NewOldStore(&app.ServerConfig)
+	// Migrate old store
 	if _, err := os.Stat(app.ServerConfig.GetCompleteConfigOldDbFilename()); err == nil {
-		logrus.Info("Migration of old database...")
-		err = app.store.OldStoreMigration(app.oldStore)
+		logrus.Info("Migration of old key-value database...")
+		oldStore := oldstore.NewOldStore(&app.ServerConfig)
+		err = app.store.OldStoreMigration(oldStore)
 		if err != nil {
 			logrus.Fatalf("Unable to migrate old store : %v\n", err)
+		}
+		err := oldStore.Close()
+		if err != nil {
+			logrus.Fatalf("Unable to close the old store: %v", err)
 		}
 	}
 
@@ -121,7 +124,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	rooter := mux.NewRouter()
 
 	// Create REST API
-	app.restApiV1 = restSrvV1.NewRestServer(app.store, app.oldStore, rooter.PathPrefix("/api/v1").Subrouter())
+	app.restApiV1 = restSrvV1.NewRestServer(app.store, rooter.PathPrefix("/api/v1").Subrouter())
 
 	// Create server check endpoint
 	rooter.HandleFunc("/isalive",
@@ -179,12 +182,6 @@ func (s *ServerApp) Stop() {
 	s.httpServer.Shutdown(ctx)
 
 	// Close store
-	if s.oldStore != nil {
-		err := s.oldStore.Close()
-		if err != nil {
-			logrus.Fatalf("Unable to close the old store: %v", err)
-		}
-	}
 	err := s.store.Close()
 	if err != nil {
 		logrus.Fatalf("Unable to close the database: %v", err)

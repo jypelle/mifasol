@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -35,9 +35,9 @@ func (s *RestServer) generateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.oldStore.ReadUserEntityByUserName(nil, name)
+	user, err := s.store.ReadUserByUserName(nil, name)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.InvalideGrantErrorCode)
 			return
 		}

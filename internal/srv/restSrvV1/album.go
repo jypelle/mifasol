@@ -29,7 +29,7 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read album: %s", albumId)
 
-	album, err := s.oldStore.ReadAlbum(nil, albumId)
+	album, err := s.store.ReadAlbum(nil, albumId)
 	if err != nil {
 		if err == oldstore.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
@@ -53,7 +53,7 @@ func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
 	// Check credential
 	// TODO
 
-	album, err := s.oldStore.CreateAlbum(nil, &albumMeta)
+	album, err := s.store.CreateAlbum(nil, &albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to create the album: %v", err)
 	}
@@ -75,7 +75,7 @@ func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the album: %v", err)
 	}
 
-	album, err := s.oldStore.UpdateAlbum(nil, albumId, &albumMeta)
+	album, err := s.store.UpdateAlbum(nil, albumId, &albumMeta)
 	if err != nil {
 		logrus.Panicf("Unable to update the album: %v", err)
 	}
@@ -91,7 +91,7 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete album: %s", albumId)
 
-	album, err := s.oldStore.DeleteAlbum(nil, albumId)
+	album, err := s.store.DeleteAlbum(nil, albumId)
 	if err != nil {
 		if err == oldstore.ErrDeleteAlbumWithSongs {
 			s.apiErrorCodeResponse(w, restApiV1.DeleteAlbumWithSongsErrorCode)

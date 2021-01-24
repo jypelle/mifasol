@@ -2,7 +2,6 @@ package restSrvV1
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
 	"github.com/jypelle/mifasol/internal/srv/store"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -12,17 +11,15 @@ import (
 )
 
 type RestServer struct {
-	oldStore  *oldstore.OldStore
 	store     *store.Store
 	subRooter *mux.Router
 
 	sessionMap sync.Map
 }
 
-func NewRestServer(store *store.Store, oldStore *oldstore.OldStore, subRouter *mux.Router) *RestServer {
+func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 
 	restServer := &RestServer{
-		oldStore:  oldStore,
 		store:     store,
 		subRooter: subRouter,
 	}
@@ -107,9 +104,9 @@ func NewRestServer(store *store.Store, oldStore *oldstore.OldStore, subRouter *m
 					return
 				}
 
-				user, err := restServer.oldStore.ReadUser(nil, ses.(*session).userId)
+				user, err := restServer.store.ReadUser(nil, ses.(*session).userId)
 				if err != nil {
-					if err == oldstore.ErrNotFound {
+					if err == store.ErrNotFound {
 						restServer.apiErrorCodeResponse(w, restApiV1.InvalidTokenErrorCode)
 						return
 					}

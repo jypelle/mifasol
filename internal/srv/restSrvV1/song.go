@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -14,7 +14,7 @@ import (
 func (s *RestServer) readSongs(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read songs")
 
-	songs, err := s.oldStore.ReadSongs(nil, &restApiV1.SongFilter{})
+	songs, err := s.store.ReadSongs(nil, &restApiV1.SongFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read songs: %v", err)
 	}
@@ -29,9 +29,9 @@ func (s *RestServer) readSong(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read song: %s", songId)
 
-	song, err := s.oldStore.ReadSong(nil, songId)
+	song, err := s.store.ReadSong(nil, songId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -48,18 +48,18 @@ func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read song content: %s", songId)
 
-	song, err := s.oldStore.ReadSong(nil, songId)
+	song, err := s.store.ReadSong(nil, songId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
 		logrus.Panicf("Unable to read song: %v", err)
 	}
 
-	songContent, err := s.oldStore.ReadSongContent(song)
+	songContent, err := s.store.ReadSongContent(song)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -75,7 +75,7 @@ func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 func (s *RestServer) createSongContent(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Create song from raw content")
 
-	song, err := s.oldStore.CreateSongFromRawContent(nil, r.Body, restApiV1.UnknownAlbumId)
+	song, err := s.store.CreateSongFromRawContent(nil, r.Body, restApiV1.UnknownAlbumId)
 
 	if err != nil {
 		logrus.Panicf("Unable to create the song: %v", err)
@@ -91,7 +91,7 @@ func (s *RestServer) createSongContentForAlbum(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	lastAlbumId := restApiV1.AlbumId(vars["id"])
 
-	song, err := s.oldStore.CreateSongFromRawContent(nil, r.Body, lastAlbumId)
+	song, err := s.store.CreateSongFromRawContent(nil, r.Body, lastAlbumId)
 
 	if err != nil {
 		logrus.Panicf("Unable to create the song: %v", err)
@@ -119,7 +119,7 @@ func (s *RestServer) updateSong(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the song: %v", err)
 	}
 
-	song, err := s.oldStore.UpdateSong(nil, songId, &songMeta, nil, true)
+	song, err := s.store.UpdateSong(nil, songId, &songMeta, nil, true)
 	if err != nil {
 		logrus.Panicf("Unable to update the song: %v", err)
 	}
@@ -135,7 +135,7 @@ func (s *RestServer) deleteSong(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete song: %s", songId)
 
-	song, err := s.oldStore.DeleteSong(nil, songId)
+	song, err := s.store.DeleteSong(nil, songId)
 	if err != nil {
 		logrus.Panicf("Unable to delete song: %v", err)
 	}

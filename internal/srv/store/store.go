@@ -31,16 +31,6 @@ func NewStore(serverConfig *config.ServerConfig) *Store {
 
 	// Database upgrade
 	/*
-			if _, err := db.Exec(`
-		drop table if exists album;
-
-
-		`); err != nil {
-				logrus.Fatalf("Unable to migrate the database: %v", err)
-			}
-	*/
-
-	/*
 		e := service.upgrade()
 		if e != nil {
 			logrus.Fatalf("Unable to upgrade database: %v", e)

@@ -20,7 +20,7 @@ func (s *RestServer) readSyncReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	syncReport, err := s.oldStore.ReadSyncReport(fromTs)
+	syncReport, err := s.store.ReadSyncReport(fromTs)
 	if err != nil {
 		logrus.Panicf("Unable to read sync report: %v", err)
 	}
@@ -40,7 +40,7 @@ func (s *RestServer) readFileSyncReport(w http.ResponseWriter, r *http.Request) 
 	}
 	userId := restApiV1.UserId(vars["userId"])
 
-	fileSyncReport, err := s.oldStore.ReadFileSyncReport(fromTs, userId)
+	fileSyncReport, err := s.store.ReadFileSyncReport(fromTs, userId)
 	if err != nil {
 		logrus.Panicf("Unable to read sync report: %v", err)
 	}

@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readArtists(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read artists")
 
-	artists, err := s.oldStore.ReadArtists(nil, &restApiV1.ArtistFilter{})
+	artists, err := s.store.ReadArtists(nil, &restApiV1.ArtistFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read artists: %v", err)
 	}
@@ -29,9 +29,9 @@ func (s *RestServer) readArtist(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read artist: %s", artistId)
 
-	artist, err := s.oldStore.ReadArtist(nil, artistId)
+	artist, err := s.store.ReadArtist(nil, artistId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -50,7 +50,7 @@ func (s *RestServer) createArtist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to create the artist: %v", err)
 	}
 
-	artist, err := s.oldStore.CreateArtist(nil, &artistMeta)
+	artist, err := s.store.CreateArtist(nil, &artistMeta)
 	if err != nil {
 		logrus.Panicf("Unable to create the artist: %v", err)
 	}
@@ -71,7 +71,7 @@ func (s *RestServer) updateArtist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the artist: %v", err)
 	}
 
-	artist, err := s.oldStore.UpdateArtist(nil, artistId, &artistMeta)
+	artist, err := s.store.UpdateArtist(nil, artistId, &artistMeta)
 	if err != nil {
 		logrus.Panicf("Unable to update the artist: %v", err)
 	}
@@ -87,9 +87,9 @@ func (s *RestServer) deleteArtist(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete artist: %s", artistId)
 
-	artist, err := s.oldStore.DeleteArtist(nil, artistId)
+	artist, err := s.store.DeleteArtist(nil, artistId)
 	if err != nil {
-		if err == oldstore.ErrDeleteArtistWithSongs {
+		if err == storeerror.ErrDeleteArtistWithSongs {
 			s.apiErrorCodeResponse(w, restApiV1.DeleteArtistWithSongsErrorCode)
 			return
 		}

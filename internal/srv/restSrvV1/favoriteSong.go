@@ -12,7 +12,7 @@ import (
 func (s *RestServer) readFavoriteSongs(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read favorite songs")
 
-	favoriteSongs, err := s.oldStore.ReadFavoriteSongs(nil, &restApiV1.FavoriteSongFilter{})
+	favoriteSongs, err := s.store.ReadFavoriteSongs(nil, &restApiV1.FavoriteSongFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read favorite songs: %v", err)
 	}
@@ -29,7 +29,7 @@ func (s *RestServer) createFavoriteSong(w http.ResponseWriter, r *http.Request) 
 		logrus.Panicf("Unable to interpret data to create the favorite song: %v", err)
 	}
 
-	favoriteSong, err := s.oldStore.CreateFavoriteSong(nil, &favoriteSongMeta, true)
+	favoriteSong, err := s.store.CreateFavoriteSong(nil, &favoriteSongMeta, true)
 	if err != nil {
 		logrus.Panicf("Unable to create the favorite song: %v", err)
 	}
@@ -47,7 +47,7 @@ func (s *RestServer) deleteFavoriteSong(w http.ResponseWriter, r *http.Request) 
 
 	logrus.Debugf("Delete favorite song: %v", favoriteSongId)
 
-	favoriteSong, err := s.oldStore.DeleteFavoriteSong(nil, favoriteSongId)
+	favoriteSong, err := s.store.DeleteFavoriteSong(nil, favoriteSongId)
 	if err != nil {
 		logrus.Panicf("Unable to delete favorite song: %v", err)
 	}

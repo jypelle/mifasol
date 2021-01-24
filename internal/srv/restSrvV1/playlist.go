@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readPlaylists(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read playlists")
 
-	playlists, err := s.oldStore.ReadPlaylists(nil, &restApiV1.PlaylistFilter{})
+	playlists, err := s.store.ReadPlaylists(nil, &restApiV1.PlaylistFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read playlists: %v", err)
 	}
@@ -29,9 +29,9 @@ func (s *RestServer) readPlaylist(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read playlist: %s", playlistId)
 
-	playlist, err := s.oldStore.ReadPlaylist(nil, playlistId)
+	playlist, err := s.store.ReadPlaylist(nil, playlistId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -50,7 +50,7 @@ func (s *RestServer) createPlaylist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to create the playlist: %v", err)
 	}
 
-	playlist, err := s.oldStore.CreatePlaylist(nil, &playlistMeta, true)
+	playlist, err := s.store.CreatePlaylist(nil, &playlistMeta, true)
 	if err != nil {
 		logrus.Panicf("Unable to create the playlist: %v", err)
 	}
@@ -72,7 +72,7 @@ func (s *RestServer) updatePlaylist(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the playlist: %v", err)
 	}
 
-	playlist, err := s.oldStore.UpdatePlaylist(nil, playlistId, &playlistMeta, true)
+	playlist, err := s.store.UpdatePlaylist(nil, playlistId, &playlistMeta, true)
 	if err != nil {
 		logrus.Panicf("Unable to update the playlist: %v", err)
 	}
@@ -88,7 +88,7 @@ func (s *RestServer) deletePlaylist(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete playlist: %s", playlistId)
 
-	playlist, err := s.oldStore.DeletePlaylist(nil, playlistId)
+	playlist, err := s.store.DeletePlaylist(nil, playlistId)
 	if err != nil {
 		logrus.Panicf("Unable to delete playlist: %v", err)
 	}

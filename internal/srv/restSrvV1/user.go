@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 func (s *RestServer) readUsers(w http.ResponseWriter, r *http.Request) {
 	logrus.Debugf("Read users")
 
-	users, err := s.oldStore.ReadUsers(nil, &restApiV1.UserFilter{})
+	users, err := s.store.ReadUsers(nil, &restApiV1.UserFilter{})
 	if err != nil {
 		logrus.Panicf("Unable to read users: %v", err)
 	}
@@ -29,9 +29,9 @@ func (s *RestServer) readUser(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Read user: %s", userId)
 
-	user, err := s.oldStore.ReadUser(nil, userId)
+	user, err := s.store.ReadUser(nil, userId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -50,7 +50,7 @@ func (s *RestServer) createUser(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to create the user: %v", err)
 	}
 
-	user, err := s.oldStore.CreateUser(nil, &userMetaComplete)
+	user, err := s.store.CreateUser(nil, &userMetaComplete)
 	if err != nil {
 		logrus.Panicf("Unable to create the user: %v", err)
 	}
@@ -72,7 +72,7 @@ func (s *RestServer) updateUser(w http.ResponseWriter, r *http.Request) {
 		logrus.Panicf("Unable to interpret data to update the user: %v", err)
 	}
 
-	user, err := s.oldStore.UpdateUser(nil, userId, &userMetaComplete)
+	user, err := s.store.UpdateUser(nil, userId, &userMetaComplete)
 	if err != nil {
 		logrus.Panicf("Unable to update the user: %v", err)
 	}
@@ -88,7 +88,7 @@ func (s *RestServer) deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Debugf("Delete user: %s", userId)
 
-	user, err := s.oldStore.DeleteUser(nil, userId)
+	user, err := s.store.DeleteUser(nil, userId)
 	if err != nil {
 		logrus.Panicf("Unable to delete user: %v", err)
 	}
