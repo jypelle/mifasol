@@ -1,10 +1,9 @@
 package store
 
 import (
-	"github.com/asdine/storm/v3"
+	"database/sql"
 	"github.com/jmoiron/sqlx"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
-	"github.com/jypelle/mifasol/internal/srv/storeerror"
+	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"time"
@@ -20,62 +19,48 @@ func (s *Store) ReadFavoriteSongs(externalTrn *sqlx.Tx, filter *restApiV1.Favori
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
+		txn, err = s.db.Beginx()
 		if err != nil {
 			return nil, err
 		}
 		defer txn.Rollback()
 	}
 
-	favoriteSongEntities := []oldentity.FavoriteSongEntity{}
-
+	queryArgs := make(map[string]interface{})
 	if filter.FromTs != nil {
-		err = txn.Range("UpdateTs", *filter.FromTs, time.Now().UnixNano(), &favoriteSongEntities)
-	} else {
-		err = txn.All(&favoriteSongEntities)
+		queryArgs["from_ts"] = *filter.FromTs
 	}
 
-	if err != nil && err != storm.ErrNotFound {
+	rows, err := txn.NamedQuery(
+		`SELECT
+				f.*
+			FROM favorite_song f
+			WHERE 1>0
+			`+tool.TernStr(filter.FromTs != nil, "AND f.update_ts >= :from_ts ", "")+`
+			ORDER BY a.update_ts ASC
+		`,
+		queryArgs,
+	)
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	favoriteSongs := []restApiV1.FavoriteSong{}
 
-	for _, favoriteSongEntity := range favoriteSongEntities {
+	for rows.Next() {
+		var favoriteSongEntity entity.FavoriteSongEntity
+		err = rows.StructScan(&favoriteSongEntity)
+		if err != nil {
+			return nil, err
+		}
+
 		var favoriteSong restApiV1.FavoriteSong
 		favoriteSongEntity.Fill(&favoriteSong)
 		favoriteSongs = append(favoriteSongs, favoriteSong)
 	}
 
 	return favoriteSongs, nil
-}
-
-func (s *Store) ReadFavoriteSong(externalTrn *sqlx.Tx, favoriteSongId restApiV1.FavoriteSongId) (*restApiV1.FavoriteSong, error) {
-	var err error
-
-	// Check available transaction
-	txn := externalTrn
-	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
-		}
-		defer txn.Rollback()
-	}
-
-	var favoriteSongEntity oldentity.FavoriteSongEntity
-	err = txn.One("Id", string(favoriteSongId.UserId)+":"+string(favoriteSongId.SongId), &favoriteSongEntity)
-	if err != nil {
-		if err == storm.ErrNotFound {
-			return nil, storeerror.ErrNotFound
-		}
-		return nil, err
-	}
-
-	var favoriteSong restApiV1.FavoriteSong
-	favoriteSongEntity.Fill(&favoriteSong)
-
-	return &favoriteSong, nil
 }
 
 func (s *Store) CreateFavoriteSong(externalTrn *sqlx.Tx, favoriteSongMeta *restApiV1.FavoriteSongMeta, check bool) (*restApiV1.FavoriteSong, error) {
@@ -91,43 +76,65 @@ func (s *Store) CreateFavoriteSong(externalTrn *sqlx.Tx, favoriteSongMeta *restA
 		defer txn.Rollback()
 	}
 
-	var favoriteSongEntity oldentity.FavoriteSongEntity
+	var favoriteSongEntity entity.FavoriteSongEntity
 
-	err = txn.One("Id", string(favoriteSongMeta.Id.UserId)+":"+string(favoriteSongMeta.Id.SongId), &favoriteSongEntity)
-	if err != nil && err != storm.ErrNotFound {
+	err = txn.Get(&favoriteSongEntity, "SELECT * FROM favorite_song WHERE user_id = ? AND song_id = ?", favoriteSongMeta.Id.UserId, favoriteSongMeta.Id.SongId)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	if err == storm.ErrNotFound {
+	if err == sql.ErrNoRows {
 		// Store favorite song
 		now := time.Now().UnixNano()
 
-		favoriteSongEntity = oldentity.FavoriteSongEntity{
+		favoriteSongEntity = entity.FavoriteSongEntity{
 			UpdateTs: now,
 		}
 		favoriteSongEntity.LoadMeta(favoriteSongMeta)
 
-		err = txn.Save(&favoriteSongEntity)
+		_, err = txn.NamedExec(`
+			INSERT INTO	favorite_song (
+			    user_id,
+				song_id,
+			    update_ts
+			)
+			VALUES (
+			    :user_id,
+				:song_id,
+				:update_ts
+			)
+		`, &favoriteSongEntity)
 		if err != nil {
 			return nil, err
 		}
 
-		// if previously deletedFavoriteSong exists
-		var deletedFavoriteSongEntity oldentity.DeletedFavoriteSongEntity
-		err = txn.One("Id", string(favoriteSongMeta.Id.UserId)+":"+string(favoriteSongMeta.Id.SongId), &deletedFavoriteSongEntity)
-		if err != nil && err != storm.ErrNotFound {
+		// delete existing deletedFavoriteSong
+		queryArgs := make(map[string]interface{})
+		queryArgs["user_id"] = favoriteSongMeta.Id.UserId
+		queryArgs["song_id"] = favoriteSongMeta.Id.SongId
+
+		_, err = txn.NamedExec(`
+			DELETE FROM deleted_favorite_song
+			WHERE user_id = :user_id and song_id = :song_id
+		`, &queryArgs)
+		if err != nil {
 			return nil, err
 		}
 
-		if err == nil {
-			// Delete deletedFavoriteSong
-			err = txn.DeleteStruct(&deletedFavoriteSongEntity)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		// Force resync on linked favoritePlaylist
-		err = s.updateFavoritePlaylistsContainingSong(txn, favoriteSongMeta.Id.UserId, favoriteSongMeta.Id.SongId)
+		queryArgs = make(map[string]interface{})
+		queryArgs["user_id"] = favoriteSongEntity.UserId
+		queryArgs["song_id"] = favoriteSongEntity.SongId
+		_, err = txn.NamedExec(`
+			UPDATE favorite_playlist
+			SET update_ts = :update_ts
+			WHERE user_id = :user_id AND playlist_id in (
+				select distinct playlist_id
+				from playlist_song ps
+				join favorite_playlist fp
+				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
+				where ps.song_id = :fs.song_id
+			)
+		`, &queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -157,26 +164,55 @@ func (s *Store) DeleteFavoriteSong(externalTrn *sqlx.Tx, favoriteSongId restApiV
 		defer txn.Rollback()
 	}
 
-	var favoriteSongEntity oldentity.FavoriteSongEntity
-	err = txn.One("Id", string(favoriteSongId.UserId)+":"+string(favoriteSongId.SongId), &favoriteSongEntity)
+	var favoriteSongEntity entity.FavoriteSongEntity
+	err = txn.Get(&favoriteSongEntity, "SELECT * FROM favorite_song WHERE user_id = ? AND song_id = ?", favoriteSongId.UserId, favoriteSongId.SongId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete favoriteSong
-	err = txn.DeleteStruct(&favoriteSongEntity)
+	_, err = txn.Exec("DELETE FROM favorite_song WHERE user_id = ? AND song_id = ?", favoriteSongId.UserId, favoriteSongId.SongId)
 	if err != nil {
 		return nil, err
 	}
 
+	deleteTs := time.Now().UnixNano()
+
 	// Archive favoriteSongId deletion
-	err = txn.Save(oldentity.NewDeletedFavoriteSongEntity(favoriteSongId))
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_favorite_song (
+			    user_id,
+			    song_id,
+				delete_ts
+			)
+			VALUES (
+			    :user_id,
+			    :song_id,
+				:delete_ts
+			)
+	`, &entity.DeletedFavoriteSongEntity{
+		UserId:   favoriteSongEntity.UserId,
+		SongId:   favoriteSongEntity.SongId,
+		DeleteTs: deleteTs})
 	if err != nil {
 		return nil, err
 	}
 
 	// Force resync on linked favoritePlaylist
-	err = s.updateFavoritePlaylistsContainingSong(txn, favoriteSongId.UserId, favoriteSongId.SongId)
+	queryArgs := make(map[string]interface{})
+	queryArgs["user_id"] = favoriteSongEntity.UserId
+	queryArgs["song_id"] = favoriteSongEntity.SongId
+	_, err = txn.NamedExec(`
+			UPDATE favorite_playlist
+			SET update_ts = :update_ts
+			WHERE user_id = :user_id AND playlist_id in (
+				select distinct playlist_id
+				from playlist_song ps
+				join favorite_playlist fp
+				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
+				where ps.song_id = :fs.song_id
+			)
+		`, &queryArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -199,9 +235,6 @@ func (s *Store) GetDeletedFavoriteSongIds(externalTrn *sqlx.Tx, fromTs int64) ([
 
 	var err error
 
-	favoriteSongIds := []restApiV1.FavoriteSongId{}
-	deletedFavoriteSongEntities := []oldentity.DeletedFavoriteSongEntity{}
-
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
@@ -212,14 +245,37 @@ func (s *Store) GetDeletedFavoriteSongIds(externalTrn *sqlx.Tx, fromTs int64) ([
 		defer txn.Rollback()
 	}
 
-	err = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoriteSongEntities)
-
-	if err != nil && err != storm.ErrNotFound {
+	queryArgs := make(map[string]interface{})
+	queryArgs["from_ts"] = fromTs
+	rows, err := txn.NamedQuery(
+		`SELECT
+					d.*
+				FROM deleted_favorite_song d
+				WHERE d.delete_ts >= :from_ts
+				ORDER BY d.delete_ts ASC
+			`,
+		queryArgs,
+	)
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	for _, deletedFavoriteSongEntity := range deletedFavoriteSongEntities {
-		favoriteSongIds = append(favoriteSongIds, restApiV1.FavoriteSongId{UserId: deletedFavoriteSongEntity.UserId, SongId: deletedFavoriteSongEntity.SongId})
+	favoriteSongIds := []restApiV1.FavoriteSongId{}
+
+	for rows.Next() {
+		var deletedFavoriteSongEntity entity.DeletedFavoriteSongEntity
+		err = rows.StructScan(&deletedFavoriteSongEntity)
+		if err != nil {
+			return nil, err
+		}
+
+		favoriteSongIds = append(
+			favoriteSongIds,
+			restApiV1.FavoriteSongId{
+				UserId: deletedFavoriteSongEntity.UserId,
+				SongId: deletedFavoriteSongEntity.SongId},
+		)
 	}
 
 	return favoriteSongIds, nil
@@ -228,9 +284,6 @@ func (s *Store) GetDeletedFavoriteSongIds(externalTrn *sqlx.Tx, fromTs int64) ([
 func (s *Store) GetDeletedUserFavoriteSongIds(externalTrn *sqlx.Tx, fromTs int64, userId restApiV1.UserId) ([]restApiV1.SongId, error) {
 	var err error
 
-	songIds := []restApiV1.SongId{}
-	deletedFavoriteSongEntities := []oldentity.DeletedFavoriteSongEntity{}
-
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
@@ -241,16 +294,33 @@ func (s *Store) GetDeletedUserFavoriteSongIds(externalTrn *sqlx.Tx, fromTs int64
 		defer txn.Rollback()
 	}
 
-	err = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoriteSongEntities)
-
-	if err != nil && err != storm.ErrNotFound {
+	queryArgs := make(map[string]interface{})
+	queryArgs["user_id"] = userId
+	queryArgs["from_ts"] = fromTs
+	rows, err := txn.NamedQuery(
+		`SELECT
+					d.*
+				FROM deleted_favorite_song d
+				WHERE user_id = :user_id AND d.delete_ts >= :from_ts
+				ORDER BY d.delete_ts ASC
+			`,
+		queryArgs,
+	)
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	for _, deletedFavoriteSongEntity := range deletedFavoriteSongEntities {
-		if deletedFavoriteSongEntity.UserId == userId {
-			songIds = append(songIds, deletedFavoriteSongEntity.SongId)
+	songIds := []restApiV1.SongId{}
+
+	for rows.Next() {
+		var deletedFavoriteSongEntity entity.DeletedFavoriteSongEntity
+		err = rows.StructScan(&deletedFavoriteSongEntity)
+		if err != nil {
+			return nil, err
 		}
+
+		songIds = append(songIds, deletedFavoriteSongEntity.SongId)
 	}
 
 	return songIds, nil

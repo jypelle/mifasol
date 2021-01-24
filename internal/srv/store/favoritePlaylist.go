@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"github.com/asdine/storm/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/internal/tool"
@@ -163,7 +162,6 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 			    join playlist_song ps on ps.song_id = fs.song_id
 			    join favorite_playlist fp on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
 			    where fs.user_id = :user_id and update_ts = :update_ts
-			    ....
 			)
 		`, &queryArgs)
 		if err != nil {
@@ -333,32 +331,4 @@ func (s *Store) GetDeletedUserFavoritePlaylistIds(externalTrn *sqlx.Tx, fromTs i
 	}
 
 	return playlistIds, nil
-}
-
-func (s *Store) updateFavoritePlaylistsContainingSong(txn storm.Node, userId restApiV1.UserId, songId restApiV1.SongId) error {
-	now := time.Now().UnixNano()
-
-	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
-
-	e := txn.Find("UserId", userId, &favoritePlaylistEntities)
-	if e != nil && e != storm.ErrNotFound {
-		return e
-	}
-
-	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
-		var playlistSongEntity entity.PlaylistSongEntity
-		e = txn.One("Id", string(favoritePlaylistEntity.PlaylistId)+":"+string(songId), &playlistSongEntity)
-		if e != nil && e != storm.ErrNotFound {
-			return e
-		}
-		if e != storm.ErrNotFound {
-			favoritePlaylistEntity.UpdateTs = now
-
-			e = txn.Save(&favoritePlaylistEntity)
-			if e != nil {
-				return e
-			}
-		}
-	}
-	return nil
 }
