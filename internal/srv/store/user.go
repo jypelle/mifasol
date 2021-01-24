@@ -177,7 +177,7 @@ func (s *Store) CreateUser(externalTrn *sqlx.Tx, userMetaComplete *restApiV1.Use
 	`, &userEntity)
 
 	// Add incoming playlist to favorite playlist
-	favoritePlaylistMeta := &restApiV1.FavoritePlaylistMeta{restApiV1.FavoritePlaylistId{UserId: userEntity.Id, PlaylistId: restApiV1.IncomingPlaylistId}}
+	favoritePlaylistMeta := &restApiV1.FavoritePlaylistMeta{restApiV1.FavoritePlaylistId{UserId: userEntity.UserId, PlaylistId: restApiV1.IncomingPlaylistId}}
 	_, err = s.CreateFavoritePlaylist(txn, favoritePlaylistMeta, false)
 	if err != nil {
 		return nil, err

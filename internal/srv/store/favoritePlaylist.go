@@ -75,7 +75,7 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
 
-	err = txn.Get(&favoritePlaylistEntity, "SELECT * FROM favorite_playlist WHERE user_id = ? AND playlist_id = ?", favoritePlaylistMeta.Id.UserId, favoritePlaylistMeta.Id.PlaylistId )
+	err = txn.Get(&favoritePlaylistEntity, "SELECT * FROM favorite_playlist WHERE user_id = ? AND playlist_id = ?", favoritePlaylistMeta.Id.UserId, favoritePlaylistMeta.Id.PlaylistId)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -140,10 +140,11 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 
 		// delete existing deletedFavoriteSong
 		queryArgs = make(map[string]interface{})
-		queryArgs["user_id"] = favoritePlaylistMeta.Id.UserId
+		queryArgs["user_id"] = favoritePlaylistEntity.UserId
+		queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
 		_, err = txn.NamedExec(`
 			DELETE FROM deleted_favorite_song
-			where (user_id,song_id) in (select user_id,song_id from favorite_song where user_id = :user_id)
+			where (user_id,song_id) in (select user_id,song_id from favorite_song where user_id = :user_id and update_ts = :update_ts)
 		`, &queryArgs)
 		if err != nil {
 			return nil, err
@@ -151,34 +152,22 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 
 		// force resync on linked favoritePlaylist
 		queryArgs = make(map[string]interface{})
-		queryArgs["user_id"] = favoritePlaylistMeta.Id.UserId
+		queryArgs["user_id"] = favoritePlaylistEntity.UserId
 		queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
-		_, err ======= txn.NamedExec(`
+		_, err = txn.NamedExec(`
 			UPDATE favorite_playlist
 			SET update_ts = :update_ts
 			WHERE user_id = :user_id AND playlist_id in (
-			    select playlist_id
+			    select distinct playlist_id
 			    from favorite_song fs
-			    where fs.user_id = :user_id
+			    join playlist_song ps on ps.song_id = fs.song_id
+			    join favorite_playlist fp on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
+			    where fs.user_id = :user_id and update_ts = :update_ts
 			    ....
 			)
 		`, &queryArgs)
 		if err != nil {
 			return nil, err
-		}
-
-		playlistSongEntities := []entity.PlaylistSongEntity{}
-
-		err = txn.Find("PlaylistId", favoritePlaylistMeta.Id.PlaylistId, &playlistSongEntities)
-		if err != nil && err != storm.ErrNotFound {
-			return nil, err
-		}
-
-		for _, playlistSongEntity := range playlistSongEntities {
-			_, err = s.CreateFavoriteSong(txn, &restApiV1.FavoriteSongMeta{Id: restApiV1.FavoriteSongId{UserId: favoritePlaylistMeta.Id.UserId, SongId: playlistSongEntity.SongId}}, false)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		// Commit transaction
@@ -207,19 +196,35 @@ func (s *Store) DeleteFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistId 
 	}
 
 	var favoritePlaylistEntity entity.FavoritePlaylistEntity
-	err = txn.One("Id", string(favoritePlaylistId.UserId)+":"+string(favoritePlaylistId.PlaylistId), &favoritePlaylistEntity)
+	err = txn.Get(&favoritePlaylistEntity, "SELECT * FROM favorite_playlist WHERE user_id = ? AND playlist_id = ?", favoritePlaylistId.UserId, favoritePlaylistId.PlaylistId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete favoritePlaylist
-	err = txn.DeleteStruct(&favoritePlaylistEntity)
+	_, err = txn.Exec("DELETE FROM favorite_playlist WHERE user_id = ? AND playlist_id = ?", favoritePlaylistId.UserId, favoritePlaylistId.PlaylistId)
 	if err != nil {
 		return nil, err
 	}
 
+	deleteTs := time.Now().UnixNano()
+
 	// Archive favoritePlaylistId deletion
-	err = txn.Save(entity.NewDeletedFavoritePlaylistEntity(favoritePlaylistId))
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_favorite_playlist (
+			    user_id,
+			    playlist_id,
+				delete_ts
+			)
+			VALUES (
+			    :user_id,
+			    :playlist_id,
+				:delete_ts
+			)
+	`, &entity.DeletedFavoritePlaylistEntity{
+		UserId:     favoritePlaylistEntity.UserId,
+		PlaylistId: favoritePlaylistEntity.PlaylistId,
+		DeleteTs:   deleteTs})
 	if err != nil {
 		return nil, err
 	}
@@ -238,9 +243,6 @@ func (s *Store) DeleteFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistId 
 func (s *Store) GetDeletedFavoritePlaylistIds(externalTrn *sqlx.Tx, fromTs int64) ([]restApiV1.FavoritePlaylistId, error) {
 	var err error
 
-	favoritePlaylistIds := []restApiV1.FavoritePlaylistId{}
-	deletedFavoritePlaylistEntities := []entity.DeletedFavoritePlaylistEntity{}
-
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
@@ -251,24 +253,45 @@ func (s *Store) GetDeletedFavoritePlaylistIds(externalTrn *sqlx.Tx, fromTs int64
 		defer txn.Rollback()
 	}
 
-	err = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoritePlaylistEntities)
-
-	if err != nil && err != storm.ErrNotFound {
+	queryArgs := make(map[string]interface{})
+	queryArgs["from_ts"] = fromTs
+	rows, err := txn.NamedQuery(
+		`SELECT
+					d.*
+				FROM deleted_favorite_playlist d
+				WHERE d.delete_ts >= :from_ts
+				ORDER BY d.delete_ts ASC
+			`,
+		queryArgs,
+	)
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
-		favoritePlaylistIds = append(favoritePlaylistIds, restApiV1.FavoritePlaylistId{UserId: deletedFavoritePlaylistEntity.UserId, PlaylistId: deletedFavoritePlaylistEntity.PlaylistId})
+	favoritePlaylistIds := []restApiV1.FavoritePlaylistId{}
+
+	for rows.Next() {
+		var deletedFavoritePlaylistEntity entity.DeletedFavoritePlaylistEntity
+		err = rows.StructScan(&deletedFavoritePlaylistEntity)
+		if err != nil {
+			return nil, err
+		}
+
+		favoritePlaylistIds = append(
+			favoritePlaylistIds,
+			restApiV1.FavoritePlaylistId{
+				UserId:     deletedFavoritePlaylistEntity.UserId,
+				PlaylistId: deletedFavoritePlaylistEntity.PlaylistId},
+		)
 	}
 
 	return favoritePlaylistIds, nil
 }
 
 func (s *Store) GetDeletedUserFavoritePlaylistIds(externalTrn *sqlx.Tx, fromTs int64, userId restApiV1.UserId) ([]restApiV1.PlaylistId, error) {
-	var err error
 
-	playlistIds := []restApiV1.PlaylistId{}
-	deletedFavoritePlaylistEntities := []entity.DeletedFavoritePlaylistEntity{}
+	var err error
 
 	// Check available transaction
 	txn := externalTrn
@@ -280,16 +303,33 @@ func (s *Store) GetDeletedUserFavoritePlaylistIds(externalTrn *sqlx.Tx, fromTs i
 		defer txn.Rollback()
 	}
 
-	err = txn.Range("DeleteTs", fromTs, time.Now().UnixNano(), &deletedFavoritePlaylistEntities)
-
-	if err != nil && err != storm.ErrNotFound {
+	queryArgs := make(map[string]interface{})
+	queryArgs["user_id"] = userId
+	queryArgs["from_ts"] = fromTs
+	rows, err := txn.NamedQuery(
+		`SELECT
+					d.*
+				FROM deleted_favorite_playlist d
+				WHERE user_id = :user_id AND d.delete_ts >= :from_ts
+				ORDER BY d.delete_ts ASC
+			`,
+		queryArgs,
+	)
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	for _, deletedFavoritePlaylistEntity := range deletedFavoritePlaylistEntities {
-		if deletedFavoritePlaylistEntity.UserId == userId {
-			playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.PlaylistId)
+	playlistIds := []restApiV1.PlaylistId{}
+
+	for rows.Next() {
+		var deletedFavoritePlaylistEntity entity.DeletedFavoritePlaylistEntity
+		err = rows.StructScan(&deletedFavoritePlaylistEntity)
+		if err != nil {
+			return nil, err
 		}
+
+		playlistIds = append(playlistIds, deletedFavoritePlaylistEntity.PlaylistId)
 	}
 
 	return playlistIds, nil
