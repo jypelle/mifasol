@@ -97,8 +97,8 @@ create table playlist_song
 
 create table playlist_owned_user
 (
-    playlist_id text    not null,
-    user_id   text    not null,
+    playlist_id text not null,
+    user_id     text not null,
     primary key (playlist_id, user_id)
 );
 
@@ -123,7 +123,8 @@ create table song
     publication_year integer,
     album_id         integer not null,
     track_number     integer,
-    explicit_fg      bool    not null
+    explicit_fg      bool    not null,
+    obsolete_tags_fg bool    not null
 );
 
 create table deleted_song

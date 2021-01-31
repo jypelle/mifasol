@@ -3,7 +3,7 @@ package restSrvV1
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -31,7 +31,7 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 
 	album, err := s.store.ReadAlbum(nil, albumId)
 	if err != nil {
-		if err == oldstore.ErrNotFound {
+		if err == storeerror.ErrNotFound {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
@@ -93,7 +93,7 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 
 	album, err := s.store.DeleteAlbum(nil, albumId)
 	if err != nil {
-		if err == oldstore.ErrDeleteAlbumWithSongs {
+		if err == storeerror.ErrDeleteAlbumWithSongs {
 			s.apiErrorCodeResponse(w, restApiV1.DeleteAlbumWithSongsErrorCode)
 			return
 		}

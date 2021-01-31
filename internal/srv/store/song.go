@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"github.com/asdine/storm/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/internal/srv/oldentity"
@@ -85,9 +84,6 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 		artistSongEntities := []entity.ArtistSongEntity{}
 		err = txn.Select(&artistSongEntities, `SELECT * FROM artist_song WHERE song_id = ?`, songEntity.SongId)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return nil, storeerror.ErrNotFound
-			}
 			return nil, err
 		}
 
@@ -130,9 +126,6 @@ func (s *Store) ReadSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*restAp
 	artistSongEntities := []entity.ArtistSongEntity{}
 	err = txn.Select(&artistSongEntities, "SELECT * FROM artist_song WHERE song_id = ?", songId)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, storeerror.ErrNotFound
-		}
 		return nil, err
 	}
 
@@ -279,9 +272,9 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 		return nil, err
 	}
 
-	// Refresh album artists
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
-		err = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, nil)
+		// Update album
+		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songEntity.AlbumId)
 		if err != nil {
 			return nil, err
 		}
@@ -496,13 +489,13 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 
 	// Refresh album artists
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId && (artistIdsChanged || updateArtistMetaArtistId != nil || songEntity.AlbumId != songOldAlbumId) {
-		err = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, updateArtistMetaArtistId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songEntity.AlbumId)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if songOldAlbumId != restApiV1.UnknownAlbumId && songEntity.AlbumId != songOldAlbumId {
-		err = s.refreshAlbumArtistIds(txn, songOldAlbumId, updateArtistMetaArtistId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songOldAlbumId)
 		if err != nil {
 			return nil, err
 		}
@@ -517,49 +510,6 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 	songEntity.Fill(&song)
 
 	return &song, nil
-}
-
-func (s *Store) updateSongAlbumArtists(externalTrn *sqlx.Tx, songId restApiV1.SongId, artistIds []restApiV1.ArtistId) error {
-	var err error
-
-	// Check available transaction
-	txn := externalTrn
-	if txn == nil {
-		txn, err = s.db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer txn.Rollback()
-	}
-
-	var songEntity oldentity.SongEntity
-	err = txn.One("Id", songId, &songEntity)
-	if err != nil {
-		return err
-	}
-
-	songEntity.UpdateTs = time.Now().UnixNano()
-
-	// Update song
-	err = txn.Update(&songEntity)
-	if err != nil {
-		return err
-	}
-
-	/*
-		// Update song album artists tag
-		err = s.UpdateSongContentTag(txn,&songEntity)
-		if err != nil {
-			return err
-		}
-	*/
-
-	// Commit transaction
-	if externalTrn == nil {
-		txn.Commit()
-	}
-
-	return nil
 }
 
 func (s *Store) DeleteSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*restApiV1.Song, error) {
@@ -684,7 +634,7 @@ func (s *Store) DeleteSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*rest
 
 	// Refresh album artists
 	if song.AlbumId != restApiV1.UnknownAlbumId {
-		err = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
+		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, song.AlbumId)
 		if err != nil {
 			return nil, err
 		}

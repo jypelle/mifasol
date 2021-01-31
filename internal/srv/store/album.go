@@ -59,8 +59,29 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 			return nil, err
 		}
 
+		// TODO: Need optimizations!
+		// Retrieve album artists
+		artistIds := []restApiV1.ArtistId{}
+		err = txn.Select(
+			&artistIds,
+			`SELECT
+				artist_id
+			FROM song s
+			JOIN artist_song USING (song_id)
+			JOIN artist a USING (artist_id)
+			WHERE album_id = ?
+			GROUP BY artist_id
+			HAVING count(*) > (SELECT count(*)/2 FROM song where album_id = ? )
+			ORDER BY a.name, a.artist_id`,
+			albumEntity.AlbumId,
+		)
+		if err != nil {
+			return nil, err
+		}
+
 		var album restApiV1.Album
 		albumEntity.Fill(&album)
+		album.ArtistIds = artistIds
 
 		albums = append(albums, album)
 	}
@@ -91,8 +112,28 @@ func (s *Store) ReadAlbum(externalTrn *sqlx.Tx, albumId restApiV1.AlbumId) (*res
 		return nil, err
 	}
 
+	// Retrieve album artists
+	artistIds := []restApiV1.ArtistId{}
+	err = txn.Select(
+		&artistIds,
+		`SELECT
+			artist_id
+		FROM song s
+		JOIN artist_song USING (song_id)
+		JOIN artist a USING (artist_id)
+		WHERE album_id = ?
+		GROUP BY artist_id
+		HAVING count(*) > (SELECT count(*)/2 FROM song where album_id = ? )
+		ORDER BY a.name, a.artist_id`,
+		albumId,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	var album restApiV1.Album
 	albumEntity.Fill(&album)
+	album.ArtistIds = artistIds
 
 	return &album, nil
 }
@@ -206,97 +247,6 @@ func (s *Store) UpdateAlbum(externalTrn *sqlx.Tx, albumId restApiV1.AlbumId, alb
 	}
 
 	return &album, nil
-}
-
-func (s *Store) refreshAlbumArtistIds(externalTrn *sqlx.Tx, albumId restApiV1.AlbumId, updateArtistMetaArtistId *restApiV1.ArtistId) error {
-	var err error
-
-	// Check available transaction
-	txn := externalTrn
-	if txn == nil {
-		txn, err = s.db.Beginx()
-		if err != nil {
-			return err
-		}
-		defer txn.Rollback()
-	}
-
-	var albumEntity entity.AlbumEntity
-	err = txn.Get(&albumEntity, `SELECT * FROM album WHERE album_id = ?`, albumId)
-	if err != nil {
-		return err
-	}
-
-	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{AlbumId: &albumId})
-	if err != nil {
-		return err
-	}
-
-	albumOldArtistIds := albumEntity.ArtistIds
-
-	// Update AlbumArtists
-	artistsCount := make(map[restApiV1.ArtistId]int)
-	for _, song := range songs {
-		for _, artistId := range song.ArtistIds {
-			if val, ok := artistsCount[artistId]; ok {
-				artistsCount[artistId] = val + 1
-			} else {
-				artistsCount[artistId] = 1
-			}
-		}
-	}
-
-	albumEntity.ArtistIds = []restApiV1.ArtistId{}
-
-	for artistId, artistCount := range artistsCount {
-		if artistCount > len(songs)/2 {
-			albumEntity.ArtistIds = append(albumEntity.ArtistIds, artistId)
-		}
-	}
-
-	// Reorder artists
-	err = s.sortArtistIds(txn, albumEntity.ArtistIds)
-	if err != nil {
-		return err
-	}
-
-	artistIdsChanged := !isArtistIdsEqual(albumOldArtistIds, albumEntity.ArtistIds)
-	isUpdatedArtistMetaInAlbumArtistIds := false
-	if updateArtistMetaArtistId != nil {
-		for _, artistId := range albumEntity.ArtistIds {
-			if artistId == *updateArtistMetaArtistId {
-				isUpdatedArtistMetaInAlbumArtistIds = true
-				break
-			}
-		}
-	}
-
-	if artistIdsChanged || isUpdatedArtistMetaInAlbumArtistIds {
-		// Update Song AlbumArtists
-		for _, song := range songs {
-			s.updateSongAlbumArtists(txn, song.Id, albumEntity.ArtistIds)
-		}
-
-		// Update album
-		albumEntity.UpdateTs = time.Now().UnixNano()
-
-		_, err = txn.NamedExec(`
-			UPDATE album
-			SET update_ts = :update_ts
-			WHERE album_id = :album_id
-		`, &albumEntity)
-
-		if err != nil {
-			return err
-		}
-
-		// Commit transaction
-		if externalTrn == nil {
-			txn.Commit()
-		}
-	}
-
-	return nil
 }
 
 func (s *Store) DeleteAlbum(externalTrn *sqlx.Tx, albumId restApiV1.AlbumId) (*restApiV1.Album, error) {

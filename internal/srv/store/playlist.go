@@ -2,11 +2,16 @@ package store
 
 import (
 	"database/sql"
+	"github.com/asdine/storm/v3"
+	"github.com/asdine/storm/v3/q"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
+	"github.com/jypelle/mifasol/internal/srv/oldentity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
+	"reflect"
+	"sort"
 	"time"
 )
 
@@ -202,6 +207,114 @@ func (s *Store) GetDeletedPlaylistIds(externalTrn *sqlx.Tx, fromTs int64) ([]res
 	}
 
 	return playlistIds, nil
+}
+
+func (s *Store) UpdatePlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	var e error
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, err = s.db.Beginx()
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
+	}
+
+	now := time.Now().UnixNano()
+
+	var playlistEntity entity.PlaylistEntity
+	e = txn.One("Id", playlistId, &playlistEntity)
+	if e != nil {
+		return nil, e
+	}
+
+	playlistOldName := playlistEntity.Name
+	playlistOldSongIds := playlistEntity.SongIds
+
+	playlistEntity.LoadMeta(playlistMeta)
+
+	// Clean owner list
+	playlistEntity.OwnerUserIds = tool.DeduplicateUserId(playlistEntity.OwnerUserIds)
+	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
+		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
+	})
+
+	// Detect song list update
+	songIdsUpdated := !reflect.DeepEqual(playlistOldSongIds, playlistEntity.SongIds)
+
+	// Update playlist update timestamp
+	playlistEntity.UpdateTs = now
+
+	// Update playlist update content timestamp
+	if playlistOldName != playlistEntity.Name || songIdsUpdated {
+		playlistEntity.ContentUpdateTs = now
+	}
+
+	e = txn.Save(&playlistEntity)
+	if e != nil {
+		return nil, e
+	}
+
+	// Update owner index
+	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&oldentity.OwnedUserPlaylistEntity{})
+	if e != nil && e != storm.ErrNotFound {
+		return nil, e
+	}
+
+	for _, ownerUserId := range playlistEntity.OwnerUserIds {
+
+		// Check owner user id
+		if check {
+			var userEntity oldentity.UserEntity
+			e := txn.One("Id", ownerUserId, &userEntity)
+			if e != nil {
+				return nil, e
+			}
+		}
+
+		// Store playlist owner
+		e = txn.Save(oldentity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
+		if e != nil {
+			return nil, e
+		}
+	}
+
+	// Update songs list
+	if songIdsUpdated {
+		e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&oldentity.PlaylistSongEntity{})
+		if e != nil && e != storm.ErrNotFound {
+			return nil, e
+		}
+
+		for _, songId := range playlistEntity.SongIds {
+			// Check song id
+			if check {
+				var songEntity oldentity.SongEntity
+				e := txn.One("Id", songId, &songEntity)
+				if e != nil {
+					return nil, e
+				}
+			}
+
+			// Store song link
+			e = txn.Save(oldentity.NewPlaylistSongEntity(playlistId, songId))
+			if e != nil {
+				return nil, e
+			}
+		}
+	}
+
+	// Commit transaction
+	if externalTrn == nil {
+		txn.Commit()
+	}
+
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
 }
 
 func (s *Store) AddSongToPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.PlaylistId, songId restApiV1.SongId, check bool) (*restApiV1.Playlist, error) {
