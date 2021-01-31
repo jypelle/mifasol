@@ -120,7 +120,7 @@ func (s *Store) createSongNewFromMp3Content(externalTrn *sqlx.Tx, content []byte
 
 func (s *Store) updateSongContentMp3Tag(externalTrn *sqlx.Tx, songEntity *entity.SongEntity) error {
 	// Extract song meta from tags
-	tag, err := id3v2.Open(s.getSongFileName(songEntity), id3v2.Options{Parse: true})
+	tag, err := id3v2.Open(s.getSongFileName(songEntity.SongId, songEntity.Format), id3v2.Options{Parse: true})
 	if err != nil {
 		return err
 	}

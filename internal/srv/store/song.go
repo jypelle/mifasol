@@ -159,8 +159,8 @@ func (s *Store) GetSongDirName(songId restApiV1.SongId) string {
 	return filepath.Join(s.serverConfig.GetCompleteConfigSongsDirName(), string(songId)[len(songId)-2:])
 }
 
-func (s *Store) getSongFileName(songEntity *entity.SongEntity) string {
-	return filepath.Join(s.GetSongDirName(songEntity.SongId), string(songEntity.SongId)+songEntity.Format.Extension())
+func (s *Store) getSongFileName(songId restApiV1.SongId, songFormat restApiV1.SongFormat) string {
+	return filepath.Join(s.GetSongDirName(songId), string(songId)+songFormat.Extension())
 }
 
 func (s *Store) GetSongFileName(song *restApiV1.Song) string {
@@ -211,16 +211,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 
 	// Create artists link
 	for _, artistId := range artistIds {
-		// Check artist id
-		if check {
-			var artistEntity oldentity.ArtistEntity
-			err = txn.Get(&artistEntity, `SELECT * FROM artist WHERE artist_id = ?`, artistId)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Store artist songs
+		// Store artist song
 		_, err = txn.NamedExec(`
 			INSERT INTO	artist_song (
 			    artist_id,
@@ -275,7 +266,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 	if err != nil {
 		return nil, err
 	}
-	err = ioutil.WriteFile(s.getSongFileName(&songEntity), songNew.Content, 0660)
+	err = ioutil.WriteFile(s.getSongFileName(songEntity.SongId, songEntity.Format), songNew.Content, 0660)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +275,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 	err = s.UpdateSongContentTag(txn, &songEntity)
 	if err != nil {
 		// If tags not updated, delete the song file
-		os.Remove(s.getSongFileName(&songEntity))
+		os.Remove(s.getSongFileName(songEntity.SongId, songEntity.Format))
 		return nil, err
 	}
 
@@ -294,6 +285,13 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Add song to incoming playlist
+	logrus.Debugf("Add song to incoming playlist")
+	_, err = s.AddSongToPlaylist(txn, restApiV1.IncomingPlaylistId, songEntity.SongId, false)
+	if err != nil {
+		return nil, err
 	}
 
 	// Commit transaction
@@ -352,13 +350,6 @@ func (s *Store) CreateSongFromRawContent(externalTrn *sqlx.Tx, raw io.ReadCloser
 		return nil, err
 	}
 
-	// Add song to incoming playlist
-	logrus.Debugf("Add song to incoming playlist")
-	_, err = s.AddSongToPlaylist(txn, restApiV1.IncomingPlaylistId, song.Id, false)
-	if err != nil {
-		return nil, err
-	}
-
 	logrus.Debugf("Commit")
 	// Commit transaction
 	if externalTrn == nil {
@@ -382,31 +373,48 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 		defer txn.Rollback()
 	}
 
+	// Retrieve song
 	var songEntity entity.SongEntity
 	err = txn.Get(&songEntity, "SELECT * FROM song WHERE song_id = ?", songId)
 	if err != nil {
 		return nil, err
 	}
 
-	songOldArtistIds := songEntity.ArtistIds
-	songOldAlbumId := songEntity.AlbumId
-
-	songEntity.LoadMeta(songMeta)
-
-	// Deduplicate artists
-	if songMeta != nil {
-		songEntity.ArtistIds = tool.DeduplicateArtistId(songEntity.ArtistIds)
+	// Retrieve actual song artists
+	artistSongEntities := []entity.ArtistSongEntity{}
+	err = txn.Select(&artistSongEntities, "SELECT asg.* FROM artist_song asg JOIN artist a ON a.artist_id = asg.artist_id WHERE asg.song_id = ? ORDER BY a.name", songId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, storeerror.ErrNotFound
+		}
+		return nil, err
+	}
+	var songOldArtistIds []restApiV1.ArtistId
+	for _, artistSongEntity := range artistSongEntities {
+		songOldArtistIds = append(songOldArtistIds, artistSongEntity.ArtistId)
 	}
 
-	// Reorder artists
-	if songMeta != nil || updateArtistMetaArtistId != nil {
-		err = s.sortArtistIds(txn, songEntity.ArtistIds)
+	// Retrieve actual song album
+	songOldAlbumId := songEntity.AlbumId
+
+	// Update song
+	songEntity.LoadMeta(songMeta)
+
+	// Set new artists
+	// Cleaning song new artists
+	var songNewArtistIds []restApiV1.ArtistId
+	var artistIdsChanged = false
+	// Deduplicate & reorder artists
+	if songMeta != nil {
+		songNewArtistIds = tool.DeduplicateArtistId(songMeta.ArtistIds)
+		err = s.sortArtistIds(txn, songNewArtistIds)
 		if err != nil {
 			return nil, err
 		}
+		artistIdsChanged = !isArtistIdsEqual(songOldArtistIds, songNewArtistIds)
+	} else {
+		songNewArtistIds = songOldArtistIds
 	}
-
-	songEntity.UpdateTs = time.Now().UnixNano()
 
 	// Update album link
 	if songOldAlbumId != songEntity.AlbumId {
@@ -414,7 +422,7 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 			// Check album id
 			if check {
 				var albumEntity oldentity.AlbumEntity
-				err = txn.One("Id", songEntity.AlbumId, &albumEntity)
+				err = txn.Get(&albumEntity, "SELECT * FROM album WHERE album_id = ?", songEntity.AlbumId)
 				if err != nil {
 					return nil, err
 				}
@@ -422,26 +430,29 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 		}
 	}
 
-	artistIdsChanged := !isArtistIdsEqual(songOldArtistIds, songEntity.ArtistIds)
-
 	// Update artists link
-	if songMeta != nil && artistIdsChanged {
-		err = txn.Select(q.Eq("SongId", songEntity.Id)).Delete(&oldentity.ArtistSongEntity{})
-		if err != nil && err != storm.ErrNotFound {
+	if artistIdsChanged {
+		// Delete old links
+		_, err = txn.Exec("DELETE FROM artist_song WHERE song_id = ?", songId)
+		if err != nil {
 			return nil, err
 		}
-		for _, artistId := range songEntity.ArtistIds {
-			// Check artist id
-			if check {
-				var artistEntity oldentity.ArtistEntity
-				err = txn.One("Id", artistId, &artistEntity)
-				if err != nil {
-					return nil, err
-				}
-			}
 
+		// Insert new links
+		for _, artistId := range songNewArtistIds {
 			// Store artist song
-			err = txn.Save(oldentity.NewArtistSongEntity(artistId, songEntity.Id))
+			_, err = txn.NamedExec(`
+				INSERT INTO	artist_song (
+					artist_id,
+					song_id
+				)
+				VALUES (
+					:artist_id,
+					:song_id
+				)
+				`,
+				&entity.ArtistSongEntity{ArtistId: artistId, SongId: songEntity.SongId},
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -449,23 +460,32 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 	}
 
 	// Update song
-	err = txn.Save(&songEntity)
+	songEntity.UpdateTs = time.Now().UnixNano()
+	_, err = txn.NamedExec(`
+		UPDATE song
+		SET name = :name,
+		    format = :format,
+		    size = :size,
+		    bit_depth = :bit_depth,
+		    publication_year = :publication_year,
+		    album_id = :album_id,
+		    track_number = :track_number,
+		    explicit_fg = :explicit_fg,
+			update_ts = :update_ts
+		WHERE song_id = :song_id
+	`, &songEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update playlists link
-	var playlistIds []restApiV1.PlaylistId
-	playlistIds, err = s.GetPlaylistIdsFromSongId(txn, songId)
+	// Update playlists content update
+	_, err = txn.NamedExec(`
+		UPDATE playlist p
+		SET content_update_ts = :update_ts
+		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = p.playlist_id AND ps.song_id = :song_id)
+	`, &songEntity)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, playlistId := range playlistIds {
-		_, err = s.UpdatePlaylist(txn, playlistId, nil, false)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Update tags in song content
@@ -507,7 +527,7 @@ func (s *Store) updateSongAlbumArtists(externalTrn *sqlx.Tx, songId restApiV1.So
 	if txn == nil {
 		txn, err = s.db.Beginx()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer txn.Rollback()
 	}
@@ -561,80 +581,119 @@ func (s *Store) DeleteSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*rest
 
 	deleteTs := time.Now().UnixNano()
 
+	// Read song
 	song, err := s.ReadSong(txn, songId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Delete playlists link
-	playlistIds, err := s.GetPlaylistIdsFromSongId(txn, songId)
+	queryArgs := make(map[string]interface{})
+	queryArgs["delete_ts"] = deleteTs
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+		UPDATE playlist p
+		SET update_ts = :delete_ts,
+			content_update_ts = :delete_ts
+		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = p.playlist_id AND ps.song_id = :song_id)
+	`, queryArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, playlistId := range playlistIds {
-		playList, e := s.ReadPlaylist(txn, playlistId)
-		if e != nil {
-			return nil, e
-		}
-
-		newSongIds := make([]restApiV1.SongId, 0)
-		for _, currentSongId := range playList.SongIds {
-			if currentSongId != songId {
-				newSongIds = append(newSongIds, currentSongId)
-			}
-		}
-		playList.SongIds = newSongIds
-		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta, false)
-		if e != nil {
-			return nil, e
-		}
+	queryArgs = make(map[string]interface{})
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+			DELETE FROM	playlist_song
+			WHERE song_id = :song_id
+		`, queryArgs)
+	if err != nil {
+		return nil, err
 	}
 
 	// Delete artists link
-	artistSongEntities := []oldentity.ArtistSongEntity{}
-	err = txn.Find("SongId", songEntity.Id, &artistSongEntities)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
-	}
-	for _, artistSongEntity := range artistSongEntities {
-		txn.DeleteStruct(&artistSongEntity)
-	}
-
-	// Delete favorite song link
-	favoriteSongEntities := []oldentity.FavoriteSongEntity{}
-	err = txn.Find("SongId", songId, &favoriteSongEntities)
-	if err != nil && err != storm.ErrNotFound {
-		return nil, err
-	}
-	for _, favoriteSongEntity := range favoriteSongEntities {
-		s.DeleteFavoriteSong(txn, restApiV1.FavoriteSongId{UserId: favoriteSongEntity.UserId, SongId: favoriteSongEntity.SongId})
-	}
-
-	// Delete song
-	err = txn.DeleteStruct(&songEntity)
+	queryArgs = make(map[string]interface{})
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+			DELETE FROM	artist_song
+			WHERE song_id = :song_id
+		`, queryArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Delete song content
-	err = os.Remove(s.getSongFileName(&songEntity))
+	// Delete favorite song link
+	queryArgs = make(map[string]interface{})
+	queryArgs["delete_ts"] = deleteTs
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_favorite_song (
+			    user_id,
+			    song_id,
+				delete_ts
+			)
+			SELECT
+			    user_id,
+			    song_id,
+				:delete_ts
+			FROM favorite_song
+			WHERE song_id = :song_id
+	`, queryArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	queryArgs = make(map[string]interface{})
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+			DELETE FROM	favorite_song
+			WHERE song_id = :song_id
+		`, queryArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete song
+	queryArgs = make(map[string]interface{})
+	queryArgs["song_id"] = songId
+	_, err = txn.NamedExec(`
+			DELETE FROM song
+			WHERE song_id = :song_id
+		`, queryArgs)
 	if err != nil {
 		return nil, err
 	}
 
 	// Archive songId
-	err = txn.Save(&oldentity.DeletedSongEntity{Id: songEntity.Id, DeleteTs: deleteTs})
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_song (
+			    song_id,
+			    delete_ts
+			)
+			VALUES (
+			    :song_id,
+				:delete_ts
+			)`,
+		&entity.DeletedSongEntity{
+			SongId:   songId,
+			DeleteTs: deleteTs,
+		})
 	if err != nil {
 		return nil, err
 	}
 
 	// Refresh album artists
-	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
-		err = s.refreshAlbumArtistIds(txn, songEntity.AlbumId, nil)
+	if song.AlbumId != restApiV1.UnknownAlbumId {
+		err = s.refreshAlbumArtistIds(txn, song.AlbumId, nil)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Delete song content
+	err = os.Remove(s.getSongFileName(songId, song.Format))
+	if err != nil {
+		return nil, err
 	}
 
 	// Commit transaction

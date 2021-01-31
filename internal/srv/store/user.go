@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"github.com/asdine/storm/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
@@ -260,47 +259,71 @@ func (s *Store) DeleteUser(externalTrn *sqlx.Tx, userId restApiV1.UserId) (*rest
 	deleteTs := time.Now().UnixNano()
 
 	var userEntity entity.UserEntity
-	err = txn.Get(&userEntity, "SELECT * FROM user WHERE user_id = ?", userId)
+	err = txn.Get(&userEntity, `SELECT * FROM user WHERE user_id = ?`, userId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Remove user from owned playlists
-	playlistIds, err := s.GetPlaylistIdsFromOwnerUserId(txn, userId)
+	queryArgs := make(map[string]interface{})
+	queryArgs["user_id"] = userId
+	queryArgs["update_ts"] = deleteTs
+	_, err = txn.NamedExec(`
+			UPDATE playlist
+			SET update_ts = :update_ts
+			WHERE playlist_id in (
+			    select playlist_id
+			    from playlist_owned_user pou
+			    where pou.user_id = :user_id
+			)
+		`, queryArgs)
 	if err != nil {
 		return nil, err
 	}
-	for _, playlistId := range playlistIds {
-		playList, e := s.ReadPlaylist(txn, playlistId)
-		if e != nil {
-			return nil, e
-		}
-
-		newOwnerUserIds := make([]restApiV1.UserId, 0)
-		for _, currentUserId := range playList.OwnerUserIds {
-			if currentUserId != userId {
-				newOwnerUserIds = append(newOwnerUserIds, currentUserId)
-			}
-		}
-		playList.OwnerUserIds = newOwnerUserIds
-		_, e = s.UpdatePlaylist(txn, playlistId, &playList.PlaylistMeta, false)
-		if e != nil {
-			return nil, e
-		}
+	_, err = txn.Exec(`DELETE FROM playlist_owned_user WHERE user_id = ?`, userId)
+	if err != nil {
+		return nil, err
 	}
 
 	// Delete user's favorite playlists
-	favoritePlaylistEntities := []entity.FavoritePlaylistEntity{}
-	err = txn.Find("UserId", userId, &favoritePlaylistEntities)
-	if err != nil && err != storm.ErrNotFound {
+	favoritePlaylistEntities, err := s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{UserId: &userId})
+	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
+		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.Id.UserId, PlaylistId: favoritePlaylistEntity.Id.PlaylistId})
+	}
+
+	// Delete user's favorite songs
+	queryArgs = make(map[string]interface{})
+	queryArgs["delete_ts"] = deleteTs
+	queryArgs["user_id"] = userId
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_favorite_song (
+			    user_id,
+			    song_id,
+				delete_ts
+			)
+			SELECT
+			    user_id,
+			    song_id,
+				:delete_ts
+			FROM favorite_song
+			WHERE user_id = :user_id
+	`, queryArgs)
+	if err != nil {
 		return nil, err
 	}
-	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
-		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.UserId, PlaylistId: favoritePlaylistEntity.PlaylistId})
+
+	queryArgs = make(map[string]interface{})
+	queryArgs["user_id"] = userId
+	_, err = txn.NamedExec(`
+			DELETE FROM	favorite_song
+			WHERE user_id = :user_id
+		`, queryArgs)
+	if err != nil {
+		return nil, err
 	}
 
 	// Delete user
-	_, err = txn.Exec("DELETE FROM user WHERE user_id = ?", userId)
+	_, err = txn.Exec(`DELETE FROM user WHERE user_id = ?`, userId)
 	if err != nil {
 		return nil, err
 	}

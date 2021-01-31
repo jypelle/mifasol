@@ -172,7 +172,7 @@ func (s *OldStore) CreateSong(externalTrn storm.Node, songNew *restApiV1.SongNew
 			}
 		}
 
-		// Store artist songs
+		// Store artist song
 		e = txn.Save(oldentity.NewArtistSongEntity(artistId, songEntity.Id))
 		if e != nil {
 			return nil, e
@@ -379,6 +379,7 @@ func (s *OldStore) UpdateSong(externalTrn storm.Node, songId restApiV1.SongId, s
 	}
 
 	for _, playlistId := range playlistIds {
+		// TODO: content_update should be updated
 		_, e = s.UpdatePlaylist(txn, playlistId, nil, false)
 		if e != nil {
 			return nil, e

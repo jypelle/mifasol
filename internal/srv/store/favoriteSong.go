@@ -115,7 +115,7 @@ func (s *Store) CreateFavoriteSong(externalTrn *sqlx.Tx, favoriteSongMeta *restA
 		_, err = txn.NamedExec(`
 			DELETE FROM deleted_favorite_song
 			WHERE user_id = :user_id and song_id = :song_id
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (s *Store) CreateFavoriteSong(externalTrn *sqlx.Tx, favoriteSongMeta *restA
 				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
 				where ps.song_id = :fs.song_id
 			)
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +212,7 @@ func (s *Store) DeleteFavoriteSong(externalTrn *sqlx.Tx, favoriteSongId restApiV
 				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
 				where ps.song_id = :fs.song_id
 			)
-		`, &queryArgs)
+		`, queryArgs)
 	if err != nil {
 		return nil, err
 	}

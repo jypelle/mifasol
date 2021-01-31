@@ -182,7 +182,7 @@ func (s *Store) createSongNewFromFlacContent(externalTrn *sqlx.Tx, content []byt
 func (s *Store) updateSongContentFlacTag(externalTrn *sqlx.Tx, songEntity *entity.SongEntity) error {
 
 	// region Extract tags
-	flacFile, err := flac.ParseFile(s.getSongFileName(songEntity))
+	flacFile, err := flac.ParseFile(s.getSongFileName(songEntity.SongId, songEntity.Format))
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (s *Store) updateSongContentFlacTag(externalTrn *sqlx.Tx, songEntity *entit
 	} else {
 		flacFile.Meta = append(flacFile.Meta, &metaDataBlock)
 	}
-	flacFile.Save(s.getSongFileName(songEntity))
+	flacFile.Save(s.getSongFileName(songEntity.SongId, songEntity.Format))
 
 	// Commit transaction
 	if externalTrn == nil {

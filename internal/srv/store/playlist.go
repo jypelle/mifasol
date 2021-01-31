@@ -249,7 +249,7 @@ func (s *Store) AddSongToPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Pla
 				COALESCE(MAX(position)+1,0) as position,
 				:song_id
 			FROM playlist_song WHERE playlist_id = :playlist_id
-	`, &queryArgs)
+	`, queryArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (s *Store) AddSongToPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Pla
 			SET position = position -1
 			WHERE playlist_id = :playlist_id
 			AND (SELECT count(*) FROM playlist_song ps2 WHERE ps2.playlist_id = :playlist_id) > 100
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -270,7 +270,7 @@ func (s *Store) AddSongToPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Pla
 			DELETE FROM	playlist_song
 			WHERE playlist_id = :playlist_id
 			AND position < 0
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}

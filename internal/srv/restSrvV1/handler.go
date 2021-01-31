@@ -3,6 +3,7 @@ package restSrvV1
 import (
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/internal/srv/store"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -106,7 +107,7 @@ func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 
 				user, err := restServer.store.ReadUser(nil, ses.(*session).userId)
 				if err != nil {
-					if err == store.ErrNotFound {
+					if err == storeerror.ErrNotFound {
 						restServer.apiErrorCodeResponse(w, restApiV1.InvalidTokenErrorCode)
 						return
 					}

@@ -26,6 +26,12 @@ func (s *Store) ReadFavoritePlaylists(externalTrn *sqlx.Tx, filter *restApiV1.Fa
 	if filter.FromTs != nil {
 		queryArgs["from_ts"] = *filter.FromTs
 	}
+	if filter.UserId != nil {
+		queryArgs["user_id"] = *filter.UserId
+	}
+	if filter.PlaylistId != nil {
+		queryArgs["playlist_id"] = *filter.PlaylistId
+	}
 
 	rows, err := txn.NamedQuery(
 		`SELECT
@@ -33,6 +39,8 @@ func (s *Store) ReadFavoritePlaylists(externalTrn *sqlx.Tx, filter *restApiV1.Fa
 			FROM favorite_playlist f
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND f.update_ts >= :from_ts ", "")+`
+			`+tool.TernStr(filter.UserId != nil, "AND f.user_id = :user_id ", "")+`
+			`+tool.TernStr(filter.PlaylistId != nil, "AND f.playlist_id = :playlist_id ", "")+`
 			ORDER BY a.update_ts ASC
 		`,
 		queryArgs,
@@ -111,7 +119,7 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 		_, err = txn.NamedExec(`
 			DELETE FROM deleted_favorite_playlist
 			WHERE user_id = :user_id and playlist_id = :playlist_id
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +152,7 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 		_, err = txn.NamedExec(`
 			DELETE FROM deleted_favorite_song
 			where (user_id,song_id) in (select user_id,song_id from favorite_song where user_id = :user_id and update_ts = :update_ts)
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +171,7 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 			    join favorite_playlist fp on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
 			    where fs.user_id = :user_id and update_ts = :update_ts
 			)
-		`, &queryArgs)
+		`, queryArgs)
 		if err != nil {
 			return nil, err
 		}

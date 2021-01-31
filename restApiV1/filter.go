@@ -33,7 +33,9 @@ type UserFilter struct {
 }
 
 type FavoritePlaylistFilter struct {
-	FromTs *int64
+	FromTs     *int64
+	UserId     *UserId
+	PlaylistId *PlaylistId
 }
 
 type FavoriteSongFilter struct {
