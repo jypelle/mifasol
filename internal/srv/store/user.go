@@ -287,6 +287,9 @@ func (s *Store) DeleteUser(externalTrn *sqlx.Tx, userId restApiV1.UserId) (*rest
 
 	// Delete user's favorite playlists
 	favoritePlaylistEntities, err := s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{UserId: &userId})
+	if err != nil {
+		return nil, err
+	}
 	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
 		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.Id.UserId, PlaylistId: favoritePlaylistEntity.Id.PlaylistId})
 	}

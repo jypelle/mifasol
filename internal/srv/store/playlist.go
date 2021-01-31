@@ -2,11 +2,9 @@ package store
 
 import (
 	"database/sql"
-	"github.com/asdine/storm/v3"
-	"github.com/asdine/storm/v3/q"
+	"errors"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
@@ -209,8 +207,150 @@ func (s *Store) GetDeletedPlaylistIds(externalTrn *sqlx.Tx, fromTs int64) ([]res
 	return playlistIds, nil
 }
 
+func (s *Store) CreatePlaylist(externalTrn *sqlx.Tx, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	return s.CreateInternalPlaylist(externalTrn, "", playlistMeta, check)
+}
+
+func (s *Store) CreateInternalPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
+	var err error
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, err = s.db.Beginx()
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
+	}
+
+	// Store playlist
+	now := time.Now().UnixNano()
+
+	if playlistId == "" {
+		playlistId = restApiV1.PlaylistId(tool.CreateUlid())
+	}
+
+	playlistEntity := entity.PlaylistEntity{
+		PlaylistId:      playlistId,
+		CreationTs:      now,
+		UpdateTs:        now,
+		ContentUpdateTs: now,
+	}
+	playlistEntity.LoadMeta(playlistMeta)
+
+	_, err = txn.NamedExec(`
+			INSERT INTO	playlist (
+			    playlist_id,
+				creation_ts,
+			    update_ts,
+			    content_update_ts,
+				name
+			)
+			VALUES (
+			    :playlist_id,
+				:creation_ts,
+			    :update_ts,
+			    :content_update_ts,
+				:name
+			)`,
+		&playlistEntity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clean owner list
+	playlistMeta.OwnerUserIds = tool.DeduplicateUserId(playlistMeta.OwnerUserIds)
+	sort.Slice(playlistMeta.OwnerUserIds, func(i, j int) bool {
+		return playlistMeta.OwnerUserIds[i] < playlistMeta.OwnerUserIds[j]
+	})
+
+	// Create owners link
+	for _, ownerUserId := range playlistMeta.OwnerUserIds {
+
+		// Check owner user id
+		if check {
+			var userEntity entity.UserEntity
+			err = txn.Get(&userEntity, `SELECT * FROM user WHERE user_id = ?`, ownerUserId)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Store playlist owner
+		queryArgs := make(map[string]interface{})
+		queryArgs["playlist_id"] = playlistId
+		queryArgs["user_id"] = ownerUserId
+		_, err = txn.NamedExec(`
+				INSERT INTO	playlist_owned_user (
+					playlist_id,
+					user_id
+				)
+				VALUES (
+					:playlist_id,
+					:user_id
+				)
+				`, queryArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		// Add playlist to owner favorite playlist
+		favoritePlaylistMeta := &restApiV1.FavoritePlaylistMeta{restApiV1.FavoritePlaylistId{UserId: ownerUserId, PlaylistId: playlistId}}
+		_, err = s.CreateFavoritePlaylist(txn, favoritePlaylistMeta, false)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	// Create songs link
+	for position, songId := range playlistMeta.SongIds {
+		// Check song id
+		if check {
+			var songEntity entity.SongEntity
+			err = txn.Get(&songEntity, `SELECT * FROM song WHERE song_id = ?`, songId)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Store song link
+		queryArgs := make(map[string]interface{})
+		queryArgs["playlist_id"] = playlistId
+		queryArgs["position"] = position
+		queryArgs["song_id"] = songId
+		_, err = txn.NamedExec(`
+				INSERT INTO	playlist_song (
+					playlist_id,
+					position,
+					song_id
+				)
+				VALUES (
+					:playlist_id,
+					:position,
+					:song_id
+				)
+				`, queryArgs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Commit transaction
+	if externalTrn == nil {
+		txn.Commit()
+	}
+
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
+}
+
 func (s *Store) UpdatePlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.PlaylistId, playlistMeta *restApiV1.PlaylistMeta, check bool) (*restApiV1.Playlist, error) {
-	var e error
+	var err error
 
 	// Check available transaction
 	txn := externalTrn
@@ -225,24 +365,37 @@ func (s *Store) UpdatePlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Playli
 	now := time.Now().UnixNano()
 
 	var playlistEntity entity.PlaylistEntity
-	e = txn.One("Id", playlistId, &playlistEntity)
-	if e != nil {
-		return nil, e
+
+	err = txn.Get(&playlistEntity, "SELECT * FROM playlist WHERE playlist_id = ?", playlistId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, storeerror.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Retrieve old songs
+	playlistOldSongIds := []restApiV1.SongId{}
+	err = txn.Select(&playlistOldSongIds, "SELECT song_id FROM playlist_song WHERE playlist_id = ? ORDER BY position", playlistId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, storeerror.ErrNotFound
+		}
+		return nil, err
 	}
 
 	playlistOldName := playlistEntity.Name
-	playlistOldSongIds := playlistEntity.SongIds
 
 	playlistEntity.LoadMeta(playlistMeta)
 
 	// Clean owner list
-	playlistEntity.OwnerUserIds = tool.DeduplicateUserId(playlistEntity.OwnerUserIds)
-	sort.Slice(playlistEntity.OwnerUserIds, func(i, j int) bool {
-		return playlistEntity.OwnerUserIds[i] < playlistEntity.OwnerUserIds[j]
+	playlistMeta.OwnerUserIds = tool.DeduplicateUserId(playlistMeta.OwnerUserIds)
+	sort.Slice(playlistMeta.OwnerUserIds, func(i, j int) bool {
+		return playlistMeta.OwnerUserIds[i] < playlistMeta.OwnerUserIds[j]
 	})
 
 	// Detect song list update
-	songIdsUpdated := !reflect.DeepEqual(playlistOldSongIds, playlistEntity.SongIds)
+	songIdsUpdated := !reflect.DeepEqual(playlistOldSongIds, playlistMeta.SongIds)
 
 	// Update playlist update timestamp
 	playlistEntity.UpdateTs = now
@@ -252,56 +405,90 @@ func (s *Store) UpdatePlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Playli
 		playlistEntity.ContentUpdateTs = now
 	}
 
-	e = txn.Save(&playlistEntity)
-	if e != nil {
-		return nil, e
+	_, err = txn.NamedExec(`
+		UPDATE playlist
+		SET name = :name,
+			update_ts = :update_ts,
+			content_update_ts = :content_update_ts
+		WHERE playlist_id = :playlist_id
+	`, &playlistEntity)
+
+	if err != nil {
+		return nil, err
 	}
 
-	// Update owner index
-	e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&oldentity.OwnedUserPlaylistEntity{})
-	if e != nil && e != storm.ErrNotFound {
-		return nil, e
+	// Update owner list
+	_, err = txn.Exec("DELETE FROM playlist_owned_user WHERE playlist_id = ?", playlistId)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, ownerUserId := range playlistEntity.OwnerUserIds {
+	for _, ownerUserId := range playlistMeta.OwnerUserIds {
 
 		// Check owner user id
 		if check {
-			var userEntity oldentity.UserEntity
-			e := txn.One("Id", ownerUserId, &userEntity)
-			if e != nil {
-				return nil, e
+			var userEntity entity.UserEntity
+			err = txn.Get(&userEntity, `SELECT * FROM user WHERE user_id = ?`, ownerUserId)
+			if err != nil {
+				return nil, err
 			}
 		}
 
 		// Store playlist owner
-		e = txn.Save(oldentity.NewOwnedUserPlaylistEntity(ownerUserId, playlistId))
-		if e != nil {
-			return nil, e
+		queryArgs := make(map[string]interface{})
+		queryArgs["playlist_id"] = playlistId
+		queryArgs["user_id"] = ownerUserId
+		_, err = txn.NamedExec(`
+				INSERT INTO	playlist_owned_user (
+					playlist_id,
+					user_id
+				)
+				VALUES (
+					:playlist_id,
+					:user_id
+				)
+				`, queryArgs)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	// Update songs list
 	if songIdsUpdated {
-		e = txn.Select(q.Eq("PlaylistId", playlistId)).Delete(&oldentity.PlaylistSongEntity{})
-		if e != nil && e != storm.ErrNotFound {
-			return nil, e
+		_, err = txn.Exec("DELETE FROM playlist_song WHERE playlist_id = ?", playlistId)
+		if err != nil {
+			return nil, err
 		}
 
-		for _, songId := range playlistEntity.SongIds {
+		for position, songId := range playlistMeta.SongIds {
 			// Check song id
 			if check {
-				var songEntity oldentity.SongEntity
-				e := txn.One("Id", songId, &songEntity)
-				if e != nil {
-					return nil, e
+				var songEntity entity.SongEntity
+				err = txn.Get(&songEntity, `SELECT * FROM song WHERE song_id = ?`, songId)
+				if err != nil {
+					return nil, err
 				}
 			}
 
 			// Store song link
-			e = txn.Save(oldentity.NewPlaylistSongEntity(playlistId, songId))
-			if e != nil {
-				return nil, e
+			queryArgs := make(map[string]interface{})
+			queryArgs["playlist_id"] = playlistId
+			queryArgs["position"] = position
+			queryArgs["song_id"] = songId
+			_, err = txn.NamedExec(`
+				INSERT INTO	playlist_song (
+					playlist_id,
+					position,
+					song_id
+				)
+				VALUES (
+					:playlist_id,
+					:position,
+					:song_id
+				)
+				`, queryArgs)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -398,6 +585,85 @@ func (s *Store) AddSongToPlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.Pla
 			content_update_ts = :content_update_ts
 		WHERE playlist_id = :playlist_id
 	`, &playlistEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit transaction
+	if externalTrn == nil {
+		txn.Commit()
+	}
+
+	var playlist restApiV1.Playlist
+	playlistEntity.Fill(&playlist)
+
+	return &playlist, nil
+}
+
+func (s *Store) DeletePlaylist(externalTrn *sqlx.Tx, playlistId restApiV1.PlaylistId) (*restApiV1.Playlist, error) {
+	var err error
+
+	// Incoming playlist can't be deleted
+	if playlistId == restApiV1.IncomingPlaylistId {
+		return nil, errors.New("Incoming playlist can't be deleted")
+	}
+
+	// Check available transaction
+	txn := externalTrn
+	if txn == nil {
+		txn, err = s.db.Beginx()
+		if err != nil {
+			return nil, err
+		}
+		defer txn.Rollback()
+	}
+
+	deleteTs := time.Now().UnixNano()
+
+	var playlistEntity entity.PlaylistEntity
+	err = txn.Get(&playlistEntity, `SELECT * FROM playlist WHERE playlist_id = ?`, playlistId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete favorite playlist link
+	favoritePlaylistEntities, err := s.ReadFavoritePlaylists(txn, &restApiV1.FavoritePlaylistFilter{PlaylistId: &playlistId})
+	if err != nil {
+		return nil, err
+	}
+	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
+		s.DeleteFavoritePlaylist(txn, restApiV1.FavoritePlaylistId{UserId: favoritePlaylistEntity.Id.UserId, PlaylistId: favoritePlaylistEntity.Id.PlaylistId})
+	}
+
+	// Delete owners link
+	_, err = txn.Exec("DELETE FROM playlist_owned_user WHERE playlist_id = ?", playlistId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete songs link
+	_, err = txn.Exec("DELETE FROM playlist_song WHERE playlist_id = ?", playlistId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete playlist
+	_, err = txn.Exec("DELETE FROM playlist WHERE playlist_id = ?", playlistId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Archive playlistId
+	_, err = txn.NamedExec(`
+			INSERT INTO	deleted_playlist (
+			    playlist_id,
+				delete_ts
+			)
+			VALUES (
+			    :playlist_id,
+				:delete_ts
+			)
+	`, &entity.DeletedPlaylistEntity{PlaylistId: playlistEntity.PlaylistId, DeleteTs: deleteTs})
 	if err != nil {
 		return nil, err
 	}

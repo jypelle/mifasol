@@ -123,8 +123,7 @@ create table song
     publication_year integer,
     album_id         integer not null,
     track_number     integer,
-    explicit_fg      bool    not null,
-    obsolete_tags_fg bool    not null
+    explicit_fg      bool    not null
 );
 
 create table deleted_song
