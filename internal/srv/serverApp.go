@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/internal/srv/config"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
 	"github.com/jypelle/mifasol/internal/srv/restSrvV1"
 	"github.com/jypelle/mifasol/internal/srv/store"
 	"github.com/jypelle/mifasol/internal/tool"
@@ -105,20 +104,6 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
 	// Create store
 	app.store = store.NewStore(&app.ServerConfig)
-
-	// Migrate old store
-	if _, err := os.Stat(app.ServerConfig.GetCompleteConfigOldDbFilename()); err == nil {
-		logrus.Info("Migration of old key-value database...")
-		oldStore := oldstore.NewOldStore(&app.ServerConfig)
-		err = app.store.OldStoreMigration(oldStore)
-		if err != nil {
-			logrus.Fatalf("Unable to migrate old store : %v\n", err)
-		}
-		err := oldStore.Close()
-		if err != nil {
-			logrus.Fatalf("Unable to close the old store: %v", err)
-		}
-	}
 
 	// Create router
 	rooter := mux.NewRouter()

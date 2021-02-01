@@ -41,7 +41,7 @@ func (s *Store) ReadFavoritePlaylists(externalTrn *sqlx.Tx, filter *restApiV1.Fa
 			`+tool.TernStr(filter.FromTs != nil, "AND f.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.UserId != nil, "AND f.user_id = :user_id ", "")+`
 			`+tool.TernStr(filter.PlaylistId != nil, "AND f.playlist_id = :playlist_id ", "")+`
-			ORDER BY a.update_ts ASC
+			ORDER BY f.update_ts ASC
 		`,
 		queryArgs,
 	)
@@ -167,9 +167,9 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 			WHERE user_id = :user_id AND playlist_id in (
 			    select distinct playlist_id
 			    from favorite_song fs
-			    join playlist_song ps on ps.song_id = fs.song_id
-			    join favorite_playlist fp on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
-			    where fs.user_id = :user_id and update_ts = :update_ts
+			    join playlist_song ps using (song_id)
+			    join favorite_playlist fp using (playlist_id,user_id)
+			    where fs.user_id = :user_id and fs.update_ts = :update_ts
 			)
 		`, queryArgs)
 		if err != nil {

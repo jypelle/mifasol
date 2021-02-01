@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
@@ -194,7 +193,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		if check {
 			// Check album id
-			var albumEntity oldentity.AlbumEntity
+			var albumEntity entity.AlbumEntity
 			err = txn.Get(&albumEntity, `SELECT * FROM album WHERE album_id = ?`, songEntity.AlbumId)
 			if err != nil {
 				return nil, err
@@ -414,7 +413,7 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 		if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 			// Check album id
 			if check {
-				var albumEntity oldentity.AlbumEntity
+				var albumEntity entity.AlbumEntity
 				err = txn.Get(&albumEntity, "SELECT * FROM album WHERE album_id = ?", songEntity.AlbumId)
 				if err != nil {
 					return nil, err

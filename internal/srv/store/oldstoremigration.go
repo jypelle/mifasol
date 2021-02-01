@@ -3,12 +3,12 @@ package store
 import (
 	"github.com/asdine/storm/v3"
 	"github.com/jypelle/mifasol/internal/srv/entity"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
-	"github.com/jypelle/mifasol/internal/srv/oldstore"
+	"github.com/jypelle/mifasol/internal/srv/legacy/oldentity"
+	"github.com/jypelle/mifasol/internal/srv/legacy/oldstore"
 	"github.com/jypelle/mifasol/restApiV1"
 )
 
-func (s *Store) OldStoreMigration(oldStore *oldstore.OldStore) error {
+func (s *Store) oldStoreImport(oldStore *oldstore.OldStore) error {
 	txn, e := s.db.Beginx()
 	if e != nil {
 		return e

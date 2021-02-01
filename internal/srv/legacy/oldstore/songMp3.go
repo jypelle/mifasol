@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/asdine/storm/v3"
 	"github.com/bogem/id3v2"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
+	"github.com/jypelle/mifasol/internal/srv/legacy/oldentity"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"strconv"

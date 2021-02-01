@@ -74,6 +74,7 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 			HAVING count(*) > (SELECT count(*)/2 FROM song where album_id = ? )
 			ORDER BY a.name, a.artist_id`,
 			albumEntity.AlbumId,
+			albumEntity.AlbumId,
 		)
 		if err != nil {
 			return nil, err

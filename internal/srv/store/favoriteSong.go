@@ -37,7 +37,7 @@ func (s *Store) ReadFavoriteSongs(externalTrn *sqlx.Tx, filter *restApiV1.Favori
 			FROM favorite_song f
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND f.update_ts >= :from_ts ", "")+`
-			ORDER BY a.update_ts ASC
+			ORDER BY f.update_ts ASC
 		`,
 		queryArgs,
 	)

@@ -121,7 +121,7 @@ create table song
     size             integer not null,
     bit_depth        integer not null,
     publication_year integer,
-    album_id         integer not null,
+    album_id         text    not null,
     track_number     integer,
     explicit_fg      bool    not null
 );

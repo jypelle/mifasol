@@ -2,7 +2,7 @@ package oldstore
 
 import (
 	"github.com/asdine/storm/v3"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
+	"github.com/jypelle/mifasol/internal/srv/legacy/oldentity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"

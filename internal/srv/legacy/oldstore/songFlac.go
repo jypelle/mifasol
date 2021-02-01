@@ -5,7 +5,7 @@ import (
 	"github.com/asdine/storm/v3"
 	"github.com/go-flac/flacvorbis"
 	"github.com/go-flac/go-flac"
-	"github.com/jypelle/mifasol/internal/srv/oldentity"
+	"github.com/jypelle/mifasol/internal/srv/legacy/oldentity"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"strconv"
