@@ -39,7 +39,7 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 	if filter.AlbumId != nil {
 		queryArgs["album_id"] = *filter.AlbumId
 	}
-	if filter.AlbumId != nil {
+	if filter.ArtistId != nil {
 		queryArgs["artist_id"] = *filter.ArtistId
 	}
 	if filter.FavoriteUserId != nil {
@@ -53,7 +53,7 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 		`SELECT
 				DISTINCT s.*
 			FROM song s
-			`+tool.TernStr(filter.ArtistId != nil, "JOIN artist_song as ON as.song_id = s.song_id AND s.artist_id = :artist_id ", "")+`
+			`+tool.TernStr(filter.ArtistId != nil, "JOIN artist_song asg ON asg.song_id = s.song_id AND asg.artist_id = :artist_id ", "")+`
 			`+tool.TernStr(filter.FavoriteUserId != nil || filter.FavoriteFromTs != nil, "JOIN favorite_song fs ON fs.song_id = s.song_id ", "")+`
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND s.update_ts >= :from_ts ", "")+`
@@ -472,9 +472,9 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 
 	// Update playlists content update
 	_, err = txn.NamedExec(`
-		UPDATE playlist p
+		UPDATE playlist
 		SET content_update_ts = :update_ts
-		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = p.playlist_id AND ps.song_id = :song_id)
+		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = playlist.playlist_id AND ps.song_id = :song_id)
 	`, &songEntity)
 	if err != nil {
 		return nil, err
@@ -488,13 +488,13 @@ func (s *Store) UpdateSong(externalTrn *sqlx.Tx, songId restApiV1.SongId, songMe
 
 	// Refresh album artists
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId && (artistIdsChanged || updateArtistMetaArtistId != nil || songEntity.AlbumId != songOldAlbumId) {
-		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songEntity.AlbumId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = ? WHERE album_id = ?`, songEntity.UpdateTs, songEntity.AlbumId)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if songOldAlbumId != restApiV1.UnknownAlbumId && songEntity.AlbumId != songOldAlbumId {
-		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songOldAlbumId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = ? WHERE album_id = ?`, songEntity.UpdateTs, songOldAlbumId)
 		if err != nil {
 			return nil, err
 		}
@@ -541,10 +541,10 @@ func (s *Store) DeleteSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*rest
 	queryArgs["delete_ts"] = deleteTs
 	queryArgs["song_id"] = songId
 	_, err = txn.NamedExec(`
-		UPDATE playlist p
+		UPDATE playlist
 		SET update_ts = :delete_ts,
 			content_update_ts = :delete_ts
-		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = p.playlist_id AND ps.song_id = :song_id)
+		WHERE EXISTS (SELECT 1 FROM playlist_song ps WHERE ps.playlist_id = playlist.playlist_id AND ps.song_id = :song_id)
 	`, queryArgs)
 	if err != nil {
 		return nil, err
