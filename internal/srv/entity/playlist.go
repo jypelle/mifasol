@@ -15,6 +15,7 @@ type PlaylistEntity struct {
 }
 
 func (e *PlaylistEntity) Fill(s *restApiV1.Playlist) {
+	s.Id = e.PlaylistId
 	s.CreationTs = e.CreationTs
 	s.UpdateTs = e.UpdateTs
 	s.ContentUpdateTs = e.ContentUpdateTs
