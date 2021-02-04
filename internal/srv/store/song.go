@@ -53,7 +53,7 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 		`SELECT
 				DISTINCT s.*
 			FROM song s
-			`+tool.TernStr(filter.ArtistId != nil, "JOIN artist_song asg ON asg.song_id = s.song_id AND asg.artist_id = :artist_id ", "")+`
+			`+tool.TernStr(filter.ArtistId != nil, "JOIN artist_song asg2 ON asg2.song_id = s.song_id AND asg2.artist_id = :artist_id ", "")+`
 			`+tool.TernStr(filter.FavoriteUserId != nil || filter.FavoriteFromTs != nil, "JOIN favorite_song fs ON fs.song_id = s.song_id ", "")+`
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND s.update_ts >= :from_ts ", "")+`
@@ -273,7 +273,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		// Update album
-		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, songEntity.AlbumId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, now, songEntity.AlbumId)
 		if err != nil {
 			return nil, err
 		}
@@ -633,7 +633,7 @@ func (s *Store) DeleteSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*rest
 
 	// Refresh album artists
 	if song.AlbumId != restApiV1.UnknownAlbumId {
-		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, song.AlbumId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = ? WHERE album_id = ?`, deleteTs, song.AlbumId)
 		if err != nil {
 			return nil, err
 		}

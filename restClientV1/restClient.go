@@ -90,21 +90,20 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 			cert := response.TLS.PeerCertificates[0]
 
 			// Save server certificate
-			tool.CertToFile(clientConfig.GetCompleteConfigCertFilename(), cert.Raw)
-
-			// Append server certificate to root CAs
-			rootCAPool.AppendCertsFromPEM(cert.Raw)
-
-		} else {
-			// Load local server certificate
-			certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
+			err = tool.CertToFile(clientConfig.GetCompleteConfigCertFilename(), cert.Raw)
 			if err != nil {
-				return nil, fmt.Errorf("Reading server certificate failed : %v", err)
+				return nil, fmt.Errorf("Unable to store mifasol server certificate: %v", err)
 			}
-
-			// Append server certificate to root CAs
-			rootCAPool.AppendCertsFromPEM(certPem)
 		}
+
+		// Load local server certificate
+		certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
+		if err != nil {
+			return nil, fmt.Errorf("Reading server certificate failed : %v", err)
+		}
+
+		// Append server certificate to root CAs
+		rootCAPool.AppendCertsFromPEM(certPem)
 
 	}
 

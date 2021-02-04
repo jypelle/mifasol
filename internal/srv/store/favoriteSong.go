@@ -124,15 +124,16 @@ func (s *Store) CreateFavoriteSong(externalTrn *sqlx.Tx, favoriteSongMeta *restA
 		queryArgs = make(map[string]interface{})
 		queryArgs["user_id"] = favoriteSongEntity.UserId
 		queryArgs["song_id"] = favoriteSongEntity.SongId
+		queryArgs["update_ts"] = now
 		_, err = txn.NamedExec(`
 			UPDATE favorite_playlist
 			SET update_ts = :update_ts
 			WHERE user_id = :user_id AND playlist_id in (
-				select distinct playlist_id
+				select distinct ps.playlist_id
 				from playlist_song ps
 				join favorite_playlist fp
 				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
-				where ps.song_id = :fs.song_id
+				where ps.song_id = :song_id
 			)
 		`, queryArgs)
 		if err != nil {
@@ -202,15 +203,16 @@ func (s *Store) DeleteFavoriteSong(externalTrn *sqlx.Tx, favoriteSongId restApiV
 	queryArgs := make(map[string]interface{})
 	queryArgs["user_id"] = favoriteSongEntity.UserId
 	queryArgs["song_id"] = favoriteSongEntity.SongId
+	queryArgs["update_ts"] = deleteTs
 	_, err = txn.NamedExec(`
 			UPDATE favorite_playlist
 			SET update_ts = :update_ts
 			WHERE user_id = :user_id AND playlist_id in (
-				select distinct playlist_id
+				select distinct ps.playlist_id
 				from playlist_song ps
 				join favorite_playlist fp
 				on fp.playlist_id = ps.playlist_id and fp.user_id = :user_id
-				where ps.song_id = :fs.song_id
+				where ps.song_id = :song_id
 			)
 		`, queryArgs)
 	if err != nil {
