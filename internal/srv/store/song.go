@@ -59,7 +59,7 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 			`+tool.TernStr(filter.FromTs != nil, "AND s.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.AlbumId != nil, "AND s.album_id = :album_id ", "")+`
 			`+tool.TernStr(filter.FavoriteUserId != nil, "AND fs.user_id = :favorite_user_id ", "")+`
-			`+tool.TernStr(filter.FavoriteFromTs != nil, "AND fs.update_ts >= :favorite_from_ts ", "")+`
+			`+tool.TernStr(filter.FavoriteFromTs != nil, "AND (fs.update_ts >= :favorite_from_ts OR s.update_ts >= :favorite_from_ts ) ", "")+`
 			ORDER BY s.song_id ASC
 		`,
 		queryArgs,
