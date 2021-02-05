@@ -1,12 +1,12 @@
-package svc
+package store
 
 import (
-	"github.com/asdine/storm/v3"
+	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/restApiV1"
 )
 
-func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
+func (s *Store) createSongNewFromOggContent(externalTrn *sqlx.Tx, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	// TODO
@@ -14,10 +14,10 @@ func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []
 	var artistIds []restApiV1.ArtistId
 
 	// Check available transaction
-	txn := externalTrn
 	var err error
+	txn := externalTrn
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
+		txn, err = s.db.Beginx()
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func (s *Service) createSongNewFromOggContent(externalTrn storm.Node, content []
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentOggTag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
+func (s *Store) updateSongContentOggTag(externalTrn *sqlx.Tx, songEntity *entity.SongEntity) error {
 	// TODO
 	return nil
 }

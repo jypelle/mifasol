@@ -8,7 +8,8 @@ import (
 )
 
 const configFilename = "config.json"
-const configDbFilename = "mifasol.db"
+const configOldDbFilename = "mifasol.db"
+const configDbFilename = "mifasol.sqlite"
 const configDbDirName = "db"
 const configDataDirName = "data"
 const configSongsDirName = "songs"
@@ -38,6 +39,10 @@ type ServerEditableConfig struct {
 
 func (sc ServerConfig) GetCompleteConfigFilename() string {
 	return filepath.Join(sc.ConfigDir, configFilename)
+}
+
+func (sc ServerConfig) GetCompleteConfigOldDbFilename() string {
+	return filepath.Join(sc.ConfigDir, configOldDbFilename)
 }
 
 func (sc ServerConfig) GetCompleteConfigDbFilename() string {

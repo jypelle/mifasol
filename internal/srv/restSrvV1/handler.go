@@ -1,9 +1,9 @@
 package restSrvV1
 
 import (
-	"context"
 	"github.com/gorilla/mux"
-	"github.com/jypelle/mifasol/internal/srv/svc"
+	"github.com/jypelle/mifasol/internal/srv/store"
+	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -11,19 +11,17 @@ import (
 	"sync"
 )
 
-var contextKeyUser = "user"
-
 type RestServer struct {
-	service   *svc.Service
+	store     *store.Store
 	subRooter *mux.Router
 
 	sessionMap sync.Map
 }
 
-func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
+func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 
 	restServer := &RestServer{
-		service:   service,
+		store:     store,
 		subRooter: subRouter,
 	}
 
@@ -31,36 +29,36 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 
 	restServer.subRooter.HandleFunc("/albums", restServer.readAlbums).Methods("GET")
 	restServer.subRooter.HandleFunc("/albums/{id}", restServer.readAlbum).Methods("GET")
-	restServer.subRooter.HandleFunc("/albums", restServer.createAlbum).Methods("POST")        // Admin only
-	restServer.subRooter.HandleFunc("/albums/{id}", restServer.updateAlbum).Methods("PUT")    // Admin only
-	restServer.subRooter.HandleFunc("/albums/{id}", restServer.deleteAlbum).Methods("DELETE") // Admin only
+	restServer.subRooter.HandleFunc("/albums", restServer.createAlbum).Methods("POST")
+	restServer.subRooter.HandleFunc("/albums/{id}", restServer.updateAlbum).Methods("PUT")
+	restServer.subRooter.HandleFunc("/albums/{id}", restServer.deleteAlbum).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/artists", restServer.readArtists).Methods("GET")
 	restServer.subRooter.HandleFunc("/artists/{id}", restServer.readArtist).Methods("GET")
-	restServer.subRooter.HandleFunc("/artists", restServer.createArtist).Methods("POST")        // Admin only
-	restServer.subRooter.HandleFunc("/artists/{id}", restServer.updateArtist).Methods("PUT")    // Admin only
-	restServer.subRooter.HandleFunc("/artists/{id}", restServer.deleteArtist).Methods("DELETE") // Admin only
+	restServer.subRooter.HandleFunc("/artists", restServer.createArtist).Methods("POST")
+	restServer.subRooter.HandleFunc("/artists/{id}", restServer.updateArtist).Methods("PUT")
+	restServer.subRooter.HandleFunc("/artists/{id}", restServer.deleteArtist).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/playlists", restServer.readPlaylists).Methods("GET")
 	restServer.subRooter.HandleFunc("/playlists/{id}", restServer.readPlaylist).Methods("GET")
-	restServer.subRooter.HandleFunc("/playlists", restServer.createPlaylist).Methods("POST")        // Admin only
-	restServer.subRooter.HandleFunc("/playlists/{id}", restServer.updatePlaylist).Methods("PUT")    // Admin only
-	restServer.subRooter.HandleFunc("/playlists/{id}", restServer.deletePlaylist).Methods("DELETE") // Admin only
+	restServer.subRooter.HandleFunc("/playlists", restServer.createPlaylist).Methods("POST")
+	restServer.subRooter.HandleFunc("/playlists/{id}", restServer.updatePlaylist).Methods("PUT")
+	restServer.subRooter.HandleFunc("/playlists/{id}", restServer.deletePlaylist).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/songs", restServer.readSongs).Methods("GET")
 	restServer.subRooter.HandleFunc("/songs/{id}", restServer.readSong).Methods("GET")
 	restServer.subRooter.HandleFunc("/songContents/{id}", restServer.readSongContent).Methods("GET")
-	restServer.subRooter.HandleFunc("/songContents", restServer.createSongContent).Methods("POST")                      // Admin only
-	restServer.subRooter.HandleFunc("/songContentsForAlbum/{id}", restServer.createSongContentForAlbum).Methods("POST") // Admin only
-	restServer.subRooter.HandleFunc("/songWithContents", restServer.createSongWithContent).Methods("POST")              // Admin only
-	restServer.subRooter.HandleFunc("/songs/{id}", restServer.updateSong).Methods("PUT")                                // Admin only
-	restServer.subRooter.HandleFunc("/songs/{id}", restServer.deleteSong).Methods("DELETE")                             // Admin only
+	restServer.subRooter.HandleFunc("/songContents", restServer.createSongContent).Methods("POST")
+	restServer.subRooter.HandleFunc("/songContentsForAlbum/{id}", restServer.createSongContentForAlbum).Methods("POST")
+	restServer.subRooter.HandleFunc("/songWithContents", restServer.createSongWithContent).Methods("POST")
+	restServer.subRooter.HandleFunc("/songs/{id}", restServer.updateSong).Methods("PUT")
+	restServer.subRooter.HandleFunc("/songs/{id}", restServer.deleteSong).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/users", restServer.readUsers).Methods("GET")
 	restServer.subRooter.HandleFunc("/users/{id}", restServer.readUser).Methods("GET")
-	restServer.subRooter.HandleFunc("/users", restServer.createUser).Methods("POST") // Admin only
+	restServer.subRooter.HandleFunc("/users", restServer.createUser).Methods("POST")
 	restServer.subRooter.HandleFunc("/users/{id}", restServer.updateUser).Methods("PUT")
-	restServer.subRooter.HandleFunc("/users/{id}", restServer.deleteUser).Methods("DELETE") // Admin only
+	restServer.subRooter.HandleFunc("/users/{id}", restServer.deleteUser).Methods("DELETE")
 
 	restServer.subRooter.HandleFunc("/favoritePlaylists", restServer.readFavoritePlaylists).Methods("GET")
 	restServer.subRooter.HandleFunc("/favoritePlaylists", restServer.createFavoritePlaylist).Methods("POST")
@@ -90,7 +88,6 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 			}()
 
 			// Check Token
-			ctx := r.Context()
 			if r.URL.Path != "/api/v1/token" {
 				reqToken := r.Header.Get("Authorization")
 				splitToken := strings.Split(reqToken, "Bearer")
@@ -108,9 +105,9 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 					return
 				}
 
-				user, err := restServer.service.ReadUser(nil, ses.(*session).userId)
+				user, err := restServer.store.ReadUser(nil, ses.(*session).userId)
 				if err != nil {
-					if err == svc.ErrNotFound {
+					if err == storeerror.ErrNotFound {
 						restServer.apiErrorCodeResponse(w, restApiV1.InvalidTokenErrorCode)
 						return
 					}
@@ -118,36 +115,13 @@ func NewRestServer(service *svc.Service, subRouter *mux.Router) *RestServer {
 					return
 				}
 				logrus.Debugln("User: " + user.Name)
-				ctx = context.WithValue(ctx, contextKeyUser, user)
+				//			context.WithValue(r.Context(), contextKeyUser, user)
 
 			}
 
-			handler.ServeHTTP(w, r.WithContext(ctx))
+			handler.ServeHTTP(w, r)
 		})
 	})
 
 	return restServer
-}
-
-func (s *RestServer) GetConnectedUser(r *http.Request) *restApiV1.User {
-	user, ok := r.Context().Value(contextKeyUser).(*restApiV1.User)
-	if ok && user != nil {
-		return user
-	} else {
-		return nil
-	}
-}
-
-func (s *RestServer) IsAdmin(r *http.Request) bool {
-	user := s.GetConnectedUser(r)
-	return user != nil && user.AdminFg
-}
-
-func (s *RestServer) CheckAdmin(w http.ResponseWriter, r *http.Request) bool {
-	if !s.IsAdmin(r) {
-		s.apiErrorCodeResponse(w, restApiV1.ForbiddenErrorCode)
-		return false
-	} else {
-		return true
-	}
 }

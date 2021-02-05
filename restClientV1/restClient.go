@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jypelle/mifasol/internal/tool"
+	"github.com/jypelle/mifasol/internal/version"
 	"github.com/jypelle/mifasol/restApiV1"
 	"io"
 	"io/ioutil"
@@ -89,21 +90,20 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 			cert := response.TLS.PeerCertificates[0]
 
 			// Save server certificate
-			tool.CertToFile(clientConfig.GetCompleteConfigCertFilename(), cert.Raw)
-
-			// Append server certificate to root CAs
-			rootCAPool.AppendCertsFromPEM(cert.Raw)
-
-		} else {
-			// Load local server certificate
-			certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
+			err = tool.CertToFile(clientConfig.GetCompleteConfigCertFilename(), cert.Raw)
 			if err != nil {
-				return nil, fmt.Errorf("Reading server certificate failed : %v", err)
+				return nil, fmt.Errorf("Unable to store mifasol server certificate: %v", err)
 			}
-
-			// Append server certificate to root CAs
-			rootCAPool.AppendCertsFromPEM(certPem)
 		}
+
+		// Load local server certificate
+		certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
+		if err != nil {
+			return nil, fmt.Errorf("Reading server certificate failed : %v", err)
+		}
+
+		// Append server certificate to root CAs
+		rootCAPool.AppendCertsFromPEM(certPem)
 
 	}
 
@@ -195,6 +195,8 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 
 	// Embed the token in the request
 	req.Header.Add("Authorization", "Bearer "+c.token.AccessToken)
+	// And rest client revision
+	req.Header.Add("x-mifasol-client-version", version.AppVersion.String())
 
 	// Add optional body content for POST & PUT request
 	if body != nil {

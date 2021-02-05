@@ -2,6 +2,7 @@ package restClientV1
 
 import (
 	"encoding/json"
+	"github.com/jypelle/mifasol/internal/version"
 	"net/http"
 )
 
@@ -12,6 +13,10 @@ func (c *RestClient) refreshToken() ClientError {
 	if err != nil {
 		return NewClientError(err)
 	}
+
+	// And rest client revision
+	req.Header.Add("x-mifasol-client-version", version.AppVersion.String())
+
 	query := req.URL.Query()
 	query.Add("grant_type", "password")
 	query.Add("username", c.ClientConfig.GetUsername())
