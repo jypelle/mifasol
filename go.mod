@@ -12,7 +12,6 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/markbates/pkger v0.17.1
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
