@@ -20,12 +20,6 @@ func (e *AlbumEntity) Fill(s *restApiV1.Album) {
 	s.ArtistIds = e.ArtistIds
 }
 
-func (e *AlbumEntity) LoadMeta(s *restApiV1.AlbumMeta) {
-	if s != nil {
-		e.Name = s.Name
-	}
-}
-
 type DeletedAlbumEntity struct {
 	Id       restApiV1.AlbumId `storm:"id"`
 	DeleteTs int64             `storm:"index"`

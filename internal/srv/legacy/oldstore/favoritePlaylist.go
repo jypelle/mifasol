@@ -71,31 +71,3 @@ func (s *OldStore) ReadFavoritePlaylist(externalTrn storm.Node, favoritePlaylist
 
 	return &favoritePlaylist, nil
 }
-
-func (s *OldStore) updateFavoritePlaylistsContainingSong(txn storm.Node, userId restApiV1.UserId, songId restApiV1.SongId) error {
-	now := time.Now().UnixNano()
-
-	favoritePlaylistEntities := []oldentity.FavoritePlaylistEntity{}
-
-	e := txn.Find("UserId", userId, &favoritePlaylistEntities)
-	if e != nil && e != storm.ErrNotFound {
-		return e
-	}
-
-	for _, favoritePlaylistEntity := range favoritePlaylistEntities {
-		var playlistSongEntity oldentity.PlaylistSongEntity
-		e = txn.One("Id", string(favoritePlaylistEntity.PlaylistId)+":"+string(songId), &playlistSongEntity)
-		if e != nil && e != storm.ErrNotFound {
-			return e
-		}
-		if e != storm.ErrNotFound {
-			favoritePlaylistEntity.UpdateTs = now
-
-			e = txn.Save(&favoritePlaylistEntity)
-			if e != nil {
-				return e
-			}
-		}
-	}
-	return nil
-}

@@ -26,43 +26,7 @@ func (e *PlaylistEntity) Fill(s *restApiV1.Playlist) {
 	s.OwnerUserIds = e.OwnerUserIds
 }
 
-func (e *PlaylistEntity) LoadMeta(s *restApiV1.PlaylistMeta) {
-	if s != nil {
-		e.Name = s.Name
-		e.SongIds = s.SongIds
-		e.OwnerUserIds = s.OwnerUserIds
-	}
-}
-
 type DeletedPlaylistEntity struct {
 	Id       restApiV1.PlaylistId `storm:"id"`
 	DeleteTs int64                `storm:"index"`
-}
-
-type PlaylistSongEntity struct {
-	Id         string               `storm:"id"`
-	PlaylistId restApiV1.PlaylistId `storm:"index"`
-	SongId     restApiV1.SongId     `storm:"index"`
-}
-
-func NewPlaylistSongEntity(playlistId restApiV1.PlaylistId, songId restApiV1.SongId) *PlaylistSongEntity {
-	return &PlaylistSongEntity{
-		Id:         string(playlistId) + ":" + string(songId),
-		PlaylistId: playlistId,
-		SongId:     songId,
-	}
-}
-
-type OwnedUserPlaylistEntity struct {
-	Id         string               `storm:"id"`
-	UserId     restApiV1.UserId     `storm:"index"`
-	PlaylistId restApiV1.PlaylistId `storm:"index"`
-}
-
-func NewOwnedUserPlaylistEntity(userId restApiV1.UserId, playlistId restApiV1.PlaylistId) *OwnedUserPlaylistEntity {
-	return &OwnedUserPlaylistEntity{
-		Id:         string(userId) + string(playlistId),
-		UserId:     userId,
-		PlaylistId: playlistId,
-	}
 }

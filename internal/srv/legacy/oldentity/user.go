@@ -24,14 +24,6 @@ func (e *UserEntity) Fill(s *restApiV1.User) {
 	s.Password = e.Password
 }
 
-func (e *UserEntity) LoadMeta(s *restApiV1.UserMeta) {
-	if s != nil {
-		e.Name = s.Name
-		e.HideExplicitFg = s.HideExplicitFg
-		e.AdminFg = s.AdminFg
-	}
-}
-
 type DeletedUserEntity struct {
 	Id       restApiV1.UserId `storm:"id"`
 	DeleteTs int64            `storm:"index"`

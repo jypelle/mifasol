@@ -34,20 +34,6 @@ func (e *SongEntity) Fill(s *restApiV1.Song) {
 	s.ArtistIds = e.ArtistIds
 }
 
-func (e *SongEntity) LoadMeta(s *restApiV1.SongMeta) {
-	if s != nil {
-		e.Name = s.Name
-		e.Format = s.Format
-		e.Size = s.Size
-		e.BitDepth = s.BitDepth
-		e.PublicationYear = s.PublicationYear
-		e.AlbumId = s.AlbumId
-		e.TrackNumber = s.TrackNumber
-		e.ExplicitFg = s.ExplicitFg
-		e.ArtistIds = s.ArtistIds
-	}
-}
-
 type DeletedSongEntity struct {
 	Id       restApiV1.SongId `storm:"id"`
 	DeleteTs int64            `storm:"index"`
