@@ -3,6 +3,7 @@ module github.com/jypelle/mifasol
 go 1.16
 
 require (
+	gioui.org v0.0.0-20210206065156-6682f75db903
 	github.com/asdine/storm/v3 v3.2.1
 	github.com/bogem/id3v2 v1.2.1-0.20200829074214-de2d74e8049e
 	github.com/faiface/beep v1.0.3-0.20200712202812-d836f29bdc50
@@ -19,6 +20,7 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/vbauerster/mpb/v6 v6.0.2
 	gitlab.com/tslocum/cview v1.5.3
+	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 	golang.org/x/text v0.3.5
 	modernc.org/sqlite v1.8.7
 )
