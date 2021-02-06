@@ -7,7 +7,7 @@ import (
 var (
 	AppVersion = restApiV1.Version{
 		MajorNumber: 0,
-		MinorNumber: 2,
-		PatchNumber: 5,
+		MinorNumber: 3,
+		PatchNumber: 0,
 	}
 )

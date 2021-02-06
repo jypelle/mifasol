@@ -6,10 +6,9 @@ import (
 )
 
 type FavoritePlaylistEntity struct {
-	Id         string               `storm:"id"`
-	UpdateTs   int64                `storm:"index"`
-	UserId     restApiV1.UserId     `storm:"index"`
-	PlaylistId restApiV1.PlaylistId `storm:"index"`
+	UserId     restApiV1.UserId     `db:"user_id"`
+	PlaylistId restApiV1.PlaylistId `db:"playlist_id"`
+	UpdateTs   int64                `db:"update_ts"`
 }
 
 func (e *FavoritePlaylistEntity) Fill(s *restApiV1.FavoritePlaylist) {
@@ -19,24 +18,21 @@ func (e *FavoritePlaylistEntity) Fill(s *restApiV1.FavoritePlaylist) {
 
 func (e *FavoritePlaylistEntity) LoadMeta(s *restApiV1.FavoritePlaylistMeta) {
 	if s != nil {
-		e.Id = string(s.Id.UserId) + ":" + string(s.Id.PlaylistId)
 		e.UserId = s.Id.UserId
 		e.PlaylistId = s.Id.PlaylistId
 	}
 }
 
 type DeletedFavoritePlaylistEntity struct {
-	Id         string               `storm:"id"`
-	DeleteTs   int64                `storm:"index"`
-	UserId     restApiV1.UserId     `storm:"index"`
-	PlaylistId restApiV1.PlaylistId `storm:"index"`
+	UserId     restApiV1.UserId     `db:"user_id"`
+	PlaylistId restApiV1.PlaylistId `db:"playlist_id"`
+	DeleteTs   int64                `db:"delete_ts"`
 }
 
 func NewDeletedFavoritePlaylistEntity(favoritePlaylistId restApiV1.FavoritePlaylistId) *DeletedFavoritePlaylistEntity {
 	now := time.Now().UnixNano()
 
 	return &DeletedFavoritePlaylistEntity{
-		Id:         string(favoritePlaylistId.UserId) + ":" + string(favoritePlaylistId.PlaylistId),
 		DeleteTs:   now,
 		UserId:     favoritePlaylistId.UserId,
 		PlaylistId: favoritePlaylistId.PlaylistId,

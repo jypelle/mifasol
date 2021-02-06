@@ -7,6 +7,7 @@ type User struct {
 	Id         UserId `json:"id"`
 	CreationTs int64  `json:"creationTs"`
 	UpdateTs   int64  `json:"updateTs"`
+	Password   string
 	UserMeta
 }
 

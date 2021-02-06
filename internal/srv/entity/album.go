@@ -5,19 +5,17 @@ import "github.com/jypelle/mifasol/restApiV1"
 // Album
 
 type AlbumEntity struct {
-	Id         restApiV1.AlbumId `storm:"id"`
-	CreationTs int64
-	UpdateTs   int64  `storm:"index"`
-	Name       string `storm:"index"`
-	ArtistIds  []restApiV1.ArtistId
+	AlbumId    restApiV1.AlbumId `db:"album_id"`
+	CreationTs int64             `db:"creation_ts"`
+	UpdateTs   int64             `db:"update_ts"`
+	Name       string            `db:"name"`
 }
 
 func (e *AlbumEntity) Fill(s *restApiV1.Album) {
-	s.Id = e.Id
+	s.Id = e.AlbumId
 	s.CreationTs = e.CreationTs
 	s.UpdateTs = e.UpdateTs
 	s.Name = e.Name
-	s.ArtistIds = e.ArtistIds
 }
 
 func (e *AlbumEntity) LoadMeta(s *restApiV1.AlbumMeta) {
@@ -27,6 +25,6 @@ func (e *AlbumEntity) LoadMeta(s *restApiV1.AlbumMeta) {
 }
 
 type DeletedAlbumEntity struct {
-	Id       restApiV1.AlbumId `storm:"id"`
-	DeleteTs int64             `storm:"index"`
+	AlbumId  restApiV1.AlbumId `db:"album_id"`
+	DeleteTs int64             `db:"delete_ts"`
 }

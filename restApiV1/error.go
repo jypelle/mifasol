@@ -22,6 +22,8 @@ const (
 
 	ForbiddenErrorCode ErrorCode = "forbidden"
 
+	ObsoleteClientErrorCode ErrorCode = "obsolete_client"
+
 	// Client Error
 	UnknownErrorCode ErrorCode = "unknown_error"
 	ClientErrorCode  ErrorCode = "client_error"

@@ -6,6 +6,7 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell/v2"
+	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
 	"time"
@@ -25,6 +26,8 @@ type PlayerComponent struct {
 	volumeStreamer  *effects.Volume
 
 	playingSong *restApiV1.Song
+
+	bufferedReader *tool.BufferedReader
 }
 
 func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
@@ -34,7 +37,8 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 	speaker.Init(sampleRate, sampleRate.N(time.Duration(uiApp.BufferLength)*time.Millisecond))
 
 	c := &PlayerComponent{
-		uiApp: uiApp,
+		uiApp:          uiApp,
+		bufferedReader: tool.NewBufferedReader(80000000),
 	}
 
 	c.titleBox = cview.NewTextView()
@@ -80,7 +84,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 					newPosition = 0
 				}
 				c.musicStreamer.Seek(newPosition)
-				//				c.musicStreamer.Seek(0)
+				c.musicStreamer.Seek(0)
 			}
 			speaker.Unlock()
 			return nil
@@ -167,14 +171,16 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 		return
 	}
 
+	speaker.Clear()
+
+	c.bufferedReader.Reset(reader)
+
 	var err error
-	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(reader)
+	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(c.bufferedReader)
 	if err != nil {
 		c.uiApp.WarningMessage("Unable to read content for: " + c.playingSong.Name)
 		return
 	}
-
-	speaker.Clear()
 
 	if c.musicFormat.SampleRate == 44100 {
 		c.controlStreamer = &beep.Ctrl{Streamer: c.musicStreamer, Paused: false}

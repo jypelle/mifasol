@@ -1,22 +1,22 @@
-package svc
+package store
 
 import (
 	"errors"
 	"fmt"
-	"github.com/asdine/storm/v3"
+	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
-func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
+func (s *Store) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	var syncReport restApiV1.SyncReport
 
 	var err error
-	var txn storm.Node
+	var txn *sqlx.Tx
 	// Force db write lock to avoid sync timestamp overlap
-	txn, err = s.Db.Begin(true)
+	txn, err = s.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
@@ -98,14 +98,14 @@ func (s *Service) ReadSyncReport(fromTs int64) (*restApiV1.SyncReport, error) {
 	return &syncReport, nil
 }
 
-func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*restApiV1.FileSyncReport, error) {
+func (s *Store) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*restApiV1.FileSyncReport, error) {
 	var fileSyncReport restApiV1.FileSyncReport
 
 	var err error
 
-	var txn storm.Node
+	var txn *sqlx.Tx
 	// Force db write lock to avoid sync timestamp overlap
-	txn, err = s.Db.Begin(true)
+	txn, err = s.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
@@ -138,16 +138,15 @@ func (s *Service) ReadFileSyncReport(fromTs int64, userId restApiV1.UserId) (*re
 	return &fileSyncReport, nil
 }
 
-func (s *Service) ReadFileSyncSongs(externalTrn storm.Node, favoriteFromTs int64, favoriteUserId restApiV1.UserId) ([]restApiV1.FileSyncSong, error) {
+func (s *Store) ReadFileSyncSongs(externalTrn *sqlx.Tx, favoriteFromTs int64, favoriteUserId restApiV1.UserId) ([]restApiV1.FileSyncSong, error) {
 	fileSyncSongs := []restApiV1.FileSyncSong{}
 
 	// Check available transaction
 	txn := externalTrn
-	var err error
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
-		if err != nil {
-			return nil, err
+		txn, e := s.db.Beginx()
+		if e != nil {
+			return nil, e
 		}
 		defer txn.Rollback()
 	}

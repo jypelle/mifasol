@@ -1,9 +1,9 @@
-package svc
+package store
 
 import (
 	"bytes"
-	"github.com/asdine/storm/v3"
 	"github.com/bogem/id3v2"
+	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
+func (s *Store) createSongNewFromMp3Content(externalTrn *sqlx.Tx, content []byte, lastAlbumId restApiV1.AlbumId) (*restApiV1.SongNew, error) {
 
 	// Extract song meta from tags
 	reader := bytes.NewReader(content)
@@ -27,14 +27,14 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	var bitDepth = restApiV1.SongBitDepthUnknown
 	var title = ""
 	var publicationYear *int64 = nil
-	var albumId restApiV1.AlbumId = restApiV1.UnknownAlbumId
+	var albumId = restApiV1.UnknownAlbumId
 	var trackNumber *int64 = nil
 	var artistIds []restApiV1.ArtistId
 
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn, err = s.Db.Begin(true)
+		txn, err = s.db.Beginx()
 		if err != nil {
 			return nil, err
 		}
@@ -118,9 +118,9 @@ func (s *Service) createSongNewFromMp3Content(externalTrn storm.Node, content []
 	return songNew, nil
 }
 
-func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, songEntity *entity.SongEntity) error {
+func (s *Store) updateSongContentMp3Tag(externalTrn *sqlx.Tx, songEntity *entity.SongEntity) error {
 	// Extract song meta from tags
-	tag, err := id3v2.Open(s.getSongFileName(songEntity), id3v2.Options{Parse: true})
+	tag, err := id3v2.Open(s.getSongFileName(songEntity.SongId, songEntity.Format), id3v2.Options{Parse: true})
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, songEntity *en
 	// Check available transaction
 	txn := externalTrn
 	if txn == nil {
-		txn, err = s.Db.Begin(false)
+		txn, err = s.db.Beginx()
 		if err != nil {
 			return err
 		}
@@ -149,24 +149,24 @@ func (s *Service) updateSongContentMp3Tag(externalTrn storm.Node, songEntity *en
 		}
 		tag.SetAlbum(album.Name)
 
-		if songEntity.TrackNumber != nil {
-			tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), strconv.FormatInt(*songEntity.TrackNumber, 10))
+		if songEntity.TrackNumber.Valid {
+			tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), strconv.FormatInt(songEntity.TrackNumber.Int64, 10))
 		}
 	}
 
 	// Set publication date
-	if songEntity.PublicationYear != nil {
-		tag.SetYear(strconv.FormatInt(*songEntity.PublicationYear, 10))
+	if songEntity.PublicationYear.Valid {
+		tag.SetYear(strconv.FormatInt(songEntity.PublicationYear.Int64, 10))
 	}
 
 	// Set artists
 	artistNamesStr := ""
-	for ind, artistId := range songEntity.ArtistIds {
 
-		artist, err := s.ReadArtist(txn, artistId)
-		if err != nil {
-			return err
-		}
+	artists, err := s.ReadArtists(txn, &restApiV1.ArtistFilter{SongId: &songEntity.SongId})
+	if err != nil {
+		return err
+	}
+	for ind, artist := range artists {
 		if ind == 0 {
 			artistNamesStr = artist.Name
 		} else {

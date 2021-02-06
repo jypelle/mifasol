@@ -3,17 +3,17 @@ package srv
 import (
 	"context"
 	"encoding/json"
-	"github.com/asdine/storm/v3"
-	"github.com/asdine/storm/v3/codec/gob"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/internal/srv/config"
 	"github.com/jypelle/mifasol/internal/srv/restSrvV1"
-	"github.com/jypelle/mifasol/internal/srv/svc"
+	"github.com/jypelle/mifasol/internal/srv/store"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/internal/version"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
 	"strconv"
@@ -22,8 +22,7 @@ import (
 
 type ServerApp struct {
 	config.ServerConfig
-	db         *storm.DB
-	service    *svc.Service
+	store      *store.Store
 	restApiV1  *restSrvV1.RestServer
 	httpServer *http.Server
 }
@@ -103,20 +102,14 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
 	}
 
-	// Open database connection
-	app.db, err = storm.Open(app.ServerConfig.GetCompleteConfigDbFilename(), storm.Codec(gob.Codec))
-	if err != nil {
-		logrus.Fatalf("Unable to connect to the database: %v", err)
-	}
-
-	// Create service
-	app.service = svc.NewService(app.db, &app.ServerConfig)
+	// Create store
+	app.store = store.NewStore(&app.ServerConfig)
 
 	// Create router
 	rooter := mux.NewRouter()
 
 	// Create REST API
-	app.restApiV1 = restSrvV1.NewRestServer(app.service, rooter.PathPrefix("/api/v1").Subrouter())
+	app.restApiV1 = restSrvV1.NewRestServer(app.store, rooter.PathPrefix("/api/v1").Subrouter())
 
 	// Create server check endpoint
 	rooter.HandleFunc("/isalive",
@@ -173,8 +166,8 @@ func (s *ServerApp) Stop() {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.httpServer.Shutdown(ctx)
 
-	// Close database connection
-	err := s.db.Close()
+	// Close store
+	err := s.store.Close()
 	if err != nil {
 		logrus.Fatalf("Unable to close the database: %v", err)
 	}
