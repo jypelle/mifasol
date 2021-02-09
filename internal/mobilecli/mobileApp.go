@@ -3,6 +3,7 @@ package mobilecli
 import (
 	"encoding/json"
 	"gioui.org/app"
+	_ "gioui.org/app/permission/storage"
 	"gioui.org/font/gofont"
 	"gioui.org/io/system"
 	"gioui.org/layout"
