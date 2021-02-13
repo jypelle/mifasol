@@ -273,7 +273,7 @@ func (s *Store) CreateSong(externalTrn *sqlx.Tx, songNew *restApiV1.SongNew, che
 
 	if songEntity.AlbumId != restApiV1.UnknownAlbumId {
 		// Update album
-		_, err = txn.Exec(`UPDATE album SET update_ts = :update_ts WHERE album_id = ?`, now, songEntity.AlbumId)
+		_, err = txn.Exec(`UPDATE album SET update_ts = ? WHERE album_id = ?`, now, songEntity.AlbumId)
 		if err != nil {
 			return nil, err
 		}
