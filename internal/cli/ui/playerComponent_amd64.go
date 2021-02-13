@@ -67,26 +67,29 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 		switch {
 
 		case event.Key() == tcell.KeyRight:
-			speaker.Lock()
-			if c.musicStreamer != nil {
-				newPosition := c.musicStreamer.Position() + c.musicFormat.SampleRate.N(5*time.Second)
-				if newPosition < c.musicStreamer.Len() {
-					c.musicStreamer.Seek(newPosition)
+			/*
+				speaker.Lock()
+				if c.musicStreamer != nil {
+					newPosition := c.musicStreamer.Position() + c.musicFormat.SampleRate.N(5*time.Second)
+					if newPosition < c.musicStreamer.Len() {
+						c.musicStreamer.Seek(newPosition)
+					}
 				}
-			}
-			speaker.Unlock()
+				speaker.Unlock()
+			*/
 			return nil
 		case event.Key() == tcell.KeyLeft:
-			speaker.Lock()
-			if c.musicStreamer != nil {
-				newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
-				if newPosition < 0 {
-					newPosition = 0
-				}
-				c.musicStreamer.Seek(newPosition)
-				c.musicStreamer.Seek(0)
-			}
-			speaker.Unlock()
+			/*			speaker.Lock()
+
+						if c.musicStreamer != nil {
+							newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
+							if newPosition < 0 {
+								newPosition = 0
+							}
+							c.musicStreamer.Seek(newPosition)
+						}
+						speaker.Unlock()
+			*/
 			return nil
 		}
 
@@ -138,7 +141,6 @@ func (c *PlayerComponent) PauseResume() {
 			c.titleBox.SetText("[" + ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
 		}
 	}
-
 }
 
 func (c *PlayerComponent) GetVolume() int {
