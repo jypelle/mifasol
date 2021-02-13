@@ -10,7 +10,6 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/store"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/internal/version"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	_ "modernc.org/sqlite"

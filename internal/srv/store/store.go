@@ -18,7 +18,7 @@ type Store struct {
 func NewStore(serverConfig *config.ServerConfig) *Store {
 
 	// Open database connection
-	db, err := sqlx.Open("sqlite3", serverConfig.GetCompleteConfigDbFilename())
+	db, err := sqlx.Open("sqlite", serverConfig.GetCompleteConfigDbFilename())
 	if err != nil {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}

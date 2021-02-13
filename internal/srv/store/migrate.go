@@ -3,7 +3,6 @@ package store
 import (
 	"fmt"
 	"github.com/jypelle/mifasol/internal/srv/store/migration"
-	_ "github.com/mattn/go-sqlite3"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/sirupsen/logrus"
 	_ "modernc.org/sqlite"
