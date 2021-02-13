@@ -8,6 +8,7 @@ import (
 	"gioui.org/widget/material"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
+	"os"
 )
 
 type SyncPage struct {
@@ -34,7 +35,12 @@ func NewSyncPage(mobileApp *MobileApp) *SyncPage {
 	p.title = &label
 	p.editorBorder = &widget.Border{Color: color.NRGBA{A: 0xdd}, CornerRadius: unit.Dp(8), Width: unit.Px(1)}
 
-	statusLabel := material.H5(mobileApp.th, "filepath...")
+	entries, _ := os.ReadDir("/storage/emulated/0")
+	fileList := ""
+	for _, entry := range entries {
+		fileList += entry.Name() + " , "
+	}
+	statusLabel := material.H5(mobileApp.th, fileList)
 	p.statusLabel = &statusLabel
 
 	progressBar := material.ProgressBar(mobileApp.th, 12)
