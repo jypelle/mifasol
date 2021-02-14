@@ -6,8 +6,8 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell/v2"
-	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/mattetti/filebuffer"
 	"gitlab.com/tslocum/cview"
 	"time"
 )
@@ -26,8 +26,6 @@ type PlayerComponent struct {
 	volumeStreamer  *effects.Volume
 
 	playingSong *restApiV1.Song
-
-	bufferedReader *tool.BufferedReader
 }
 
 func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
@@ -37,8 +35,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 	speaker.Init(sampleRate, sampleRate.N(time.Duration(uiApp.BufferLength)*time.Millisecond))
 
 	c := &PlayerComponent{
-		uiApp:          uiApp,
-		bufferedReader: tool.NewBufferedReader(80000000),
+		uiApp: uiApp,
 	}
 
 	c.titleBox = cview.NewTextView()
@@ -67,29 +64,29 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 		switch {
 
 		case event.Key() == tcell.KeyRight:
-			/*
-				speaker.Lock()
-				if c.musicStreamer != nil {
-					newPosition := c.musicStreamer.Position() + c.musicFormat.SampleRate.N(5*time.Second)
-					if newPosition < c.musicStreamer.Len() {
-						c.musicStreamer.Seek(newPosition)
-					}
+			speaker.Lock()
+			if c.musicStreamer != nil {
+				currentPosition := c.musicStreamer.Position()
+				newPosition := currentPosition + c.musicFormat.SampleRate.N(5*time.Second)
+				len := c.musicStreamer.Len()
+				if newPosition < len {
+					c.musicStreamer.Seek(newPosition)
 				}
-				speaker.Unlock()
-			*/
+			}
+			speaker.Unlock()
 			return nil
 		case event.Key() == tcell.KeyLeft:
-			/*			speaker.Lock()
+			speaker.Lock()
 
-						if c.musicStreamer != nil {
-							newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
-							if newPosition < 0 {
-								newPosition = 0
-							}
-							c.musicStreamer.Seek(newPosition)
-						}
-						speaker.Unlock()
-			*/
+			if c.musicStreamer != nil {
+				newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
+				if newPosition < 0 {
+					newPosition = 0
+				}
+				c.musicStreamer.Seek(newPosition)
+			}
+			speaker.Unlock()
+
 			return nil
 		}
 
@@ -175,10 +172,10 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 
 	speaker.Clear()
 
-	c.bufferedReader.Reset(reader)
+	buffer, _ := filebuffer.NewFromReader(reader)
 
 	var err error
-	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(c.bufferedReader)
+	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(buffer)
 	if err != nil {
 		c.uiApp.WarningMessage("Unable to read content for: " + c.playingSong.Name)
 		return
