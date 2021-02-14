@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/jypelle/mifasol/internal/cli/config"
 	"github.com/jypelle/mifasol/internal/localdb"
@@ -162,6 +163,7 @@ func (a *App) Start() {
 	logrus.Debugf("Starting console user interface ...")
 
 	// Refresh Db from Server
+	fmt.Println("Syncing...")
 	a.Reload()
 
 	// Start event loop
