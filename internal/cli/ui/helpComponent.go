@@ -23,17 +23,18 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 	c.content.SetDynamicColors(true)
 	c.content.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
 	c.content.SetTextColor(color.ColorHelpText)
+
 	c.content.SetText(`[` + color.ColorHelpTitleStr + `::u]Global shortcuts[-::-]
 
-'h'       : Show / Hide this sideview
-'p'       : Play / Pause
-'+'       : Increase volume
-'-'       : Decrease Volume
-<CT+LEFT> : Go forward (5s)
-<CT+RIGHT>: Go backward (5s)
-<TAB>     : Switch view
-<F5>      : Refresh from server
-<ESC>     : Quit
+'h'        : Show / Hide this sideview
+'p'        : Play / Pause
+'+'        : Increase volume
+'-'        : Decrease Volume
+<CTL+LEFT> : Go forward (5s)
+<CTL+RIGHT>: Go backward (5s)
+<TAB>      : Switch view
+<F5>       : Refresh from server
+<ESC>      : Quit
 
 [` + color.ColorHelpTitle2Str + `::u]"Library" shortcuts[-::-]
 
