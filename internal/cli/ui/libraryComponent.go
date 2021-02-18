@@ -3,7 +3,8 @@ package ui
 import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
-	"github.com/jypelle/mifasol/internal/cli/primitive"
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
+	"github.com/jypelle/mifasol/internal/cli/ui/primitive"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
@@ -157,14 +158,14 @@ func NewLibraryComponent(uiApp *App) *LibraryComponent {
 
 	c.title = cview.NewTextView()
 	c.title.SetDynamicColors(true)
-	c.title.SetText("[" + ColorTitleStr + "]💿 Library")
+	c.title.SetText("[" + color.ColorTitleStr + "]💿 Library")
 
 	c.list = primitive.NewRichList()
 	c.list.SetInfiniteScroll(false)
 	c.list.SetHighlightFullLine(true)
 	c.list.SetPrefixWithLineNumber(true)
-	c.list.SetSelectedBackgroundColor(ColorSelected)
-	c.list.SetUnfocusedSelectedBackgroundColor(ColorUnfocusedSelected)
+	c.list.SetSelectedBackgroundColor(color.ColorSelected)
+	c.list.SetUnfocusedSelectedBackgroundColor(color.ColorUnfocusedSelected)
 	c.list.SetBorder(false)
 
 	c.list.SetHighlightedMainTextFunc(func(index int, mainText string) string {
@@ -497,17 +498,17 @@ func (c *LibraryComponent) refreshNameFilter() {
 }
 
 func (c *LibraryComponent) Enable() {
-	c.title.SetBackgroundColor(ColorTitleBackground)
-	c.list.SetBackgroundColor(ColorEnabled)
+	c.title.SetBackgroundColor(color.ColorTitleBackground)
+	c.list.SetBackgroundColor(color.ColorEnabled)
 }
 
 func (c *LibraryComponent) Disable() {
-	c.title.SetBackgroundColor(ColorTitleUnfocusedBackground)
-	c.list.SetBackgroundColor(ColorDisabled)
+	c.title.SetBackgroundColor(color.ColorTitleUnfocusedBackground)
+	c.list.SetBackgroundColor(color.ColorDisabled)
 }
 
 func (c *LibraryComponent) getTitlePrefix() string {
-	return "[" + ColorTitleStr + "]💿 Library"
+	return "[" + color.ColorTitleStr + "]💿 Library"
 }
 
 func (c *LibraryComponent) currentFilter() *libraryFilter {
@@ -817,7 +818,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *re
 		if currentPosition == highlightPosition {
 			underline = "u"
 		}
-		text += "[" + ColorSongStr + "::" + underline + "]" + cview.Escape(song.Name) + "[white::-]"
+		text += "[" + color.ColorSongStr + "::" + underline + "]" + cview.Escape(song.Name) + "[" + color.ColorWhiteStr + "::-]"
 	}
 	currentPosition++
 
@@ -831,7 +832,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *re
 			if currentPosition == highlightPosition {
 				underline = "u"
 			}
-			text += "[" + ColorAlbumStr + "::" + underline + "]" + cview.Escape(c.uiApp.LocalDb().Albums[song.AlbumId].Name) + "[white::-]"
+			text += "[" + color.ColorAlbumStr + "::" + underline + "]" + cview.Escape(c.uiApp.LocalDb().Albums[song.AlbumId].Name) + "[" + color.ColorWhiteStr + "::-]"
 		}
 		currentPosition++
 	}
@@ -847,7 +848,7 @@ func (c *LibraryComponent) getMainTextSong(song *restApiV1.Song, fromAlbumId *re
 					if currentPosition == highlightPosition {
 						underline = "u"
 					}
-					text += "[" + ColorArtistStr + "::" + underline + "]" + cview.Escape(c.uiApp.LocalDb().Artists[artistId].Name) + "[white::-]"
+					text += "[" + color.ColorArtistStr + "::" + underline + "]" + cview.Escape(c.uiApp.LocalDb().Artists[artistId].Name) + "[" + color.ColorWhiteStr + "::-]"
 				}
 				currentPosition++
 			}
@@ -890,12 +891,12 @@ func (c *LibraryComponent) getMainTextAlbum(album *restApiV1.Album, highlightPos
 
 	if album == nil {
 		if currentPosition >= highlightPosition {
-			text += "[white]" + cview.Escape("(Unknown album)") + "[white] (" + strconv.Itoa(len(c.uiApp.LocalDb().UnknownAlbumSongs)) + ")"
+			text += "[" + color.ColorWhiteStr + "]" + cview.Escape("(Unknown album)") + "[" + color.ColorWhiteStr + "] (" + strconv.Itoa(len(c.uiApp.LocalDb().UnknownAlbumSongs)) + ")"
 		}
 		currentPosition++
 	} else {
 		if currentPosition >= highlightPosition {
-			text += "[" + ColorAlbumStr + "]" + cview.Escape(album.Name) + "[white] (" + strconv.Itoa(len(c.uiApp.LocalDb().AlbumOrderedSongs[album.Id])) + ")"
+			text += "[" + color.ColorAlbumStr + "]" + cview.Escape(album.Name) + "[" + color.ColorWhiteStr + "] (" + strconv.Itoa(len(c.uiApp.LocalDb().AlbumOrderedSongs[album.Id])) + ")"
 		}
 		currentPosition++
 
@@ -905,7 +906,7 @@ func (c *LibraryComponent) getMainTextAlbum(album *restApiV1.Album, highlightPos
 					if currentPosition > highlightPosition {
 						text += " [::b]/[::-] "
 					}
-					text += "[" + ColorArtistStr + "]" + cview.Escape(c.uiApp.LocalDb().Artists[artistId].Name) + "[white]"
+					text += "[" + color.ColorArtistStr + "]" + cview.Escape(c.uiApp.LocalDb().Artists[artistId].Name) + "[" + color.ColorWhiteStr + "]"
 				}
 				currentPosition++
 			}
@@ -939,12 +940,12 @@ func (c *LibraryComponent) getMainTextArtist(artist *restApiV1.Artist, highlight
 
 	if artist == nil {
 		if currentPosition >= highlightPosition {
-			text += "[white]" + cview.Escape("(Unknown artist)") + "[white] (" + strconv.Itoa(len(c.uiApp.LocalDb().UnknownArtistSongs)) + ")"
+			text += "[" + color.ColorWhiteStr + "]" + cview.Escape("(Unknown artist)") + "[" + color.ColorWhiteStr + "] (" + strconv.Itoa(len(c.uiApp.LocalDb().UnknownArtistSongs)) + ")"
 		}
 		currentPosition++
 	} else {
 		if currentPosition >= highlightPosition {
-			text += "[" + ColorArtistStr + "]" + cview.Escape(artist.Name) + "[white] (" + strconv.Itoa(len(c.uiApp.LocalDb().ArtistOrderedSongs[artist.Id])) + ")"
+			text += "[" + color.ColorArtistStr + "]" + cview.Escape(artist.Name) + "[" + color.ColorWhiteStr + "] (" + strconv.Itoa(len(c.uiApp.LocalDb().ArtistOrderedSongs[artist.Id])) + ")"
 		}
 		currentPosition++
 	}
@@ -971,7 +972,7 @@ func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fro
 	}
 
 	if currentPosition >= highlightPosition {
-		text += "[" + ColorPlaylistStr + "]" + cview.Escape(playlist.Name) + "[white] (" + strconv.Itoa(len(c.uiApp.LocalDb().Playlists[playlist.Id].SongIds)) + ")"
+		text += "[" + color.ColorPlaylistStr + "]" + cview.Escape(playlist.Name) + "[" + color.ColorWhiteStr + "] (" + strconv.Itoa(len(c.uiApp.LocalDb().Playlists[playlist.Id].SongIds)) + ")"
 	}
 	currentPosition++
 
@@ -982,7 +983,7 @@ func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fro
 					if currentPosition > highlightPosition {
 						text += " [::b]/[::-] "
 					}
-					text += "[" + ColorUserStr + "]" + cview.Escape(c.uiApp.LocalDb().Users[userId].Name) + "[white]"
+					text += "[" + color.ColorUserStr + "]" + cview.Escape(c.uiApp.LocalDb().Users[userId].Name) + "[" + color.ColorWhiteStr + "]"
 				}
 				currentPosition++
 			}
@@ -994,7 +995,7 @@ func (c *LibraryComponent) getMainTextPlaylist(playlist *restApiV1.Playlist, fro
 
 func (c *LibraryComponent) getMainTextUser(user *restApiV1.User) string {
 
-	userName := "[" + ColorUserStr + "]" + cview.Escape(user.Name)
+	userName := "[" + color.ColorUserStr + "]" + cview.Escape(user.Name)
 
 	return userName
 }

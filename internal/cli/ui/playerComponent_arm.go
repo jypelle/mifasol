@@ -9,7 +9,7 @@ type PlayerComponent struct {
 	*cview.Flex
 	titleBox    *cview.TextView
 	volumeBox   *cview.TextView
-	progressBox *cview.Box
+	progressBox *cview.TextView
 	uiApp       *App
 
 	playingSong *restApiV1.Song

@@ -2,7 +2,8 @@ package ui
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/jypelle/mifasol/internal/cli/primitive"
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
+	"github.com/jypelle/mifasol/internal/cli/ui/primitive"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
 	"math/rand"
@@ -33,8 +34,8 @@ func NewCurrentComponent(uiApp *App) *CurrentComponent {
 	c.list = primitive.NewRichList()
 	c.list.SetInfiniteScroll(false)
 	c.list.SetHighlightFullLine(true)
-	c.list.SetSelectedBackgroundColor(ColorSelected)
-	c.list.SetUnfocusedSelectedBackgroundColor(ColorUnfocusedSelected)
+	c.list.SetSelectedBackgroundColor(color.ColorSelected)
+	c.list.SetUnfocusedSelectedBackgroundColor(color.ColorUnfocusedSelected)
 	c.list.SetBorder(false)
 
 	c.Flex = cview.NewFlex()
@@ -119,7 +120,7 @@ func (c *CurrentComponent) Focus(delegate func(cview.Primitive)) {
 func (c *CurrentComponent) SetModified(modified bool) {
 	c.modified = modified
 
-	title := "[" + ColorTitleStr + "]🎵 Playlist: "
+	title := "[" + color.ColorTitleStr + "]🎵 Playlist: "
 
 	if c.srcPlaylistId != nil {
 		if playlist, ok := c.uiApp.localDb.Playlists[*c.srcPlaylistId]; ok == true {
@@ -138,13 +139,13 @@ func (c *CurrentComponent) SetModified(modified bool) {
 }
 
 func (c *CurrentComponent) Enable() {
-	c.title.SetBackgroundColor(ColorTitleBackground)
-	c.list.SetBackgroundColor(ColorEnabled)
+	c.title.SetBackgroundColor(color.ColorTitleBackground)
+	c.list.SetBackgroundColor(color.ColorEnabled)
 }
 
 func (c *CurrentComponent) Disable() {
-	c.title.SetBackgroundColor(ColorTitleUnfocusedBackground)
-	c.list.SetBackgroundColor(ColorDisabled)
+	c.title.SetBackgroundColor(color.ColorTitleUnfocusedBackground)
+	c.list.SetBackgroundColor(color.ColorDisabled)
 }
 
 func (c *CurrentComponent) AddSong(songId restApiV1.SongId) {
@@ -168,16 +169,16 @@ func (c *CurrentComponent) LoadSong(songId restApiV1.SongId) {
 func (c *CurrentComponent) getMainTextSong(songId restApiV1.SongId, highlightPosition int) string {
 	song := c.uiApp.localDb.Songs[songId]
 
-	songName := "[" + ColorSongStr + "]" + cview.Escape(song.Name) + "[white]"
+	songName := "[" + color.ColorSongStr + "]" + cview.Escape(song.Name) + "[" + color.ColorWhiteStr + "]"
 
 	albumName := ""
 	if song.AlbumId != restApiV1.UnknownAlbumId {
-		albumName = " [::b]/[::-] [" + ColorAlbumStr + "]" + cview.Escape(c.uiApp.localDb.Albums[song.AlbumId].Name) + "[white]"
+		albumName = " [::b]/[::-] [" + color.ColorAlbumStr + "]" + cview.Escape(c.uiApp.localDb.Albums[song.AlbumId].Name) + "[" + color.ColorWhiteStr + "]"
 	}
 	artistsName := ""
 	if len(song.ArtistIds) > 0 {
 		for _, artistId := range song.ArtistIds {
-			artistsName += " [::b]/[::-] [" + ColorArtistStr + "]" + cview.Escape(c.uiApp.localDb.Artists[artistId].Name) + "[white]"
+			artistsName += " [::b]/[::-] [" + color.ColorArtistStr + "]" + cview.Escape(c.uiApp.localDb.Artists[artistId].Name) + "[" + color.ColorWhiteStr + "]"
 		}
 	}
 	return songName + albumName + artistsName

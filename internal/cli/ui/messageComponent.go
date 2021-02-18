@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"gitlab.com/tslocum/cview"
 )
 
@@ -19,14 +20,15 @@ func NewMessageComponent(uiApp *App) *MessageComponent {
 	c.TextView.SetDynamicColors(true)
 	c.TextView.SetRegions(true)
 	c.TextView.SetWrap(false)
+	c.TextView.SetBackgroundColor(color.ColorEnabled)
 
 	return c
 }
 
 func (c *MessageComponent) SetMessage(message string) {
-	c.TextView.SetText("[darkcyan]" + message + "[white]")
+	c.TextView.SetText("[darkcyan]" + message + "[" + color.ColorWhiteStr + "]")
 }
 
 func (c *MessageComponent) SetWarningMessage(message string) {
-	c.TextView.SetText("[red]" + message + "[white]")
+	c.TextView.SetText("[red]" + message + "[" + color.ColorWhiteStr + "]")
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"gitlab.com/tslocum/cview"
 )
 
@@ -21,18 +22,20 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 	c.content = cview.NewTextView()
 	c.content.SetDynamicColors(true)
 	c.content.SetBackgroundColor(tcell.NewHexColor(0xd0d0d0))
-	c.content.SetTextColor(ColorHelpText)
-	c.content.SetText(`[` + ColorHelpTitleStr + `::u]Global shortcuts[-::-]
+	c.content.SetTextColor(color.ColorHelpText)
+	c.content.SetText(`[` + color.ColorHelpTitleStr + `::u]Global shortcuts[-::-]
 
-'h'    : Show / Hide this sideview
-'p'    : Play / Pause
-'+'    : Increase volume
-'-'    : Decrease Volume
-<TAB>  : Switch view
-<F5>   : Get updates from mifasolsrv
-<ESC>  : Quit
+'h'       : Show / Hide this sideview
+'p'       : Play / Pause
+'+'       : Increase volume
+'-'       : Decrease Volume
+<CT+LEFT> : Go forward (5s)
+<CT+RIGHT>: Go backward (5s)
+<TAB>     : Switch view
+<F5>      : Refresh from server
+<ESC>     : Quit
 
-[` + ColorHelpTitle2Str + `::u]"Library" shortcuts[-::-]
+[` + color.ColorHelpTitle2Str + `::u]"Library" shortcuts[-::-]
 
 'c'    : Create album / artist
 'e'    : Edit song / album / artist / playlist
@@ -46,7 +49,7 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 <ENTER>: Play song / Artist's songs / Album's songs / Playlist's songs
 <BACK> : Go back
 
-[` + ColorHelpTitle2Str + `::u]"Playlist" shortcuts[-::-]
+[` + color.ColorHelpTitle2Str + `::u]"Playlist" shortcuts[-::-]
 
 'c'    : Clear
 'r'    : Shuffle songs
@@ -55,10 +58,6 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 '8'    : Move up highlighted song
 '2'    : Move down highlighted song
 <ENTER>: Play song
-
-[` + ColorHelpTitle2Str + `::u]"Player" shortcuts[-::-]
-
-...
 `,
 	)
 	c.content.SetScrollable(true)

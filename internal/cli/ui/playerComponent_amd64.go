@@ -5,7 +5,7 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
-	"github.com/gdamore/tcell/v2"
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/mattetti/filebuffer"
 	"gitlab.com/tslocum/cview"
@@ -16,7 +16,7 @@ type PlayerComponent struct {
 	*cview.Flex
 	titleBox    *cview.TextView
 	volumeBox   *cview.TextView
-	progressBox *cview.Box
+	progressBox *cview.TextView
 	uiApp       *App
 
 	volume          int
@@ -24,6 +24,8 @@ type PlayerComponent struct {
 	musicFormat     beep.Format
 	controlStreamer *beep.Ctrl
 	volumeStreamer  *effects.Volume
+
+	refreshTicker *time.Ticker
 
 	playingSong *restApiV1.Song
 }
@@ -40,65 +42,56 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 
 	c.titleBox = cview.NewTextView()
 	c.titleBox.SetDynamicColors(true)
-	c.titleBox.SetText("[" + ColorTitleStr + "]  ...")
+
+	c.titleBox.SetText("[" + color.ColorTitleStr + "]  ...")
+	c.titleBox.SetBackgroundColor(color.ColorTitleUnfocusedBackground)
+
+	c.progressBox = cview.NewTextView()
+	c.progressBox.SetDynamicColors(true)
+	c.progressBox.SetText("[" + color.ColorTitleStr + "]<00:00 / 00:00>")
+	c.progressBox.SetBackgroundColor(color.ColorTitleBackground)
+	c.progressBox.SetTextAlign(cview.AlignRight)
 
 	c.volumeBox = cview.NewTextView()
 	c.volumeBox.SetDynamicColors(true)
 	c.SetVolume(volume)
-	c.volumeBox.SetBackgroundColor(ColorTitleBackground)
+	c.volumeBox.SetBackgroundColor(color.ColorTitleBackground)
 	c.volumeBox.SetTextAlign(cview.AlignRight)
 
-	c.progressBox = cview.NewBox()
-
-	columnFlex := cview.NewFlex()
-	columnFlex.SetDirection(cview.FlexColumn)
-	columnFlex.AddItem(c.titleBox, 0, 1, false)
-	columnFlex.AddItem(c.volumeBox, 7, 0, false)
-
 	c.Flex = cview.NewFlex()
-	c.Flex.SetDirection(cview.FlexRow)
-	c.Flex.AddItem(columnFlex, 1, 0, false)
-	c.Flex.AddItem(c.progressBox, 1, 0, false)
+	c.Flex.SetDirection(cview.FlexColumn)
+	c.Flex.AddItem(c.titleBox, 0, 1, false)
+	c.Flex.AddItem(c.progressBox, 16, 0, false)
+	c.Flex.AddItem(c.volumeBox, 7, 0, false)
 
-	c.progressBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch {
+	c.refreshTicker = time.NewTicker(time.Second)
 
-		case event.Key() == tcell.KeyRight:
-			speaker.Lock()
-			if c.musicStreamer != nil {
-				currentPosition := c.musicStreamer.Position()
-				newPosition := currentPosition + c.musicFormat.SampleRate.N(5*time.Second)
-				len := c.musicStreamer.Len()
-				if newPosition < len {
-					c.musicStreamer.Seek(newPosition)
+	go func() {
+		for {
+			select {
+			case <-c.refreshTicker.C:
+				speaker.Lock()
+				if c.controlStreamer != nil {
+					duration := c.musicFormat.SampleRate.D(c.musicStreamer.Position()).Round(time.Second)
+					min := duration / time.Minute
+					duration -= min * time.Minute
+					sec := duration / time.Second
+
+					duration = c.musicFormat.SampleRate.D(c.musicStreamer.Len()).Round(time.Second)
+					totalMin := duration / time.Minute
+					duration -= totalMin * time.Minute
+					totalSec := duration / time.Second
+
+					c.progressBox.SetText("[" + color.ColorTitleStr + "]<" + fmt.Sprintf("%02d:%02d / %02d:%02d", min, sec, totalMin, totalSec) + ">")
+					c.uiApp.cviewApp.Draw()
 				}
+				speaker.Unlock()
 			}
-			speaker.Unlock()
-			return nil
-		case event.Key() == tcell.KeyLeft:
-			speaker.Lock()
-
-			if c.musicStreamer != nil {
-				newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
-				if newPosition < 0 {
-					newPosition = 0
-				}
-				c.musicStreamer.Seek(newPosition)
-			}
-			speaker.Unlock()
-
-			return nil
 		}
-
-		return event
-	})
+	}()
 
 	return c
 
-}
-
-func (c *PlayerComponent) Focus(delegate func(cview.Primitive)) {
-	delegate(c.progressBox)
 }
 
 func (c *PlayerComponent) SetVolume(volume int) {
@@ -119,9 +112,9 @@ func (c *PlayerComponent) SetVolume(volume int) {
 	speaker.Unlock()
 
 	if c.volume == 0 {
-		c.volumeBox.SetText("[" + ColorTitleStr + "]🔇" + fmt.Sprintf("%3d", c.volume) + "%")
+		c.volumeBox.SetText("[" + color.ColorTitleStr + "]🔇" + fmt.Sprintf("%3d", c.volume) + "%")
 	} else {
-		c.volumeBox.SetText("[" + ColorTitleStr + "]🔉" + fmt.Sprintf("%3d", c.volume) + "%")
+		c.volumeBox.SetText("[" + color.ColorTitleStr + "]🔉" + fmt.Sprintf("%3d", c.volume) + "%")
 	}
 }
 
@@ -133,9 +126,9 @@ func (c *PlayerComponent) PauseResume() {
 		}
 		speaker.Unlock()
 		if c.controlStreamer.Paused {
-			c.titleBox.SetText("[" + ColorTitleStr + "]Paused: " + c.getMainTextSong(c.playingSong))
+			c.titleBox.SetText("[" + color.ColorTitleStr + "]Paused: " + c.getMainTextSong(c.playingSong))
 		} else {
-			c.titleBox.SetText("[" + ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
+			c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
 		}
 	}
 }
@@ -150,6 +143,32 @@ func (c *PlayerComponent) VolumeUp() {
 
 func (c *PlayerComponent) VolumeDown() {
 	c.SetVolume(c.GetVolume() - 4)
+}
+
+func (c *PlayerComponent) GoBackward() {
+	speaker.Lock()
+
+	if c.musicStreamer != nil {
+		newPosition := c.musicStreamer.Position() - c.musicFormat.SampleRate.N(5*time.Second)
+		if newPosition < 0 {
+			newPosition = 0
+		}
+		c.musicStreamer.Seek(newPosition)
+	}
+	speaker.Unlock()
+}
+
+func (c *PlayerComponent) GoForward() {
+	speaker.Lock()
+	if c.musicStreamer != nil {
+		currentPosition := c.musicStreamer.Position()
+		newPosition := currentPosition + c.musicFormat.SampleRate.N(5*time.Second)
+		len := c.musicStreamer.Len()
+		if newPosition < len {
+			c.musicStreamer.Seek(newPosition)
+		}
+	}
+	speaker.Unlock()
 }
 
 func (c *PlayerComponent) Play(songId restApiV1.SongId) {
@@ -200,7 +219,7 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 			beep.Callback(
 				func() {
 					c.uiApp.cviewApp.QueueUpdateDraw(func() {
-						c.titleBox.SetText("[" + ColorTitleStr + "]Stopped: " + c.getMainTextSong(c.playingSong))
+						c.titleBox.SetText("[" + color.ColorTitleStr + "]Stopped: " + c.getMainTextSong(c.playingSong))
 						nextSongId := c.uiApp.currentComponent.GetNextSong()
 						if nextSongId != nil {
 							c.Play(*nextSongId)
@@ -211,7 +230,7 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 		),
 	)
 
-	c.titleBox.SetText("[" + ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
+	c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
 	c.uiApp.cviewApp.Draw()
 
 }

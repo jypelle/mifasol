@@ -66,7 +66,7 @@ func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClien
 	app.mainLayout = cview.NewFlex()
 	app.mainLayout.SetDirection(cview.FlexRow)
 	app.mainLayout.AddItem(mainLayoutFlex, 0, 1, false)
-	app.mainLayout.AddItem(app.playerComponent, 2, 0, false)
+	app.mainLayout.AddItem(app.playerComponent, 1, 0, false)
 
 	app.pagesComponent.AddAndSwitchToPage("main", app.mainLayout, true)
 
@@ -86,6 +86,12 @@ func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClien
 				app.Reload()
 			case event.Key() == tcell.KeyEsc:
 				app.ConfirmExit()
+				return nil
+			case event.Modifiers()&tcell.ModCtrl > 0 && event.Key() == tcell.KeyLeft:
+				app.playerComponent.GoBackward()
+				return nil
+			case event.Modifiers()&tcell.ModCtrl > 0 && event.Key() == tcell.KeyRight:
+				app.playerComponent.GoForward()
 				return nil
 			case event.Key() == tcell.KeyRune:
 				switch event.Rune() {
@@ -107,41 +113,25 @@ func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClien
 				case app.libraryComponent.HasFocus():
 					app.libraryComponent.Disable()
 					app.currentComponent.Enable()
-					app.playerComponent.Disable()
 					app.cviewApp.SetFocus(app.currentComponent)
 					return nil
 				case app.currentComponent.HasFocus():
-					app.libraryComponent.Disable()
-					app.currentComponent.Disable()
-					app.playerComponent.Enable()
-					app.cviewApp.SetFocus(app.playerComponent)
-					return nil
-				case app.playerComponent.HasFocus():
 					app.libraryComponent.Enable()
 					app.currentComponent.Disable()
-					app.playerComponent.Disable()
 					app.cviewApp.SetFocus(app.libraryComponent)
 					return nil
 				}
 			case event.Key() == tcell.KeyBacktab:
 				switch {
-				case app.playerComponent.HasFocus():
+				case app.libraryComponent.HasFocus():
 					app.libraryComponent.Disable()
 					app.currentComponent.Enable()
-					app.playerComponent.Disable()
 					app.cviewApp.SetFocus(app.currentComponent)
 					return nil
 				case app.currentComponent.HasFocus():
 					app.libraryComponent.Enable()
 					app.currentComponent.Disable()
-					app.playerComponent.Disable()
 					app.cviewApp.SetFocus(app.libraryComponent)
-					return nil
-				case app.libraryComponent.HasFocus():
-					app.libraryComponent.Disable()
-					app.currentComponent.Disable()
-					app.playerComponent.Enable()
-					app.cviewApp.SetFocus(app.playerComponent)
 					return nil
 				}
 			}
@@ -153,7 +143,6 @@ func NewApp(clientConfig config.ClientConfig, restClient *restClientV1.RestClien
 
 	app.libraryComponent.Enable()
 	app.currentComponent.Disable()
-	app.playerComponent.Disable()
 	app.cviewApp.SetFocus(app.libraryComponent)
 
 	return app

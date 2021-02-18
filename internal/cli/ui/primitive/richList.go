@@ -3,6 +3,7 @@ package primitive
 import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
+	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"gitlab.com/tslocum/cview"
 	"math"
 	"strconv"
@@ -358,7 +359,7 @@ func (l *RichList) Draw(screen tcell.Screen) {
 
 		// Prefix with line number
 		if l.prefixWithLineNumber {
-			mainText = "[#505050]" + fmt.Sprintf("%"+libraryListSizeDigit+"d", index+1) + " [white]"
+			mainText = "[#505050]" + fmt.Sprintf("%"+libraryListSizeDigit+"d", index+1) + " [" + color.ColorWhiteStr + "]"
 		}
 
 		// Background color of selected text.

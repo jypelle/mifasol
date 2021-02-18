@@ -1,11 +1,10 @@
-package ui
+package color
 
 import (
 	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 )
 
-var ColorTitle = tcell.NewHexColor(0x441800)
 var ColorTitleStr = "#441800"
 
 var ColorTitleBackground = tcell.NewHexColor(0xf0f0f0)
@@ -25,23 +24,27 @@ var ColorUserStr = "#FFFACD"
 var ColorSelected = tcell.NewHexColor(0x602020)
 var ColorUnfocusedSelected = tcell.NewHexColor(0x402020)
 
-var ColorEnabled = tcell.NewHexColor(0)
+var ColorEnabled = tcell.NewHexColor(0x050505)
 var ColorDisabled = tcell.NewHexColor(0x202024)
 
 var ColorHelpTitleStr = "#402020"
 var ColorHelpTitle2Str = "#111111"
-var ColorHelpText = tcell.NewHexColor(0)
+var ColorHelpText = tcell.NewHexColor(0x050505)
 var ColorHelpTextStr = "#000000"
+
+var ColorBlack = tcell.NewHexColor(0x050505)
+var ColorWhite = tcell.NewHexColor(0xF5F5F5)
+var ColorWhiteStr = "#F5F5F5"
 
 func init() {
 
-	cview.Styles.PrimitiveBackgroundColor = tcell.ColorBlack
+	cview.Styles.PrimitiveBackgroundColor = ColorBlack
 	cview.Styles.ContrastBackgroundColor = tcell.NewHexColor(0x403030)
 	cview.Styles.MoreContrastBackgroundColor = tcell.ColorGreen
 	cview.Styles.BorderColor = tcell.NewHexColor(0x808080)
-	cview.Styles.TitleColor = tcell.ColorWhite
-	cview.Styles.GraphicsColor = tcell.ColorWhite
-	cview.Styles.PrimaryTextColor = tcell.ColorWhite
+	cview.Styles.TitleColor = ColorWhite
+	cview.Styles.GraphicsColor = ColorWhite
+	cview.Styles.PrimaryTextColor = ColorWhite
 	cview.Styles.SecondaryTextColor = tcell.NewHexColor(0xFF6040)
 	cview.Styles.TertiaryTextColor = tcell.ColorGreen
 	cview.Styles.InverseTextColor = tcell.ColorBlue

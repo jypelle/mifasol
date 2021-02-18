@@ -8,7 +8,7 @@ require (
 	github.com/asdine/storm/v3 v3.2.1
 	github.com/bogem/id3v2 v1.2.1-0.20200829074214-de2d74e8049e
 	github.com/faiface/beep v1.0.3-0.20200712202812-d836f29bdc50
-	github.com/gdamore/tcell/v2 v2.1.1-0.20201225194624-29bb185874fd
+	github.com/gdamore/tcell/v2 v2.1.1-0.20210125004847-19e17097d8fe
 	github.com/go-flac/flacvorbis v0.1.0
 	github.com/go-flac/go-flac v0.3.1
 	github.com/gorilla/handlers v1.5.1
