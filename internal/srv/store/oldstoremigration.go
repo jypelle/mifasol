@@ -390,7 +390,7 @@ func (s *Store) oldStoreImport(oldStore *oldstore.OldStore) error {
 	}
 
 	// Songs
-	songs, e := oldStore.ReadSongs(nil, &restApiV1.SongFilter{})
+	songs, e := oldStore.ReadSongs(nil)
 	if e != nil {
 		return e
 	}

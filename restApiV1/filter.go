@@ -20,11 +20,15 @@ type PlaylistFilter struct {
 }
 
 type SongFilter struct {
-	FromTs         *int64
-	AlbumId        *AlbumId
-	ArtistId       *ArtistId
-	FavoriteUserId *UserId
-	FavoriteFromTs *int64
+	FromTs   *int64
+	AlbumId  *AlbumId
+	ArtistId *ArtistId
+	Favorite *SongFilterFavorite
+}
+
+type SongFilterFavorite struct {
+	UserId UserId
+	FromTs int64
 }
 
 type UserFilter struct {

@@ -2,6 +2,9 @@ package store
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
@@ -12,8 +15,29 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
+
+type SongWithAuthorsEntity struct {
+	entity.SongEntity
+	JsonArtists JsonArtists `db:"json_artists"`
+}
+
+type JsonArtists []entity.ArtistEntity
+
+func (j JsonArtists) Value() (driver.Value, error) {
+	return json.Marshal(j)
+}
+
+func (j *JsonArtists) Scan(value interface{}) error {
+	b, ok := value.(string)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal([]byte(b), &j)
+}
 
 func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([]restApiV1.Song, error) {
 	if s.serverConfig.DebugMode {
@@ -42,24 +66,50 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 	if filter.ArtistId != nil {
 		queryArgs["artist_id"] = *filter.ArtistId
 	}
-	if filter.FavoriteUserId != nil {
-		queryArgs["favorite_user_id"] = *filter.FavoriteUserId
-	}
-	if filter.FavoriteFromTs != nil {
-		queryArgs["favorite_from_ts"] = *filter.FavoriteFromTs
+	if filter.Favorite != nil {
+		queryArgs["favorite_user_id"] = filter.Favorite.UserId
+		queryArgs["favorite_from_ts"] = filter.Favorite.FromTs
 	}
 
 	rows, err := txn.NamedQuery(
 		`SELECT
-				DISTINCT s.*
+				s.song_id,
+				s.creation_ts,
+				s.update_ts,
+				s.name,
+				s.format,
+				s.size,
+				s.bit_depth,
+				s.publication_year,
+				s.album_id,
+				s.track_number,
+				s.explicit_fg,
+				json_group_array(json_object(
+					'artist_id',a.artist_id,
+					'creation_ts',a.creation_ts,
+					'update_ts',a.update_ts,
+					'name',a.name
+				)) as json_artists
 			FROM song s
-			`+tool.TernStr(filter.ArtistId != nil, "JOIN artist_song asg2 ON asg2.song_id = s.song_id AND asg2.artist_id = :artist_id ", "")+`
-			`+tool.TernStr(filter.FavoriteUserId != nil || filter.FavoriteFromTs != nil, "JOIN favorite_song fs ON fs.song_id = s.song_id ", "")+`
+			`+tool.IfStr(filter.ArtistId != nil, "JOIN artist_song asg2 ON asg2.song_id = s.song_id AND asg2.artist_id = :artist_id ")+`
+			`+tool.IfStr(filter.Favorite != nil, `JOIN favorite_song fs ON fs.song_id = s.song_id AND fs.user_id = :favorite_user_id AND (fs.update_ts >= :favorite_from_ts OR s.update_ts >= :favorite_from_ts ) `)+`
+			LEFT JOIN artist_song asg ON asg.song_id = s.song_id
+			LEFT JOIN artist a ON a.artist_id = asg.artist_id
 			WHERE 1>0
-			`+tool.TernStr(filter.FromTs != nil, "AND s.update_ts >= :from_ts ", "")+`
-			`+tool.TernStr(filter.AlbumId != nil, "AND s.album_id = :album_id ", "")+`
-			`+tool.TernStr(filter.FavoriteUserId != nil, "AND fs.user_id = :favorite_user_id ", "")+`
-			`+tool.TernStr(filter.FavoriteFromTs != nil, "AND (fs.update_ts >= :favorite_from_ts OR s.update_ts >= :favorite_from_ts ) ", "")+`
+			`+tool.IfStr(filter.FromTs != nil, "AND s.update_ts >= :from_ts ")+`
+			`+tool.IfStr(filter.AlbumId != nil, "AND s.album_id = :album_id ")+`
+			GROUP BY
+				s.song_id,
+				s.creation_ts,
+				s.update_ts,
+				s.name,
+				s.format,
+				s.size,
+				s.bit_depth,
+				s.publication_year,
+				s.album_id,
+				s.track_number,
+				s.explicit_fg
 			ORDER BY s.song_id ASC
 		`,
 		queryArgs,
@@ -72,24 +122,31 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 	songs := []restApiV1.Song{}
 
 	for rows.Next() {
-		var songEntity entity.SongEntity
+		var songEntity SongWithAuthorsEntity
 		err = rows.StructScan(&songEntity)
 		if err != nil {
 			return nil, err
 		}
-
-		// TODO: Need optimizations!
-		// Retrieve song artists
-		artistSongEntities := []entity.ArtistSongEntity{}
-		err = txn.Select(&artistSongEntities, `SELECT * FROM artist_song WHERE song_id = ?`, songEntity.SongId)
-		if err != nil {
-			return nil, err
-		}
+		// Sort artists
+		sort.Slice(songEntity.JsonArtists, func(i, j int) bool {
+			artistI := songEntity.JsonArtists[i]
+			artistJ := songEntity.JsonArtists[j]
+			if artistI.Name < artistJ.Name {
+				return true
+			}
+			if artistI.Name > artistJ.Name {
+				return false
+			}
+			return artistI.ArtistId < artistJ.ArtistId
+		})
 
 		var song restApiV1.Song
 		songEntity.Fill(&song)
-		for _, artistSongEntity := range artistSongEntities {
-			song.ArtistIds = append(song.ArtistIds, artistSongEntity.ArtistId)
+
+		for _, artistEntity := range songEntity.JsonArtists {
+			if artistEntity.ArtistId != "" {
+				song.ArtistIds = append(song.ArtistIds, artistEntity.ArtistId)
+			}
 		}
 
 		songs = append(songs, song)

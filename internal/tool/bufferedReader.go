@@ -47,4 +47,8 @@ func (b *BufferedReader) Read(p []byte) (n int, err error) {
 	return b.buffer.Read(p)
 }
 
+func (b *BufferedReader) Seek(offset int64, whence int) (int64, error) {
+	return 0, nil
+}
+
 func (b *BufferedReader) Close() error { return nil }

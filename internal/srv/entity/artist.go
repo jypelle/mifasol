@@ -5,10 +5,10 @@ import "github.com/jypelle/mifasol/restApiV1"
 // Artist
 
 type ArtistEntity struct {
-	ArtistId   restApiV1.ArtistId `db:"artist_id"`
-	CreationTs int64              `db:"creation_ts"`
-	UpdateTs   int64              `db:"update_ts"`
-	Name       string             `db:"name"`
+	ArtistId   restApiV1.ArtistId `db:"artist_id" json:"artist_id"`
+	CreationTs int64              `db:"creation_ts" json:"creation_ts"`
+	UpdateTs   int64              `db:"update_ts" json:"update_ts"`
+	Name       string             `db:"name" json:"name"`
 }
 
 func (e *ArtistEntity) Fill(s *restApiV1.Artist) {

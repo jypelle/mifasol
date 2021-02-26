@@ -151,7 +151,7 @@ func (s *Store) ReadFileSyncSongs(externalTrn *sqlx.Tx, favoriteFromTs int64, fa
 		defer txn.Rollback()
 	}
 
-	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{FavoriteFromTs: &favoriteFromTs, FavoriteUserId: &favoriteUserId})
+	songs, err := s.ReadSongs(txn, &restApiV1.SongFilter{Favorite: &restApiV1.SongFilterFavorite{FromTs: favoriteFromTs, UserId: favoriteUserId}})
 	if err != nil {
 		return nil, err
 	}
