@@ -22,7 +22,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 
 	c.titleBox = cview.NewTextView()
 	c.volumeBox = cview.NewTextView()
-	c.progressBox = cview.NewBox()
+	c.progressBox = cview.NewTextView()
 
 	c.Flex = cview.NewFlex()
 	c.Flex.SetDirection(cview.FlexRow)
@@ -50,6 +50,12 @@ func (c *PlayerComponent) VolumeUp() {
 }
 
 func (c *PlayerComponent) VolumeDown() {
+}
+
+func (c *PlayerComponent) GoBackward() {
+}
+
+func (c *PlayerComponent) GoForward() {
 }
 
 func (c *PlayerComponent) Play(songId restApiV1.SongId) {
