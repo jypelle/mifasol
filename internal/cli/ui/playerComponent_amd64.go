@@ -6,8 +6,8 @@ import (
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
+	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
-	"github.com/mattetti/filebuffer"
 	"gitlab.com/tslocum/cview"
 	"time"
 )
@@ -183,7 +183,7 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 	c.uiApp.Message("Start playing: " + c.getMainTextSong(c.playingSong))
 	c.uiApp.cviewApp.Draw()
 
-	reader, _, cliErr := c.uiApp.restClient.ReadSongContent(song.Id)
+	songReader, songSize, cliErr := c.uiApp.restClient.ReadSongContent(song.Id)
 	if cliErr != nil {
 		c.uiApp.ClientErrorMessage("Unable to retrieve content for: "+c.playingSong.Name, cliErr)
 		return
@@ -191,10 +191,10 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 
 	speaker.Clear()
 
-	buffer, _ := filebuffer.NewFromReader(reader)
+	bufferedReader := tool.NewBufferedStreamReader(songReader, songSize)
 
 	var err error
-	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(buffer)
+	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(bufferedReader)
 	if err != nil {
 		c.uiApp.WarningMessage("Unable to read content for: " + c.playingSong.Name)
 		return
