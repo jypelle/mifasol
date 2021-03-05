@@ -17,15 +17,17 @@ type BufferedStreamReader struct {
 	isClosed  bool
 }
 
-const maxStep = 8192
+const chunkSize = 8192
 
 // NewBufferedStreamReader returns a new Reader
-func NewBufferedStreamReader(rd io.Reader, size int64) *BufferedStreamReader {
+func NewBufferedStreamReader(rd io.Reader, size int, firstChunkSize int) *BufferedStreamReader {
 	r := &BufferedStreamReader{
 		rd:     rd,
 		buffer: make([]byte, 0, size),
 	}
 	go func() {
+		var maxIndex int
+
 		for {
 			r.m.Lock()
 
@@ -35,12 +37,16 @@ func NewBufferedStreamReader(rd io.Reader, size int64) *BufferedStreamReader {
 				return
 			}
 
-			max := len(r.buffer) + maxStep
-			if max > cap(r.buffer) {
-				max = cap(r.buffer)
+			if len(r.buffer) == 0 {
+				maxIndex = firstChunkSize
+			} else {
+				maxIndex = len(r.buffer) + chunkSize
+			}
+			if maxIndex > cap(r.buffer) {
+				maxIndex = cap(r.buffer)
 			}
 
-			n, err := rd.Read(r.buffer[len(r.buffer):max])
+			n, err := rd.Read(r.buffer[len(r.buffer):maxIndex])
 			r.buffer = r.buffer[:len(r.buffer)+n]
 			if err != nil {
 				r.err = err

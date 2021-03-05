@@ -191,7 +191,7 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 
 	speaker.Clear()
 
-	bufferedReader := tool.NewBufferedStreamReader(songReader, songSize)
+	bufferedReader := tool.NewBufferedStreamReader(songReader, int(songSize), 8192)
 
 	var err error
 	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(bufferedReader)
