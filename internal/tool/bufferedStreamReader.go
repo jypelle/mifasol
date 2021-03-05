@@ -46,8 +46,13 @@ func NewBufferedStreamReader(rd io.Reader, size int, firstChunkSize int) *Buffer
 				maxIndex = cap(r.buffer)
 			}
 
-			n, err := rd.Read(r.buffer[len(r.buffer):maxIndex])
-			r.buffer = r.buffer[:len(r.buffer)+n]
+			startIndex := len(r.buffer)
+
+			r.m.Unlock()
+			n, err := rd.Read(r.buffer[startIndex:maxIndex])
+			r.m.Lock()
+
+			r.buffer = r.buffer[:startIndex+n]
 			if err != nil {
 				r.err = err
 				r.m.Unlock()
