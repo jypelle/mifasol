@@ -9,6 +9,7 @@ import (
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
+	"strconv"
 	"time"
 )
 
@@ -126,9 +127,9 @@ func (c *PlayerComponent) PauseResume() {
 		}
 		speaker.Unlock()
 		if c.controlStreamer.Paused {
-			c.titleBox.SetText("[" + color.ColorTitleStr + "]Paused: " + c.getMainTextSong(c.playingSong))
+			c.titleBox.SetText("[" + color.ColorTitleStr + "]Paused: " + c.getCompleteMainTextSong(c.playingSong))
 		} else {
-			c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
+			c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getCompleteMainTextSong(c.playingSong))
 		}
 	}
 }
@@ -219,7 +220,7 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 			beep.Callback(
 				func() {
 					c.uiApp.cviewApp.QueueUpdateDraw(func() {
-						c.titleBox.SetText("[" + color.ColorTitleStr + "]Stopped: " + c.getMainTextSong(c.playingSong))
+						c.titleBox.SetText("[" + color.ColorTitleStr + "]Stopped: " + c.getCompleteMainTextSong(c.playingSong))
 						nextSongId := c.uiApp.currentComponent.GetNextSong()
 						if nextSongId != nil {
 							c.Play(*nextSongId)
@@ -230,12 +231,18 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 		),
 	)
 
-	c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getMainTextSong(c.playingSong))
+	c.titleBox.SetText("[" + color.ColorTitleStr + "]Playing: " + c.getCompleteMainTextSong(c.playingSong))
 	c.uiApp.cviewApp.Draw()
 
 }
 
 func (c *PlayerComponent) getMainTextSong(song *restApiV1.Song) string {
+	songName := cview.Escape(song.Name)
+
+	return songName
+}
+
+func (c *PlayerComponent) getCompleteMainTextSong(song *restApiV1.Song) string {
 	songName := cview.Escape(song.Name)
 
 	albumName := ""
@@ -248,5 +255,7 @@ func (c *PlayerComponent) getMainTextSong(song *restApiV1.Song) string {
 			artistsName += " / " + cview.Escape(c.uiApp.localDb.Artists[artistId].Name)
 		}
 	}
-	return songName + albumName + artistsName
+	format := cview.Escape(" [" + song.Format.String() + "/" + song.BitDepth.String() + "/" + strconv.Itoa(int(c.musicFormat.SampleRate)) + "hz]")
+
+	return songName + albumName + artistsName + format
 }
