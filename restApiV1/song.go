@@ -33,6 +33,16 @@ const (
 	SongBitDepth24
 )
 
+func (s SongBitDepth) String() string {
+	switch s {
+	case SongBitDepth16:
+		return "16b"
+	case SongBitDepth24:
+		return "24b"
+	}
+	return "unknown"
+}
+
 func (s SongFormat) MimeType() string {
 	switch s {
 	case SongFormatFlac:
@@ -55,6 +65,18 @@ func (s SongFormat) Extension() string {
 		return ".mp3"
 	}
 	return ".data"
+}
+
+func (s SongFormat) String() string {
+	switch s {
+	case SongFormatFlac:
+		return "flac"
+	case SongFormatOgg:
+		return "ogg"
+	case SongFormatMp3:
+		return "mp3"
+	}
+	return "data"
 }
 
 func (s SongFormat) Decode() func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
