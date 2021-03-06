@@ -6,16 +6,15 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func (s *RestServer) readArtists(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Read artists")
+	s.log.Debugf("Read artists")
 
 	artists, err := s.store.ReadArtists(nil, &restApiV1.ArtistFilter{})
 	if err != nil {
-		logrus.Panicf("Unable to read artists: %v", err)
+		s.log.Panicf("Unable to read artists: %v", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -27,7 +26,7 @@ func (s *RestServer) readArtist(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	artistId := restApiV1.ArtistId(vars["id"])
 
-	logrus.Debugf("Read artist: %s", artistId)
+	s.log.Debugf("Read artist: %s", artistId)
 
 	artist, err := s.store.ReadArtist(nil, artistId)
 	if err != nil {
@@ -35,24 +34,24 @@ func (s *RestServer) readArtist(w http.ResponseWriter, r *http.Request) {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
-		logrus.Panicf("Unable to read artist: %v", err)
+		s.log.Panicf("Unable to read artist: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, artist)
 }
 
 func (s *RestServer) createArtist(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Create artist")
+	s.log.Debugf("Create artist")
 
 	var artistMeta restApiV1.ArtistMeta
 	err := json.NewDecoder(r.Body).Decode(&artistMeta)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to create the artist: %v", err)
+		s.log.Panicf("Unable to interpret data to create the artist: %v", err)
 	}
 
 	artist, err := s.store.CreateArtist(nil, &artistMeta)
 	if err != nil {
-		logrus.Panicf("Unable to create the artist: %v", err)
+		s.log.Panicf("Unable to create the artist: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, artist)
@@ -63,17 +62,17 @@ func (s *RestServer) updateArtist(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	artistId := restApiV1.ArtistId(vars["id"])
 
-	logrus.Debugf("Update artist: %s", artistId)
+	s.log.Debugf("Update artist: %s", artistId)
 
 	var artistMeta restApiV1.ArtistMeta
 	err := json.NewDecoder(r.Body).Decode(&artistMeta)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to update the artist: %v", err)
+		s.log.Panicf("Unable to interpret data to update the artist: %v", err)
 	}
 
 	artist, err := s.store.UpdateArtist(nil, artistId, &artistMeta)
 	if err != nil {
-		logrus.Panicf("Unable to update the artist: %v", err)
+		s.log.Panicf("Unable to update the artist: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, artist)
@@ -85,7 +84,7 @@ func (s *RestServer) deleteArtist(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	artistId := restApiV1.ArtistId(vars["id"])
 
-	logrus.Debugf("Delete artist: %s", artistId)
+	s.log.Debugf("Delete artist: %s", artistId)
 
 	artist, err := s.store.DeleteArtist(nil, artistId)
 	if err != nil {
@@ -94,7 +93,7 @@ func (s *RestServer) deleteArtist(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logrus.Panicf("Unable to delete artist: %v", err)
+		s.log.Panicf("Unable to delete artist: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, artist)

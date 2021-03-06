@@ -6,7 +6,6 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -17,7 +16,7 @@ type session struct {
 }
 
 func (s *RestServer) generateToken(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Generate token")
+	s.log.Debugf("Generate token")
 
 	values := r.URL.Query()
 
@@ -41,7 +40,7 @@ func (s *RestServer) generateToken(w http.ResponseWriter, r *http.Request) {
 			s.apiErrorCodeResponse(w, restApiV1.InvalideGrantErrorCode)
 			return
 		}
-		logrus.Panicf("Unable to read user: %v", err)
+		s.log.Panicf("Unable to read user: %v", err)
 	}
 
 	if user.Password != password {

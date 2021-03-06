@@ -14,7 +14,6 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
-	github.com/mattetti/filebuffer v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
@@ -22,5 +21,5 @@ require (
 	github.com/vbauerster/mpb/v6 v6.0.2
 	gitlab.com/tslocum/cview v1.5.3
 	golang.org/x/text v0.3.5
-	modernc.org/sqlite v1.8.7
+	modernc.org/sqlite v1.8.8
 )
