@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func (c *ServerApp) Config(
+func (s *ServerApp) Config(
 	hostnames []string,
 	port int64,
 	ssl *bool) {
@@ -13,22 +13,22 @@ func (c *ServerApp) Config(
 	shouldSaveConfig := false
 
 	if len(hostnames) > 0 {
-		c.ServerEditableConfig.Hostnames = hostnames
-		os.Remove(c.GetCompleteConfigKeyFilename())
-		os.Remove(c.GetCompleteConfigCertFilename())
+		s.ServerEditableConfig.Hostnames = hostnames
+		os.Remove(s.GetCompleteConfigKeyFilename())
+		os.Remove(s.GetCompleteConfigCertFilename())
 		shouldSaveConfig = true
 		fmt.Println("Server hostnames updated")
 		fmt.Println("Self-signed certificate will be regenerated, clients should accept the new one")
 	}
 
 	if port > 0 {
-		c.ServerEditableConfig.Port = port
+		s.ServerEditableConfig.Port = port
 		shouldSaveConfig = true
 		fmt.Println("Server port updated")
 	}
 
 	if ssl != nil {
-		c.ServerEditableConfig.Ssl = *ssl
+		s.ServerEditableConfig.Ssl = *ssl
 		shouldSaveConfig = true
 		if *ssl {
 			fmt.Println("SSL enabled: clients should use https to connect to server")
@@ -38,6 +38,6 @@ func (c *ServerApp) Config(
 	}
 
 	if shouldSaveConfig {
-		c.ServerConfig.Save()
+		s.ServerConfig.Save()
 	}
 }

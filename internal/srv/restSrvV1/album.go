@@ -6,28 +6,27 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func (s *RestServer) readAlbums(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Read albums")
+	s.log.Debugf("Read albums")
 
 	albums, err := s.store.ReadAlbums(nil, &restApiV1.AlbumFilter{})
 	if err != nil {
-		logrus.Panicf("Unable to read albums: %v", err)
+		s.log.Panicf("Unable to read albums: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, albums)
 }
 
 func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Read album")
+	s.log.Debugf("Read album")
 
 	vars := mux.Vars(r)
 	albumId := restApiV1.AlbumId(vars["id"])
 
-	logrus.Debugf("Read album: %s", albumId)
+	s.log.Debugf("Read album: %s", albumId)
 
 	album, err := s.store.ReadAlbum(nil, albumId)
 	if err != nil {
@@ -35,19 +34,19 @@ func (s *RestServer) readAlbum(w http.ResponseWriter, r *http.Request) {
 			s.apiErrorCodeResponse(w, restApiV1.NotFoundErrorCode)
 			return
 		}
-		logrus.Panicf("Unable to read album: %v", err)
+		s.log.Panicf("Unable to read album: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, album)
 }
 
 func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
-	logrus.Debugf("Create album")
+	s.log.Debugf("Create album")
 
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to create the album: %v", err)
+		s.log.Panicf("Unable to interpret data to create the album: %v", err)
 	}
 
 	// Check credential
@@ -55,7 +54,7 @@ func (s *RestServer) createAlbum(w http.ResponseWriter, r *http.Request) {
 
 	album, err := s.store.CreateAlbum(nil, &albumMeta)
 	if err != nil {
-		logrus.Panicf("Unable to create the album: %v", err)
+		s.log.Panicf("Unable to create the album: %v", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -67,17 +66,17 @@ func (s *RestServer) updateAlbum(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	albumId := restApiV1.AlbumId(vars["id"])
 
-	logrus.Debugf("Update album: %s", albumId)
+	s.log.Debugf("Update album: %s", albumId)
 
 	var albumMeta restApiV1.AlbumMeta
 	err := json.NewDecoder(r.Body).Decode(&albumMeta)
 	if err != nil {
-		logrus.Panicf("Unable to interpret data to update the album: %v", err)
+		s.log.Panicf("Unable to interpret data to update the album: %v", err)
 	}
 
 	album, err := s.store.UpdateAlbum(nil, albumId, &albumMeta)
 	if err != nil {
-		logrus.Panicf("Unable to update the album: %v", err)
+		s.log.Panicf("Unable to update the album: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, album)
@@ -89,7 +88,7 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	albumId := restApiV1.AlbumId(vars["id"])
 
-	logrus.Debugf("Delete album: %s", albumId)
+	s.log.Debugf("Delete album: %s", albumId)
 
 	album, err := s.store.DeleteAlbum(nil, albumId)
 	if err != nil {
@@ -98,7 +97,7 @@ func (s *RestServer) deleteAlbum(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logrus.Panicf("Unable to delete album: %v", err)
+		s.log.Panicf("Unable to delete album: %v", err)
 	}
 
 	tool.WriteJsonResponse(w, album)

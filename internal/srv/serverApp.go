@@ -8,6 +8,7 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/config"
 	"github.com/jypelle/mifasol/internal/srv/restSrvV1"
 	"github.com/jypelle/mifasol/internal/srv/store"
+	"github.com/jypelle/mifasol/internal/srv/webSrv"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/internal/version"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,8 @@ import (
 type ServerApp struct {
 	config.ServerConfig
 	store      *store.Store
-	restApiV1  *restSrvV1.RestServer
+	restSrvV1  *restSrvV1.RestServer
+	webSrv     *webSrv.WebServer
 	httpServer *http.Server
 }
 
@@ -107,8 +109,11 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	// Create router
 	rooter := mux.NewRouter()
 
-	// Create REST API
-	app.restApiV1 = restSrvV1.NewRestServer(app.store, rooter.PathPrefix("/api/v1").Subrouter())
+	// Create REST Server
+	app.restSrvV1 = restSrvV1.NewRestServer(app.store, rooter.PathPrefix("/api/v1").Subrouter())
+
+	// Create WEB Server
+	app.webSrv = webSrv.NewWebServer(app.store, rooter, &app.ServerConfig)
 
 	// Create server check endpoint
 	rooter.HandleFunc("/isalive",
