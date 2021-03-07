@@ -56,7 +56,7 @@ Drop the dedicated `mifasolsrv` binary on your server and you are done.
 
 #### From sources
 
-You need golang >= 1.15
+You need golang >= 1.16
 
 ```
 go install ./cmd/mifasolsrv
@@ -75,7 +75,7 @@ Use Ctrl+C to gracefully stop it (and to avoid database corruption).
 On first launch, `mifasolsrv run` will:
 - Create default admin user with mifasol/mifasol as username/password
 - Create a self-signed certificate valid for localhost only
-- Listen client requests on https://localhost:6620
+- Listen requests on https://localhost:6620
 
 #### Configuration
 
@@ -157,11 +157,11 @@ Configuration file, embedded database, song and cover files are all saved into *
 
 #### From prebuild binaries
 
-Drop the dedicated `mifasolcli` binary on your client.
+Mifasol server embeds clients, so you just have to download the dedicated `mifasolcli` binary from mifasol server: https://localhost:6620
 
 #### From sources
 
-You need golang >= 1.13 and
+You need golang >= 1.16 and
 - `libasound2-dev` on linux
 - `mingw-w64` on windows
 - `AudioToolbox.framework` on mac

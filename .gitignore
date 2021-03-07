@@ -19,4 +19,4 @@
 
 # Builds
 /release
-/internal/srv/webSrv/static/clients
+/internal/srv/webSrv/clients

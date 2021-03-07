@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jypelle/mifasol/internal/srv/config"
 	"github.com/jypelle/mifasol/internal/srv/store"
+	"github.com/jypelle/mifasol/internal/srv/webSrv/clients"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/controller/home"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/static"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/templates"
@@ -22,6 +23,7 @@ type WebServer struct {
 
 	StaticFs    fs.FS
 	TemplatesFs fs.FS
+	ClientsFs   fs.FS
 
 	log *logrus.Entry
 }
@@ -39,6 +41,7 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 	//	if serverConfig.EmbeddedFs {
 	webServer.StaticFs = static.Fs
 	webServer.TemplatesFs = templates.Fs
+	webServer.ClientsFs = clients.Fs
 	//	} else {
 	//		webServer.StaticFs = os.DirFS("internal/srv/webSrv/static")
 	//		webServer.TemplatesFs = os.DirFS("internal/srv/webSrv/templates")
@@ -62,6 +65,16 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 		w.Header().Set("Cache-Control", "public, max-age=2592000") // 30 days
 		w.Header().Set("Pragma", "")
 		staticFileHandler.ServeHTTP(w, r)
+	})
+
+	// Clients binary executables files
+	//
+	clientsFileHandler := http.StripPrefix("/clients", http.FileServer(http.FS(webServer.ClientsFs)))
+	webServer.router.PathPrefix("/clients").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Expires", "")
+		w.Header().Set("Cache-Control", "public, max-age=2592000") // 30 days
+		w.Header().Set("Pragma", "")
+		clientsFileHandler.ServeHTTP(w, r)
 	})
 
 	// Home

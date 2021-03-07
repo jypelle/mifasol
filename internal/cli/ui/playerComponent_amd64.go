@@ -49,7 +49,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 
 	c.progressBox = cview.NewTextView()
 	c.progressBox.SetDynamicColors(true)
-	c.progressBox.SetText("[" + color.ColorTitleStr + "]<00:00 / 00:00>")
+	c.progressBox.SetText("[" + color.ColorTitleStr + "]00:00 / 00:00")
 	c.progressBox.SetBackgroundColor(color.ColorTitleBackground)
 	c.progressBox.SetTextAlign(cview.AlignRight)
 
@@ -62,7 +62,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 	c.Flex = cview.NewFlex()
 	c.Flex.SetDirection(cview.FlexColumn)
 	c.Flex.AddItem(c.titleBox, 0, 1, false)
-	c.Flex.AddItem(c.progressBox, 16, 0, false)
+	c.Flex.AddItem(c.progressBox, 14, 0, false)
 	c.Flex.AddItem(c.volumeBox, 7, 0, false)
 
 	c.refreshTicker = time.NewTicker(time.Second)
@@ -71,22 +71,7 @@ func NewPlayerComponent(uiApp *App, volume int) *PlayerComponent {
 		for {
 			select {
 			case <-c.refreshTicker.C:
-				speaker.Lock()
-				if c.controlStreamer != nil {
-					duration := c.musicFormat.SampleRate.D(c.musicStreamer.Position()).Round(time.Second)
-					min := duration / time.Minute
-					duration -= min * time.Minute
-					sec := duration / time.Second
-
-					duration = c.musicFormat.SampleRate.D(c.musicStreamer.Len()).Round(time.Second)
-					totalMin := duration / time.Minute
-					duration -= totalMin * time.Minute
-					totalSec := duration / time.Second
-
-					c.progressBox.SetText("[" + color.ColorTitleStr + "]<" + fmt.Sprintf("%02d:%02d / %02d:%02d", min, sec, totalMin, totalSec) + ">")
-					c.uiApp.cviewApp.Draw()
-				}
-				speaker.Unlock()
+				c.refreshProgress()
 			}
 		}
 	}()
@@ -157,6 +142,7 @@ func (c *PlayerComponent) GoBackward() {
 		c.musicStreamer.Seek(newPosition)
 	}
 	speaker.Unlock()
+	c.refreshProgress()
 }
 
 func (c *PlayerComponent) GoForward() {
@@ -170,6 +156,7 @@ func (c *PlayerComponent) GoForward() {
 		}
 	}
 	speaker.Unlock()
+	c.refreshProgress()
 }
 
 func (c *PlayerComponent) Play(songId restApiV1.SongId) {
@@ -221,6 +208,10 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 				func() {
 					c.uiApp.cviewApp.QueueUpdateDraw(func() {
 						c.titleBox.SetText("[" + color.ColorTitleStr + "]Stopped: " + c.getCompleteMainTextSong(c.playingSong))
+						c.refreshProgress()
+						c.controlStreamer = nil
+						c.volumeStreamer = nil
+						c.musicStreamer = nil
 						nextSongId := c.uiApp.currentComponent.GetNextSong()
 						if nextSongId != nil {
 							c.Play(*nextSongId)
@@ -258,4 +249,24 @@ func (c *PlayerComponent) getCompleteMainTextSong(song *restApiV1.Song) string {
 	format := cview.Escape(" [" + song.Format.String() + "/" + song.BitDepth.String() + "/" + strconv.Itoa(int(c.musicFormat.SampleRate)) + "hz]")
 
 	return songName + albumName + artistsName + format
+}
+
+func (c *PlayerComponent) refreshProgress() {
+	speaker.Lock()
+	if c.controlStreamer != nil {
+		duration := c.musicFormat.SampleRate.D(c.musicStreamer.Position()).Round(time.Second)
+		min := duration / time.Minute
+		duration -= min * time.Minute
+		sec := duration / time.Second
+
+		duration = c.musicFormat.SampleRate.D(c.musicStreamer.Len()).Round(time.Second)
+		totalMin := duration / time.Minute
+		duration -= totalMin * time.Minute
+		totalSec := duration / time.Second
+
+		c.progressBox.SetText("[" + color.ColorTitleStr + "]" + fmt.Sprintf("%02d:%02d / %02d:%02d", min, sec, totalMin, totalSec))
+		c.uiApp.cviewApp.Draw()
+
+	}
+	speaker.Unlock()
 }

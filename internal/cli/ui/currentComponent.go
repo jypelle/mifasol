@@ -47,8 +47,38 @@ func NewCurrentComponent(uiApp *App) *CurrentComponent {
 		switch {
 		case event.Key() == tcell.KeyRune:
 			switch event.Rune() {
-			case 's':
+			case 'z':
+				// Save as
 				OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+			case 's':
+				if c.uiApp.currentComponent.IsModified() {
+					if c.srcPlaylistId == nil {
+						// Save as
+						OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+					} else {
+						// Save
+
+						// Only admin or playlist owner can edit playlist content
+						if !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(*c.srcPlaylistId, uiApp.ConnectedUserId()) {
+							uiApp.WarningMessage("Only administrator or playlist owner can edit playlist content")
+						} else {
+							selectedPlaylist := uiApp.localDb.Playlists[*c.srcPlaylistId]
+							playlistMeta := selectedPlaylist.PlaylistMeta
+							playlistMeta.SongIds = c.songIds
+
+							_, cliErr := c.uiApp.restClient.UpdatePlaylist(selectedPlaylist.Id, &playlistMeta)
+							if cliErr != nil {
+								c.uiApp.ClientErrorMessage("Unable to update the playlist", cliErr)
+							} else {
+								var id restApiV1.PlaylistId = selectedPlaylist.Id
+								c.uiApp.currentComponent.srcPlaylistId = &id
+								c.uiApp.Reload()
+								c.uiApp.currentComponent.SetModified(false)
+							}
+
+						}
+					}
+				}
 			case 'c':
 				c.Clear()
 				c.SetModified(true)
@@ -136,6 +166,10 @@ func (c *CurrentComponent) SetModified(modified bool) {
 		title += " *"
 	}
 	c.title.SetText(title)
+}
+
+func (c *CurrentComponent) IsModified() bool {
+	return c.modified
 }
 
 func (c *CurrentComponent) Enable() {

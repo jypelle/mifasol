@@ -26,15 +26,15 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 
 	c.content.SetText(`[` + color.ColorHelpTitleStr + `::u]Global shortcuts[-::-]
 
-'h'        : Show / Hide this sideview
-'p'        : Play / Pause
-'+'        : Increase volume
-'-'        : Decrease Volume
-<CTL+LEFT> : Go forward (5s)
-<CTL+RIGHT>: Go backward (5s)
-<TAB>      : Switch view
-<F5>       : Refresh from server
-<ESC>      : Quit
+'h'          : Show / Hide this sideview
+'p'          : Play / Pause
+'+'          : Increase volume
+'-'          : Decrease Volume
+<CTL>+<LEFT> : Go forward (5s)
+<CTL>+<RIGHT>: Go backward (5s)
+<TAB>        : Switch view
+<F5>         : Refresh from server
+<ESC>        : Quit
 
 [` + color.ColorHelpTitle2Str + `::u]"Library" shortcuts[-::-]
 
@@ -55,7 +55,8 @@ func NewHelpComponent(uiApp *App) *HelpComponent {
 'c'    : Clear
 'r'    : Shuffle songs
 'd'    : Remove song
-'s'    : Save to existing or new playlist
+'s'    : Quick save playlist
+'z'    : Save to existing or new playlist
 '8'    : Move up highlighted song
 '2'    : Move down highlighted song
 <ENTER>: Play song
