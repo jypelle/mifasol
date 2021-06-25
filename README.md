@@ -1,7 +1,5 @@
 # 💿 Mifasol
 
-⚠ *Right now Mifasol is in a beta stage.*
-
 Mifasol is a self-hosted *opinionated* music server.
 
 ![mifasolcli console user interface](docs/mifasolcli-ui-screenshot.png)
@@ -94,7 +92,7 @@ mifasolsrv --help
 mifasolsrv <COMMAND> --help
 ```
 
-for more informations
+for more information
 
 ### Where is my data stored ?
 

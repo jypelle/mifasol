@@ -21,5 +21,5 @@ require (
 	github.com/vbauerster/mpb/v6 v6.0.2
 	gitlab.com/tslocum/cview v1.5.3
 	golang.org/x/text v0.3.5
-	modernc.org/sqlite v1.8.8
+	modernc.org/sqlite v1.11.1
 )

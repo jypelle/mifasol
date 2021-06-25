@@ -192,15 +192,3 @@ func (s *ServerApp) recoverHandler(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	})
 }
-
-func (s *ServerApp) SaveConfig() {
-	logrus.Debugf("Save config file: %s", s.GetCompleteConfigFilename())
-	rawConfig, err := json.MarshalIndent(s.ServerConfig.ServerEditableConfig, "", "\t")
-	if err != nil {
-		logrus.Fatalf("Unable to serialize config file: %v\n", err)
-	}
-	err = ioutil.WriteFile(s.GetCompleteConfigFilename(), rawConfig, 0660)
-	if err != nil {
-		logrus.Fatalf("Unable to save config file: %v\n", err)
-	}
-}
