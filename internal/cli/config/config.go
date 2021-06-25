@@ -2,8 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/jypelle/mifasol/internal"
 	"github.com/jypelle/mifasol/internal/tool"
+	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/text/collate"
 	"io/ioutil"
@@ -46,22 +46,22 @@ func NewClientEditableConfig(draftClientEditableConfig *ClientEditableConfig) *C
 
 	if draftClientEditableConfig == nil {
 		clientEditableConfig = ClientEditableConfig{
-			ServerHostname:   internal.DefaultServerHostname,
-			ServerPort:       internal.DefaultServerPort,
-			ServerSsl:        internal.DefaultServerSsl,
-			ServerSelfSigned: internal.DefaultServerSelfSigned,
-			SortLanguage:     internal.DefaultSortLanguage,
-			BufferLength:     internal.DefaultBufferLength,
-			Username:         internal.DefaultUsername,
-			Password:         internal.DefaultPassword,
-			Timeout:          internal.DefaultTimeout,
+			ServerHostname:   restClientV1.DefaultServerHostname,
+			ServerPort:       restClientV1.DefaultServerPort,
+			ServerSsl:        restClientV1.DefaultServerSsl,
+			ServerSelfSigned: restClientV1.DefaultServerSelfSigned,
+			SortLanguage:     restClientV1.DefaultSortLanguage,
+			BufferLength:     restClientV1.DefaultBufferLength,
+			Username:         restClientV1.DefaultUsername,
+			Password:         restClientV1.DefaultPassword,
+			Timeout:          restClientV1.DefaultTimeout,
 		}
 	} else {
 		clientEditableConfig = *draftClientEditableConfig
 
 		// Check config values
 		if _, ok := tool.LocaleTags[clientEditableConfig.SortLanguage]; !ok {
-			clientEditableConfig.SortLanguage = internal.DefaultSortLanguage
+			clientEditableConfig.SortLanguage = restClientV1.DefaultSortLanguage
 		}
 		if clientEditableConfig.BufferLength <= 10 {
 			clientEditableConfig.BufferLength = 10

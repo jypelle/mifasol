@@ -1,4 +1,4 @@
-package internal
+package restClientV1
 
 const DefaultServerHostname = "localhost"
 const DefaultServerPort = 6620
