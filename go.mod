@@ -2,6 +2,8 @@ module github.com/jypelle/mifasol
 
 go 1.16
 
+replace github.com/faiface/beep => github.com/cswank/beep v0.0.0-20210131195430-fa7ec5ad8941
+
 require (
 	github.com/asdine/storm/v3 v3.2.1
 	github.com/bogem/id3v2 v1.2.1-0.20200829074214-de2d74e8049e
