@@ -12,7 +12,13 @@ import (
 func (s *RestServer) readPlaylists(w http.ResponseWriter, r *http.Request) {
 	s.log.Debugf("Read playlists")
 
-	playlists, err := s.store.ReadPlaylists(nil, &restApiV1.PlaylistFilter{})
+	var playlistFilter restApiV1.PlaylistFilter
+	err := json.NewDecoder(r.Body).Decode(&playlistFilter)
+	if err != nil {
+		s.log.Panicf("Unable to interpret data to read the playlists: %v", err)
+	}
+
+	playlists, err := s.store.ReadPlaylists(nil, &playlistFilter)
 	if err != nil {
 		s.log.Panicf("Unable to read playlists: %v", err)
 	}

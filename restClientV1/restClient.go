@@ -229,6 +229,9 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 func (c *RestClient) doGetRequest(relativeUrl string) (*http.Response, ClientError) {
 	return c.doRequest("GET", relativeUrl, "", nil)
 }
+func (c *RestClient) doGetRequestWithContent(relativeUrl string, contentType string, body io.Reader) (*http.Response, ClientError) {
+	return c.doRequest("GET", relativeUrl, contentType, body)
+}
 func (c *RestClient) doDeleteRequest(relativeUrl string) (*http.Response, ClientError) {
 	return c.doRequest("DELETE", relativeUrl, "", nil)
 }

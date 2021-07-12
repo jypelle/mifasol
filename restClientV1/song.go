@@ -7,6 +7,22 @@ import (
 	"io"
 )
 
+func (c *RestClient) ReadSong(songId restApiV1.SongId) (*restApiV1.Song, ClientError) {
+	var song *restApiV1.Song
+
+	response, cliErr := c.doGetRequest("/songs/" + string(songId))
+	if cliErr != nil {
+		return nil, cliErr
+	}
+	defer response.Body.Close()
+
+	if err := json.NewDecoder(response.Body).Decode(&song); err != nil {
+		return nil, NewClientError(err)
+	}
+
+	return song, nil
+}
+
 func (c *RestClient) ReadSongContent(songId restApiV1.SongId) (io.ReadCloser, int64, ClientError) {
 
 	response, cliErr := c.doGetRequest("/songContents/" + string(songId))
