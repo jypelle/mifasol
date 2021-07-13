@@ -25,6 +25,24 @@ func (c *RestClient) CreateArtist(artistMeta *restApiV1.ArtistMeta) (*restApiV1.
 	return artist, nil
 }
 
+func (c *RestClient) ReadArtists(artistFilter *restApiV1.ArtistFilter) ([]restApiV1.Artist, ClientError) {
+	var artistList []restApiV1.Artist
+
+	encodedArtistFilter, _ := json.Marshal(artistFilter)
+
+	response, cliErr := c.doGetRequestWithContent("/artists", JsonContentType, bytes.NewBuffer(encodedArtistFilter))
+	if cliErr != nil {
+		return nil, cliErr
+	}
+	defer response.Body.Close()
+
+	if err := json.NewDecoder(response.Body).Decode(&artistList); err != nil {
+		return nil, NewClientError(err)
+	}
+
+	return artistList, nil
+}
+
 func (c *RestClient) UpdateArtist(artistId restApiV1.ArtistId, artistMeta *restApiV1.ArtistMeta) (*restApiV1.Artist, ClientError) {
 	var artist *restApiV1.Artist
 

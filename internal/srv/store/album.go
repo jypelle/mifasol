@@ -34,6 +34,13 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 		queryArgs["name"] = *filter.Name
 	}
 
+	orderBy := "a.update_ts ASC"
+	if filter.OrderBy != nil {
+		if *filter.OrderBy == restApiV1.AlbumFilterOrderByName {
+			orderBy = "a.name ASC"
+		}
+	}
+
 	rows, err := txn.NamedQuery(
 		`SELECT
 				a.*
@@ -41,8 +48,7 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND a.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.Name != nil, "AND a.name LIKE :name ", "")+`
-			ORDER BY a.update_ts ASC
-		`,
+			ORDER BY `+orderBy,
 		queryArgs,
 	)
 	if err != nil {

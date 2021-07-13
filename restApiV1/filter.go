@@ -1,22 +1,35 @@
 package restApiV1
 
-type ArtistOrder int64
+type ArtistFilterOrderBy string
+
+const ArtistFilterOrderByName ArtistFilterOrderBy = "name"
 
 type ArtistFilter struct {
-	FromTs *int64
-	Name   *string
-	SongId *SongId
+	FromTs  *int64
+	Name    *string
+	SongId  *SongId
+	OrderBy *ArtistFilterOrderBy
 }
 
+type AlbumFilterOrderBy string
+
+const AlbumFilterOrderByName AlbumFilterOrderBy = "name"
+
 type AlbumFilter struct {
-	FromTs *int64
-	Name   *string
+	FromTs  *int64
+	Name    *string
+	OrderBy *AlbumFilterOrderBy
 }
+
+type PlaylistFilterOrderBy string
+
+const PlaylistFilterOrderByName PlaylistFilterOrderBy = "name"
 
 type PlaylistFilter struct {
 	FromTs         *int64
 	FavoriteUserId *UserId
 	FavoriteFromTs *int64
+	OrderBy        *PlaylistFilterOrderBy
 }
 
 type SongFilter struct {

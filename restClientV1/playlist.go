@@ -25,7 +25,7 @@ func (c *RestClient) CreatePlaylist(playListMeta *restApiV1.PlaylistMeta) (*rest
 
 }
 
-func (c *RestClient) ReadPlaylist(playlistFilter *restApiV1.PlaylistFilter) ([]restApiV1.Playlist, ClientError) {
+func (c *RestClient) ReadPlaylists(playlistFilter *restApiV1.PlaylistFilter) ([]restApiV1.Playlist, ClientError) {
 	var playlistList []restApiV1.Playlist
 
 	encodedPlaylistFilter, _ := json.Marshal(playlistFilter)

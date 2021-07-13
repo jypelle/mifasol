@@ -40,6 +40,12 @@ func (s *Store) ReadPlaylists(externalTrn *sqlx.Tx, filter *restApiV1.PlaylistFi
 	if filter.FavoriteFromTs != nil {
 		queryArgs["favorite_from_ts"] = *filter.FavoriteFromTs
 	}
+	orderBy := "p.update_ts ASC"
+	if filter.OrderBy != nil {
+		if *filter.OrderBy == restApiV1.PlaylistFilterOrderByName {
+			orderBy = "p.name ASC"
+		}
+	}
 
 	rows, err := txn.NamedQuery(
 		`SELECT
@@ -49,8 +55,7 @@ func (s *Store) ReadPlaylists(externalTrn *sqlx.Tx, filter *restApiV1.PlaylistFi
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND p.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.FavoriteUserId != nil && filter.FavoriteFromTs != nil, "AND (fp.update_ts >= :favorite_from_ts OR p.content_update_ts >= :favorite_from_ts) ", "")+`
-			ORDER BY p.update_ts ASC
-		`,
+			ORDER BY `+orderBy,
 		queryArgs,
 	)
 	if err != nil {

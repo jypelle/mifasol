@@ -39,6 +39,13 @@ func (s *Store) ReadArtists(externalTrn *sqlx.Tx, filter *restApiV1.ArtistFilter
 		queryArgs["song_id"] = *filter.SongId
 	}
 
+	orderBy := "a.update_ts ASC"
+	if filter.OrderBy != nil {
+		if *filter.OrderBy == restApiV1.ArtistFilterOrderByName {
+			orderBy = "a.name ASC"
+		}
+	}
+
 	rows, err := txn.NamedQuery(
 		`SELECT
 				a.*
@@ -47,8 +54,7 @@ func (s *Store) ReadArtists(externalTrn *sqlx.Tx, filter *restApiV1.ArtistFilter
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND a.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.Name != nil, "AND a.name LIKE :name ", "")+`
-			ORDER BY a.update_ts ASC
-		`,
+			ORDER BY `+orderBy,
 		queryArgs,
 	)
 	if err != nil {

@@ -24,6 +24,24 @@ func (c *RestClient) CreateAlbum(albumMeta *restApiV1.AlbumMeta) (*restApiV1.Alb
 	return album, nil
 }
 
+func (c *RestClient) ReadAlbums(albumFilter *restApiV1.AlbumFilter) ([]restApiV1.Album, ClientError) {
+	var albumList []restApiV1.Album
+
+	encodedAlbumFilter, _ := json.Marshal(albumFilter)
+
+	response, cliErr := c.doGetRequestWithContent("/albums", JsonContentType, bytes.NewBuffer(encodedAlbumFilter))
+	if cliErr != nil {
+		return nil, cliErr
+	}
+	defer response.Body.Close()
+
+	if err := json.NewDecoder(response.Body).Decode(&albumList); err != nil {
+		return nil, NewClientError(err)
+	}
+
+	return albumList, nil
+}
+
 func (c *RestClient) UpdateAlbum(albumId restApiV1.AlbumId, albumMeta *restApiV1.AlbumMeta) (*restApiV1.Album, ClientError) {
 	var album *restApiV1.Album
 

@@ -12,7 +12,13 @@ import (
 func (s *RestServer) readAlbums(w http.ResponseWriter, r *http.Request) {
 	s.log.Debugf("Read albums")
 
-	albums, err := s.store.ReadAlbums(nil, &restApiV1.AlbumFilter{})
+	var albumFilter restApiV1.AlbumFilter
+	err := json.NewDecoder(r.Body).Decode(&albumFilter)
+	if err != nil {
+		s.log.Panicf("Unable to interpret data to read the albums: %v", err)
+	}
+
+	albums, err := s.store.ReadAlbums(nil, &albumFilter)
 	if err != nil {
 		s.log.Panicf("Unable to read albums: %v", err)
 	}

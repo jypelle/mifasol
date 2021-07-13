@@ -12,7 +12,13 @@ import (
 func (s *RestServer) readArtists(w http.ResponseWriter, r *http.Request) {
 	s.log.Debugf("Read artists")
 
-	artists, err := s.store.ReadArtists(nil, &restApiV1.ArtistFilter{})
+	var artistFilter restApiV1.ArtistFilter
+	err := json.NewDecoder(r.Body).Decode(&artistFilter)
+	if err != nil {
+		s.log.Panicf("Unable to interpret data to read the artists: %v", err)
+	}
+
+	artists, err := s.store.ReadArtists(nil, &artistFilter)
 	if err != nil {
 		s.log.Panicf("Unable to read artists: %v", err)
 	}
