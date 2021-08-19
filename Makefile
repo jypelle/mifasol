@@ -1,4 +1,4 @@
-.PHONY: release runcliui
+.PHONY: release runcliui buildwa
 
 release:
 	echo "Build windows amd64 client"; \
@@ -9,6 +9,8 @@ release:
 	GOOS=linux GOARCH=arm GOARM=7 go build -o internal/srv/webSrv/clients/mifasolcli-linux-arm ./cmd/mifasolcli; \
 #	echo "Build darwin amd64 client"; \
 #	GOOS=darwin GOARCH=amd64 go build -o internal/srv/webSrv/clients/mifasolcli-darwin-amd64 ./cmd/mifasolcli; \
+	echo "Build webassembly client"; \
+	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolwa.wasm ./cmd/mifasolwa; \
 	echo "Build windows amd64 server"; \
 	GOOS=windows GOARCH=amd64 go build -o release/mifasolsrv-windows-amd64.exe ./cmd/mifasolsrv; \
 	echo "Build linux amd64 server"; \
@@ -22,3 +24,6 @@ release:
 
 runcliui:
 	go run ./cmd/mifasolcli ui;
+
+buildwa:
+	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolwa.wasm ./cmd/mifasolwa;
