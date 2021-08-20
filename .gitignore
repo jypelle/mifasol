@@ -19,4 +19,5 @@
 
 # Builds
 /release
-/internal/srv/webSrv/clients
+/internal/srv/webSrv/clients/*
+!/internal/srv/webSrv/clients/embed.go
