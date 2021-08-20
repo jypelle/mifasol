@@ -1,7 +1,8 @@
 package restClientV1
 
 type RestConfig interface {
-	GetCompleteConfigCertFilename() string
+	GetCert() []byte
+	SetCert(cert []byte) error
 	GetServerHostname() string
 	GetServerPort() int64
 	GetServerSsl() bool

@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
+	"github.com/faiface/beep/flac"
+	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/vorbis"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
+	"io"
 	"strconv"
 	"time"
 )
@@ -182,7 +186,23 @@ func (c *PlayerComponent) Play(songId restApiV1.SongId) {
 	bufferedReader := tool.NewBufferedStreamReader(songReader, int(songSize), 8192)
 
 	var err error
-	c.musicStreamer, c.musicFormat, err = song.Format.Decode()(bufferedReader)
+	var decoder func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error)
+
+	switch song.Format {
+	case restApiV1.SongFormatFlac:
+		decoder = func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
+			return flac.Decode(rc)
+		}
+	case restApiV1.SongFormatOgg:
+		decoder = vorbis.Decode
+	case restApiV1.SongFormatMp3:
+		decoder = mp3.Decode
+	default:
+		c.uiApp.WarningMessage("Unknown format: " + song.Format.String())
+		return
+	}
+
+	c.musicStreamer, c.musicFormat, err = decoder(bufferedReader)
 	if err != nil {
 		c.uiApp.WarningMessage("Unable to read content for: " + c.playingSong.Name)
 		return

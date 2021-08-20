@@ -9,7 +9,6 @@ import (
 	"github.com/jypelle/mifasol/internal/version"
 	"github.com/jypelle/mifasol/restApiV1"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -41,11 +40,8 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 		// Define Root CA
 		rootCAPool = x509.NewCertPool()
 
-		existServerCert, err := tool.IsFileExists(clientConfig.GetCompleteConfigCertFilename())
-		if err != nil {
-			return nil, fmt.Errorf("Unable to access %s: %v\n", clientConfig.GetCompleteConfigCertFilename(), err)
-		}
-		if !existServerCert {
+		// Load local server certificate
+		if len(clientConfig.GetCert()) == 0 {
 			// First connection to mifasol server: retrieve & store self-signed server certificate
 			insecureTr := &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
@@ -86,24 +82,19 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 				return nil, fmt.Errorf("Unable to connect to mifasol server: certificate is missing")
 			}
 
-			// Retrieve server certificate
-			cert := response.TLS.PeerCertificates[0]
-
-			// Save server certificate
-			err = tool.CertToFile(clientConfig.GetCompleteConfigCertFilename(), cert.Raw)
+			// Retrieve & save server certificate
+			err = clientConfig.SetCert(tool.CertToMemory(response.TLS.PeerCertificates[0].Raw))
 			if err != nil {
 				return nil, fmt.Errorf("Unable to store mifasol server certificate: %v", err)
 			}
 		}
 
-		// Load local server certificate
-		certPem, err := ioutil.ReadFile(clientConfig.GetCompleteConfigCertFilename())
-		if err != nil {
-			return nil, fmt.Errorf("Reading server certificate failed : %v", err)
+		if len(clientConfig.GetCert()) == 0 {
+			return nil, fmt.Errorf("Reading server certificate failed")
 		}
 
 		// Append server certificate to root CAs
-		rootCAPool.AppendCertsFromPEM(certPem)
+		rootCAPool.AppendCertsFromPEM(clientConfig.GetCert())
 
 	}
 

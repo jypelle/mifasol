@@ -25,5 +25,5 @@ release:
 runcliui:
 	go run ./cmd/mifasolcli ui;
 
-buildwa:
-	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolwa.wasm ./cmd/mifasolwa;
+buildcliwa:
+	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolcliwa.wasm ./cmd/mifasolcliwa;

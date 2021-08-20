@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/text/collate"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -95,8 +96,21 @@ func (c ClientConfig) GetCompleteConfigFilename() string {
 	return filepath.Join(c.ConfigDir, configFilename)
 }
 
-func (c ClientConfig) GetCompleteConfigCertFilename() string {
-	return filepath.Join(c.ConfigDir, configCertFilename)
+func (c ClientConfig) GetCert() []byte {
+	certPem, err := os.ReadFile(filepath.Join(c.ConfigDir, configCertFilename))
+	if err != nil {
+		return nil
+	}
+
+	return certPem
+}
+
+func (c ClientConfig) SetCert(cert []byte) error {
+	err := os.WriteFile(c.GetCompleteConfigFilename(), cert, 0660)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c ClientConfig) GetServerHostname() string {

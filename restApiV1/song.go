@@ -1,13 +1,5 @@
 package restApiV1
 
-import (
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/flac"
-	"github.com/faiface/beep/mp3"
-	"github.com/faiface/beep/vorbis"
-	"io"
-)
-
 // Song
 
 const (
@@ -77,20 +69,6 @@ func (s SongFormat) String() string {
 		return "mp3"
 	}
 	return "data"
-}
-
-func (s SongFormat) Decode() func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
-	switch s {
-	case SongFormatFlac:
-		return func(rc io.ReadCloser) (s beep.StreamSeekCloser, format beep.Format, err error) {
-			return flac.Decode(rc)
-		}
-	case SongFormatOgg:
-		return vorbis.Decode
-	case SongFormatMp3:
-		return mp3.Decode
-	}
-	return nil
 }
 
 type SongId string

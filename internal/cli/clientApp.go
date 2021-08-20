@@ -81,7 +81,7 @@ func (c *ClientApp) Init() {
 			text = strings.Replace(text, "\n", "", -1)
 			text = strings.Replace(text, "\r", "", -1)
 			if text == "y" || text == "Y" {
-				os.Remove(c.config.GetCompleteConfigCertFilename())
+				c.config.SetCert(nil)
 				c.Init()
 				return
 			} else {

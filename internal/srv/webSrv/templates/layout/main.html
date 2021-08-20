@@ -13,7 +13,7 @@
     <script>
         const go = new Go();
         let mod, inst;
-        WebAssembly.instantiateStreaming(fetch("/clients/mifasolwa.wasm"), go.importObject).then((result) => {
+        WebAssembly.instantiateStreaming(fetch("/clients/mifasolcliwa.wasm"), go.importObject).then((result) => {
             go.run(result.instance);
         });
     </script>

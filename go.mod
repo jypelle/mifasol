@@ -17,7 +17,7 @@ require (
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/vbauerster/mpb/v6 v6.0.2
 	gitlab.com/tslocum/cview v1.5.3
 	golang.org/x/text v0.3.5

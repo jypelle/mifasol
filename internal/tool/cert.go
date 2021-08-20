@@ -65,8 +65,15 @@ func GenerateTlsCertificate(
 	if err != nil {
 		return err
 	}
-	err = CertToFile(serverCertFilename, derBytes)
+
+	certOut, err := os.Create(serverCertFilename)
 	if err != nil {
+		return err
+	}
+	if err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return err
+	}
+	if err = certOut.Close(); err != nil {
 		return err
 	}
 
@@ -89,18 +96,8 @@ func keyToFile(filename string, key *ecdsa.PrivateKey) error {
 	return nil
 }
 
-func CertToFile(filename string, derBytes []byte) error {
-	certOut, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	if err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		return err
-	}
-	if err = certOut.Close(); err != nil {
-		return err
-	}
-	return nil
+func CertToMemory(derBytes []byte) []byte {
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 }
 
 /*

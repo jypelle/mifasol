@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 )
 
 func (c *ClientApp) Config(
@@ -60,7 +59,7 @@ func (c *ClientApp) Config(
 	}
 
 	if clearCachedServerCertificate {
-		os.Remove(c.config.GetCompleteConfigCertFilename())
+		c.config.SetCert(nil)
 		fmt.Println("Cached server certificate has been deleted")
 	}
 
