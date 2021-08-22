@@ -25,7 +25,19 @@
     url('../font/Inter-ExtraBold.woff?v=3.12') format('woff');
 }
 
+*, ::before, ::after {
+    box-sizing: border-box;
+}
+
 html {
     font-family: 'Inter', sans-serif;
     font-weight: 500;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
 }

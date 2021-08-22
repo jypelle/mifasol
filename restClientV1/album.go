@@ -29,7 +29,7 @@ func (c *RestClient) ReadAlbums(albumFilter *restApiV1.AlbumFilter) ([]restApiV1
 
 	encodedAlbumFilter, _ := json.Marshal(albumFilter)
 
-	response, cliErr := c.doGetRequestWithContent("/albums", JsonContentType, bytes.NewBuffer(encodedAlbumFilter))
+	response, cliErr := c.doGetRequestWithBody("/albums", JsonContentType, bytes.NewBuffer(encodedAlbumFilter))
 	if cliErr != nil {
 		return nil, cliErr
 	}

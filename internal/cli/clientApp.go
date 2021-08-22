@@ -72,7 +72,7 @@ func (c *ClientApp) Init() {
 
 	// Create rest Client
 	var e error
-	c.restClient, e = restClientV1.NewRestClient(&c.config)
+	c.restClient, e = restClientV1.NewRestClient(&c.config, false)
 	if e != nil {
 		if e == restClientV1.ErrBadCertificate {
 			fmt.Print("Mifasol server certificate has changed.\nDo you accept the new one (to prevent man-in-the-middle attack, you should explicitely accept) ?[y/N]\n")
@@ -89,7 +89,7 @@ func (c *ClientApp) Init() {
 				os.Exit(1)
 			}
 		}
-		logrus.Fatalf("Unable to instanciate mifasol rest client: %v\n", e)
+		logrus.Fatalf("Unable to instantiate mifasol rest client: %v\n", e)
 	}
 }
 

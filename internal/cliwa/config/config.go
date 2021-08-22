@@ -1,25 +1,15 @@
 package config
 
 import (
-	"encoding/json"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restClientV1"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/text/collate"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
-const configFilename = "config.json"
-const configCertFilename = "cert.pem"
-
 type ClientConfig struct {
-	ConfigDir string
-	DebugMode bool
-
 	*ClientEditableConfig
 
+	Cert     []byte
 	collator *collate.Collator
 }
 
@@ -36,7 +26,6 @@ type ClientEditableConfig struct {
 	ServerSsl        bool   `json:"serverSsl"`
 	ServerSelfSigned bool   `json:"serverSelfSigned"`
 	SortLanguage     string `json:"sortLanguage"`
-	BufferLength     int64  `json:"bufferLength"`
 	Username         string `json:"username"`
 	Password         string `json:"password"`
 	Timeout          int64  `json:"timeout"`
@@ -52,7 +41,6 @@ func NewClientEditableConfig(draftClientEditableConfig *ClientEditableConfig) *C
 			ServerSsl:        restClientV1.DefaultServerSsl,
 			ServerSelfSigned: restClientV1.DefaultServerSelfSigned,
 			SortLanguage:     restClientV1.DefaultSortLanguage,
-			BufferLength:     restClientV1.DefaultBufferLength,
 			Username:         restClientV1.DefaultUsername,
 			Password:         restClientV1.DefaultPassword,
 			Timeout:          restClientV1.DefaultTimeout,
@@ -63,11 +51,6 @@ func NewClientEditableConfig(draftClientEditableConfig *ClientEditableConfig) *C
 		// Check config values
 		if _, ok := tool.LocaleTags[clientEditableConfig.SortLanguage]; !ok {
 			clientEditableConfig.SortLanguage = restClientV1.DefaultSortLanguage
-		}
-		if clientEditableConfig.BufferLength <= 10 {
-			clientEditableConfig.BufferLength = 10
-		} else if clientEditableConfig.BufferLength > 5000 {
-			clientEditableConfig.BufferLength = 5000
 		}
 		if clientEditableConfig.Timeout <= 10 {
 			clientEditableConfig.Timeout = 10
@@ -80,36 +63,12 @@ func NewClientEditableConfig(draftClientEditableConfig *ClientEditableConfig) *C
 	return &clientEditableConfig
 }
 
-func (c *ClientConfig) Save() {
-	logrus.Debugf("Save config file: %s", c.GetCompleteConfigFilename())
-	rawConfig, err := json.MarshalIndent(c.ClientEditableConfig, "", "\t")
-	if err != nil {
-		logrus.Fatalf("Unable to serialize config file: %v\n", err)
-	}
-	err = ioutil.WriteFile(c.GetCompleteConfigFilename(), rawConfig, 0660)
-	if err != nil {
-		logrus.Fatalf("Unable to save config file: %v\n", err)
-	}
-}
-
-func (c *ClientConfig) GetCompleteConfigFilename() string {
-	return filepath.Join(c.ConfigDir, configFilename)
-}
-
 func (c *ClientConfig) GetCert() []byte {
-	certPem, err := os.ReadFile(filepath.Join(c.ConfigDir, configCertFilename))
-	if err != nil {
-		return nil
-	}
-
-	return certPem
+	return c.Cert
 }
 
 func (c *ClientConfig) SetCert(cert []byte) error {
-	err := os.WriteFile(c.GetCompleteConfigFilename(), cert, 0660)
-	if err != nil {
-		return err
-	}
+	c.Cert = cert
 	return nil
 }
 

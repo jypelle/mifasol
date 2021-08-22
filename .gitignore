@@ -18,6 +18,7 @@
 /test
 
 # Builds
-/release
+/release/*
+/internal/srv/webSrv/static/js/wasm_exec.js
 /internal/srv/webSrv/clients/*
 !/internal/srv/webSrv/clients/embed.go

@@ -30,7 +30,7 @@ func (c *RestClient) ReadArtists(artistFilter *restApiV1.ArtistFilter) ([]restAp
 
 	encodedArtistFilter, _ := json.Marshal(artistFilter)
 
-	response, cliErr := c.doGetRequestWithContent("/artists", JsonContentType, bytes.NewBuffer(encodedArtistFilter))
+	response, cliErr := c.doGetRequestWithBody("/artists", JsonContentType, bytes.NewBuffer(encodedArtistFilter))
 	if cliErr != nil {
 		return nil, cliErr
 	}

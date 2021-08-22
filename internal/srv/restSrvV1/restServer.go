@@ -31,24 +31,28 @@ func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 	restServer.subRouter.HandleFunc("/token", restServer.generateToken).Methods("POST")
 
 	restServer.subRouter.HandleFunc("/albums", restServer.readAlbums).Methods("GET")
+	restServer.subRouter.HandleFunc("/albums", restServer.readAlbums).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/albums/{id}", restServer.readAlbum).Methods("GET")
 	restServer.subRouter.HandleFunc("/albums", restServer.createAlbum).Methods("POST")
 	restServer.subRouter.HandleFunc("/albums/{id}", restServer.updateAlbum).Methods("PUT")
 	restServer.subRouter.HandleFunc("/albums/{id}", restServer.deleteAlbum).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/artists", restServer.readArtists).Methods("GET")
+	restServer.subRouter.HandleFunc("/artists", restServer.readArtists).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/artists/{id}", restServer.readArtist).Methods("GET")
 	restServer.subRouter.HandleFunc("/artists", restServer.createArtist).Methods("POST")
 	restServer.subRouter.HandleFunc("/artists/{id}", restServer.updateArtist).Methods("PUT")
 	restServer.subRouter.HandleFunc("/artists/{id}", restServer.deleteArtist).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/playlists", restServer.readPlaylists).Methods("GET")
+	restServer.subRouter.HandleFunc("/playlists", restServer.readPlaylists).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/playlists/{id}", restServer.readPlaylist).Methods("GET")
 	restServer.subRouter.HandleFunc("/playlists", restServer.createPlaylist).Methods("POST")
 	restServer.subRouter.HandleFunc("/playlists/{id}", restServer.updatePlaylist).Methods("PUT")
 	restServer.subRouter.HandleFunc("/playlists/{id}", restServer.deletePlaylist).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/songs", restServer.readSongs).Methods("GET")
+	restServer.subRouter.HandleFunc("/songs", restServer.readSongs).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/songs/{id}", restServer.readSong).Methods("GET")
 	restServer.subRouter.HandleFunc("/songContents/{id}", restServer.readSongContent).Methods("GET")
 	restServer.subRouter.HandleFunc("/songContents", restServer.createSongContent).Methods("POST")
@@ -58,16 +62,19 @@ func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 	restServer.subRouter.HandleFunc("/songs/{id}", restServer.deleteSong).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/users", restServer.readUsers).Methods("GET")
+	restServer.subRouter.HandleFunc("/users", restServer.readUsers).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/users/{id}", restServer.readUser).Methods("GET")
 	restServer.subRouter.HandleFunc("/users", restServer.createUser).Methods("POST")
 	restServer.subRouter.HandleFunc("/users/{id}", restServer.updateUser).Methods("PUT")
 	restServer.subRouter.HandleFunc("/users/{id}", restServer.deleteUser).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/favoritePlaylists", restServer.readFavoritePlaylists).Methods("GET")
+	restServer.subRouter.HandleFunc("/favoritePlaylists", restServer.readFavoritePlaylists).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/favoritePlaylists", restServer.createFavoritePlaylist).Methods("POST")
 	restServer.subRouter.HandleFunc("/favoritePlaylists/{userId}/{playlistId}", restServer.deleteFavoritePlaylist).Methods("DELETE")
 
 	restServer.subRouter.HandleFunc("/favoriteSongs", restServer.readFavoriteSongs).Methods("GET")
+	restServer.subRouter.HandleFunc("/favoriteSongs", restServer.readFavoriteSongs).Methods("POST").Headers("x-http-method-override", "GET")
 	restServer.subRouter.HandleFunc("/favoriteSongs", restServer.createFavoriteSong).Methods("POST")
 	restServer.subRouter.HandleFunc("/favoriteSongs/{userId}/{songId}", restServer.deleteFavoriteSong).Methods("DELETE")
 

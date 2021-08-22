@@ -25,17 +25,18 @@ var (
 )
 
 type RestClient struct {
-	ClientConfig RestConfig
-	httpClient   *http.Client
-	token        *restApiV1.Token
+	ClientConfig       RestConfig
+	httpClient         *http.Client
+	token              *restApiV1.Token
+	webassemblyEnabled bool
 }
 
-func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
+func NewRestClient(clientConfig RestConfig, webassemblyEnabled bool) (*RestClient, error) {
 
 	var rootCAPool *x509.CertPool = nil
 
 	// Load self-signed server certificate
-	if clientConfig.GetServerSsl() && clientConfig.GetServerSelfSigned() {
+	if clientConfig.GetServerSsl() && clientConfig.GetServerSelfSigned() && !webassemblyEnabled {
 
 		// Define Root CA
 		rootCAPool = x509.NewCertPool()
@@ -78,7 +79,7 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 			}
 			defer response.Body.Close()
 
-			if len(response.TLS.PeerCertificates) == 0 {
+			if response.TLS == nil || len(response.TLS.PeerCertificates) == 0 {
 				return nil, fmt.Errorf("Unable to connect to mifasol server: certificate is missing")
 			}
 
@@ -123,6 +124,7 @@ func NewRestClient(clientConfig RestConfig) (*RestClient, error) {
 			Transport: tr,
 			Timeout:   time.Second * time.Duration(clientConfig.GetTimeout()),
 		},
+		webassemblyEnabled: webassemblyEnabled,
 	}
 
 	// Check secure connection
@@ -179,9 +181,19 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 	}
 
 	// Prepare the request
-	req, err := http.NewRequest(method, c.getServerApiUrl()+relativeUrl, body)
-	if err != nil {
-		return nil, NewClientError(err)
+	var req *http.Request
+	var err error
+	if method == "GET" && body != nil && c.webassemblyEnabled {
+		req, err = http.NewRequest("POST", c.getServerApiUrl()+relativeUrl, body)
+		if err != nil {
+			return nil, NewClientError(err)
+		}
+		req.Header.Add("x-http-method-override", "GET")
+	} else {
+		req, err = http.NewRequest(method, c.getServerApiUrl()+relativeUrl, body)
+		if err != nil {
+			return nil, NewClientError(err)
+		}
 	}
 
 	// Embed the token in the request
@@ -220,7 +232,7 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 func (c *RestClient) doGetRequest(relativeUrl string) (*http.Response, ClientError) {
 	return c.doRequest("GET", relativeUrl, "", nil)
 }
-func (c *RestClient) doGetRequestWithContent(relativeUrl string, contentType string, body io.Reader) (*http.Response, ClientError) {
+func (c *RestClient) doGetRequestWithBody(relativeUrl string, contentType string, body io.Reader) (*http.Response, ClientError) {
 	return c.doRequest("GET", relativeUrl, contentType, body)
 }
 func (c *RestClient) doDeleteRequest(relativeUrl string) (*http.Response, ClientError) {

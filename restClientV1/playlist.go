@@ -30,7 +30,7 @@ func (c *RestClient) ReadPlaylists(playlistFilter *restApiV1.PlaylistFilter) ([]
 
 	encodedPlaylistFilter, _ := json.Marshal(playlistFilter)
 
-	response, cliErr := c.doGetRequestWithContent("/playlists", JsonContentType, bytes.NewBuffer(encodedPlaylistFilter))
+	response, cliErr := c.doGetRequestWithBody("/playlists", JsonContentType, bytes.NewBuffer(encodedPlaylistFilter))
 	if cliErr != nil {
 		return nil, cliErr
 	}

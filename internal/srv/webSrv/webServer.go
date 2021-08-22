@@ -5,10 +5,10 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/config"
 	"github.com/jypelle/mifasol/internal/srv/store"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/clients"
-	"github.com/jypelle/mifasol/internal/srv/webSrv/controller/home"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/static"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/templates"
 	"github.com/sirupsen/logrus"
+	"github.com/vearutop/statigz"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -41,19 +41,11 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 	//	if serverConfig.EmbeddedFs {
 	webServer.StaticFs = static.Fs
 	webServer.TemplatesFs = templates.Fs
-	webServer.ClientsFs = clients.Fs
+	//webServer.ClientsFs = clients.Fs
 	//	} else {
 	//		webServer.StaticFs = os.DirFS("internal/srv/webSrv/static")
 	//		webServer.TemplatesFs = os.DirFS("internal/srv/webSrv/templates")
 	//	}
-
-	// Helpers & Components
-	webServer.templateHelpers = template.FuncMap{
-		"urlPath":      webServer.UrlPathHelper,
-		"urlPathQuery": webServer.UrlPathQueryHelper,
-		"queryParam":   webServer.QueryParamHelper,
-		"partial":      webServer.PartialHelper,
-	}
 
 	// Set routes
 
@@ -69,7 +61,7 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 
 	// Clients binary executables files
 	//
-	clientsFileHandler := http.StripPrefix("/clients", http.FileServer(http.FS(webServer.ClientsFs)))
+	clientsFileHandler := http.StripPrefix("/clients", statigz.FileServer(clients.Fs))
 	webServer.router.PathPrefix("/clients").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Expires", "")
 		w.Header().Set("Cache-Control", "public, max-age=2592000") // 30 days
@@ -77,9 +69,8 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 		clientsFileHandler.ServeHTTP(w, r)
 	})
 
-	// Home
-	homeController := home.NewController(webServer)
-	webServer.router.HandleFunc("/", homeController.IndexAction).Methods("GET").Name("home")
+	// Start page
+	webServer.router.HandleFunc("/", webServer.IndexAction).Methods("GET").Name("start")
 
 	return webServer
 }
@@ -90,4 +81,17 @@ func (s *WebServer) Log() *logrus.Entry {
 
 func (d *WebServer) Config() *config.ServerConfig {
 	return d.serverConfig
+}
+
+type IndexView struct {
+	Title string
+}
+
+func (d *WebServer) IndexAction(w http.ResponseWriter, r *http.Request) {
+
+	view := &IndexView{
+		Title: "Mifasol",
+	}
+
+	d.HtmlWriterRender(w, view, "main.html")
 }
