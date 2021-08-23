@@ -71,6 +71,13 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 		queryArgs["favorite_from_ts"] = filter.Favorite.FromTs
 	}
 
+	orderBy := "s.song_id ASC"
+	if filter.OrderBy != nil {
+		if *filter.OrderBy == restApiV1.SongFilterOrderByName {
+			orderBy = "s.name ASC"
+		}
+	}
+
 	rows, err := txn.NamedQuery(
 		`SELECT
 				s.song_id,
@@ -110,8 +117,7 @@ func (s *Store) ReadSongs(externalTrn *sqlx.Tx, filter *restApiV1.SongFilter) ([
 				s.album_id,
 				s.track_number,
 				s.explicit_fg
-			ORDER BY s.song_id ASC
-		`,
+			ORDER BY `+orderBy,
 		queryArgs,
 	)
 	if err != nil {

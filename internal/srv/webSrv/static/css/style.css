@@ -40,4 +40,6 @@ body {
     height: 100%;
     display: flex;
     flex-flow: column nowrap;
+    color: #eee;
+    background-color: #111;
 }

@@ -20,10 +20,8 @@ func (c *App) RetrieveServerCredentials() {
 
 func (c *App) ShowPrehomepage() {
 	body := c.doc.Get("body")
-	body.Set("innerHTML", `<header style="margin: 2rem;">
-		<h1 style="margin:0;">Mifasol</h1>
-	</header>
-	<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1; overflow-y: auto;">
+	body.Set("innerHTML", `<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1; overflow-y: auto;">
+		<h1 style="margin:0;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
 		<div style="display: flex; flex-flow: row wrap; margin: 2rem; ">
 			<div style="margin: 2rem;">
 				<h2>Connect to web client (alpha!)</h2>
@@ -31,13 +29,13 @@ func (c *App) ShowPrehomepage() {
 						<div>
 							<label for="mifasolUsername">Username</label>
 							<div>
-								<input id="mifasolUsername" type="text" value="">
+								<input id="mifasolUsername" type="text">
 							</div>
 						</div>
 						<div>
 							<label for="mifasolPassword">Password</label>
 							<div>
-								<input id="mifasolPassword" type="password" value="">
+								<input id="mifasolPassword" type="password">
 							</div>
 						</div>
 						<div>
@@ -69,6 +67,9 @@ func (c *App) ShowPrehomepage() {
 		</div>
 
 	</main>`)
+
+	// Set focus
+	c.doc.Call("getElementById", "mifasolUsername").Call("focus")
 
 	// Set callback
 	js.Global().Set("logIn", js.FuncOf(c.logIn))
@@ -104,25 +105,35 @@ func (c *App) logIn(this js.Value, i []js.Value) interface{} {
 
 func (c *App) ShowHomepage() {
 	body := c.doc.Get("body")
-	body.Set("innerHTML", `<header style="margin: 2rem;">
-		<h1 style="margin:0;">Mifasol</h1>
+	body.Set("innerHTML", `<header style="margin: 1rem;">
+		<h1 style="margin:0;"><img src="/static/image/logo32.png" style="vertical-align:middle;"> Mifasol</h1>
 	</header>
-	<main style="display: flex; flex-flow: column nowrap; margin: 2rem; min-height: 0; flex: 1 1 auto; ">
-		<p id="message">...</p>
-		<div id="artistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
-		<div>
-			<button type="button" onclick="logOut()">Disconnect</button>
+	<main style="display: flex; flex-flow: column nowrap; margin: 0 2rem 2rem 2rem; flex: 1 1 auto; min-height: 0;">
+		<div style="display: flex; flex-flow: column wrap; flex: 1 1 auto; min-height: 0;">
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+				<h2 style="margin:0 0 1rem 0;">Artists</h2>
+				<div id="artistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+			</div>
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+				<h2 style="margin:0 0 1rem 0;">Albums</h2>
+				<div id="albumList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+			</div>
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+				<h2 style="margin:0 0 1rem 0;">Songs</h2>
+				<div id="songList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+			</div>
 		</div>
 	</main>
-	<footer>
-		Playing...
+	<footer style="margin: 1rem;">
+		<button type="button" onclick="logOut()">Disconnect</button> <p id="message">...</p>
 	</footer>`)
 
 	// Set callback
 	js.Global().Set("logOut", js.FuncOf(c.logOut))
 
 	go func() {
-		artistList, err := c.restClient.ReadArtists(&restApiV1.ArtistFilter{})
+		orderBy := restApiV1.ArtistFilterOrderByName
+		artistList, err := c.restClient.ReadArtists(&restApiV1.ArtistFilter{OrderBy: &orderBy})
 		if err != nil {
 			logrus.Fatalf("Unable to retrieve artistlist: %v", err)
 		}
@@ -134,8 +145,38 @@ func (c *App) ShowHomepage() {
 			artistListDiv.Call("appendChild", artistElmt)
 		}
 
-		message := c.doc.Call("getElementById", "message")
-		message.Set("innerHTML", "Artists loaded")
+		//message := c.doc.Call("getElementById", "message")
+		//message.Set("innerHTML", "Artists loaded")
+	}()
+
+	go func() {
+		orderBy := restApiV1.AlbumFilterOrderByName
+		albumList, err := c.restClient.ReadAlbums(&restApiV1.AlbumFilter{OrderBy: &orderBy})
+		if err != nil {
+			logrus.Fatalf("Unable to retrieve albumList: %v", err)
+		}
+		albumListDiv := c.doc.Call("getElementById", "albumList")
+
+		for _, album := range albumList {
+			albumElmt := c.doc.Call("createElement", "p")
+			albumElmt.Set("innerHTML", album.Name)
+			albumListDiv.Call("appendChild", albumElmt)
+		}
+	}()
+
+	go func() {
+		orderBy := restApiV1.SongFilterOrderByName
+		songList, err := c.restClient.ReadSongs(&restApiV1.SongFilter{OrderBy: &orderBy})
+		if err != nil {
+			logrus.Fatalf("Unable to retrieve songList: %v", err)
+		}
+		songListDiv := c.doc.Call("getElementById", "songList")
+
+		for _, song := range songList {
+			songElmt := c.doc.Call("createElement", "p")
+			songElmt.Set("innerHTML", song.Name)
+			songListDiv.Call("appendChild", songElmt)
+		}
 	}()
 
 }

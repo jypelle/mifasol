@@ -32,11 +32,16 @@ type PlaylistFilter struct {
 	OrderBy        *PlaylistFilterOrderBy
 }
 
+type SongFilterOrderBy string
+
+const SongFilterOrderByName SongFilterOrderBy = "name"
+
 type SongFilter struct {
 	FromTs   *int64
 	AlbumId  *AlbumId
 	ArtistId *ArtistId
 	Favorite *SongFilterFavorite
+	OrderBy  *SongFilterOrderBy
 }
 
 type SongFilterFavorite struct {

@@ -7,6 +7,24 @@ import (
 	"io"
 )
 
+func (c *RestClient) ReadSongs(songFilter *restApiV1.SongFilter) ([]restApiV1.Song, ClientError) {
+	var songList []restApiV1.Song
+
+	encodedSongFilter, _ := json.Marshal(songFilter)
+
+	response, cliErr := c.doGetRequestWithBody("/songs", JsonContentType, bytes.NewBuffer(encodedSongFilter))
+	if cliErr != nil {
+		return nil, cliErr
+	}
+	defer response.Body.Close()
+
+	if err := json.NewDecoder(response.Body).Decode(&songList); err != nil {
+		return nil, NewClientError(err)
+	}
+
+	return songList, nil
+}
+
 func (c *RestClient) ReadSong(songId restApiV1.SongId) (*restApiV1.Song, ClientError) {
 	var song *restApiV1.Song
 
