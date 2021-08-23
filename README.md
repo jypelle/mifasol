@@ -1,6 +1,6 @@
-# ![logo](docs/logo64.png) Mifasol
+# Mifasol
 
-Mifasol is a self-hosted *opinionated* music server.
+![logo](docs/logo64.png) Mifasol is a self-hosted *opinionated* music server.
 
 ![mifasolcli console user interface](docs/mifasolcli-ui-screenshot.png)
 
