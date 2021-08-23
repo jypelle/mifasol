@@ -1,4 +1,4 @@
-# 💿 Mifasol
+# ![logo](docs/logo64.png) Mifasol
 
 Mifasol is a self-hosted *opinionated* music server.
 
