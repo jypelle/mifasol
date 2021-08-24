@@ -1,7 +1,7 @@
 package cliwa
 
 import (
-	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 	"net/url"
@@ -16,13 +16,14 @@ func (c *App) RetrieveServerCredentials() {
 	c.config.ServerHostname = baseUrl.Hostname()
 	c.config.ServerPort, _ = strconv.ParseInt(baseUrl.Port(), 10, 64)
 	c.config.ServerSsl = baseUrl.Scheme == "https"
+
 }
 
 func (c *App) ShowPrehomepage() {
 	body := c.doc.Get("body")
-	body.Set("innerHTML", `<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1; overflow-y: auto;">
-		<h1 style="margin:0;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
-		<div style="display: flex; flex-flow: row wrap; margin: 2rem; ">
+	body.Set("innerHTML", `<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1;">
+		<h1 style="margin:0; margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
+		<div style="display: flex; flex-flow: row wrap;">
 			<div style="margin: 2rem;">
 				<h2>Connect to web client (alpha!)</h2>
 				<form onsubmit="return logIn()">
@@ -97,6 +98,8 @@ func (c *App) logIn(this js.Value, i []js.Value) interface{} {
 			return
 		}
 
+		c.localDb = localdb.NewLocalDb(c.restClient, c.config.Collator())
+
 		c.ShowHomepage()
 	}()
 
@@ -105,78 +108,71 @@ func (c *App) logIn(this js.Value, i []js.Value) interface{} {
 
 func (c *App) ShowHomepage() {
 	body := c.doc.Get("body")
-	body.Set("innerHTML", `<header style="margin: 1rem;">
-		<h1 style="margin:0;"><img src="/static/image/logo32.png" style="vertical-align:middle;"> Mifasol</h1>
+	body.Set("innerHTML", `<header style="display: flex; flex-flow: row wrap; justify-content: space-between;">
+		<h1 style="margin: 1rem;"><img src="/static/image/logo32.png" style="vertical-align:middle;"> Mifasol</h1>
+		<button style="margin: 1rem;" type="button" onclick="logOut()">Log out</button>
 	</header>
-	<main style="display: flex; flex-flow: column nowrap; margin: 0 2rem 2rem 2rem; flex: 1 1 auto; min-height: 0;">
-		<div style="display: flex; flex-flow: column wrap; flex: 1 1 auto; min-height: 0;">
-			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+	<main style="display: flex; flex-flow: column nowrap; margin: 0 2rem 0 2rem; flex: 1 1 auto; min-height: 0;">
+		<div style="display: flex; flex-flow: column wrap; flex: 1 1 auto; min-height: 0; margin: -2rem 0 0 -2rem;">
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
 				<h2 style="margin:0 0 1rem 0;">Artists</h2>
 				<div id="artistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
 			</div>
-			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
 				<h2 style="margin:0 0 1rem 0;">Albums</h2>
 				<div id="albumList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
 			</div>
-			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0;">
+			<div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
 				<h2 style="margin:0 0 1rem 0;">Songs</h2>
 				<div id="songList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
 			</div>
 		</div>
 	</main>
-	<footer style="margin: 1rem;">
-		<button type="button" onclick="logOut()">Disconnect</button> <p id="message">...</p>
+	<footer style="display: flex; flex-flow: row wrap;">
+		<p style="margin: 1rem;" id="message">...</p>
 	</footer>`)
 
 	// Set callback
 	js.Global().Set("logOut", js.FuncOf(c.logOut))
 
 	go func() {
-		orderBy := restApiV1.ArtistFilterOrderByName
-		artistList, err := c.restClient.ReadArtists(&restApiV1.ArtistFilter{OrderBy: &orderBy})
+		err := c.localDb.Refresh()
 		if err != nil {
-			logrus.Fatalf("Unable to retrieve artistlist: %v", err)
+			logrus.Fatalf("Unable to refresh local db: %v", err)
 		}
+
 		artistListDiv := c.doc.Call("getElementById", "artistList")
 
-		for _, artist := range artistList {
-			artistElmt := c.doc.Call("createElement", "p")
-			artistElmt.Set("innerHTML", artist.Name)
-			artistListDiv.Call("appendChild", artistElmt)
+		for _, artist := range c.localDb.OrderedArtists {
+			if artist != nil {
+				artistElmt := c.doc.Call("createElement", "p")
+				artistElmt.Set("innerHTML", artist.Name)
+				artistListDiv.Call("appendChild", artistElmt)
+			}
+		}
+
+		albumListDiv := c.doc.Call("getElementById", "albumList")
+
+		for _, album := range c.localDb.OrderedAlbums {
+			if album != nil {
+				albumElmt := c.doc.Call("createElement", "p")
+				albumElmt.Set("innerHTML", album.Name)
+				albumListDiv.Call("appendChild", albumElmt)
+			}
+		}
+
+		songListDiv := c.doc.Call("getElementById", "songList")
+
+		for _, song := range c.localDb.OrderedSongs {
+			if song != nil {
+				songElmt := c.doc.Call("createElement", "p")
+				songElmt.Set("innerHTML", song.Name)
+				songListDiv.Call("appendChild", songElmt)
+			}
 		}
 
 		//message := c.doc.Call("getElementById", "message")
 		//message.Set("innerHTML", "Artists loaded")
-	}()
-
-	go func() {
-		orderBy := restApiV1.AlbumFilterOrderByName
-		albumList, err := c.restClient.ReadAlbums(&restApiV1.AlbumFilter{OrderBy: &orderBy})
-		if err != nil {
-			logrus.Fatalf("Unable to retrieve albumList: %v", err)
-		}
-		albumListDiv := c.doc.Call("getElementById", "albumList")
-
-		for _, album := range albumList {
-			albumElmt := c.doc.Call("createElement", "p")
-			albumElmt.Set("innerHTML", album.Name)
-			albumListDiv.Call("appendChild", albumElmt)
-		}
-	}()
-
-	go func() {
-		orderBy := restApiV1.SongFilterOrderByName
-		songList, err := c.restClient.ReadSongs(&restApiV1.SongFilter{OrderBy: &orderBy})
-		if err != nil {
-			logrus.Fatalf("Unable to retrieve songList: %v", err)
-		}
-		songListDiv := c.doc.Call("getElementById", "songList")
-
-		for _, song := range songList {
-			songElmt := c.doc.Call("createElement", "p")
-			songElmt.Set("innerHTML", song.Name)
-			songListDiv.Call("appendChild", songElmt)
-		}
 	}()
 
 }

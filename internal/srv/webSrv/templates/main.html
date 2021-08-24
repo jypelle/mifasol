@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>{{.Title}}</title>
 
     <link rel="stylesheet" href="/static/css/normalize.css"/>
@@ -14,15 +14,24 @@
     <script src="/static/js/wasm_exec.js"></script>
     <script>
         const go = new Go();
-        let mod, inst;
         WebAssembly.instantiateStreaming(fetch("/clients/mifasolcliwa.wasm"), go.importObject).then((result) => {
             go.run(result.instance);
         });
     </script>
 </head>
 <body>
-<main style="flex-grow: 1; height: 100%;">
-    Loading...
+<main style="flex: 1 1 auto; min-height: 0; display: flex; flex-flow: column nowrap; justify-content: center; align-items:center;">
+    <div style="flex: 1 1 auto; overflow-y: auto;"></div>
+    <div style="margin: 2rem; text-align: center;">
+        Loading<br>
+        <div class="lds-ellipsis">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <div style="flex: 1 1 auto; overflow-y: auto;"></div>
 </main>
 </body>
 </html>
