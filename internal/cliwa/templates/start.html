@@ -1,0 +1,46 @@
+<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1;">
+    <h1 style="margin:0; margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
+    <div style="display: flex; flex-flow: row wrap;">
+        <div style="margin: 2rem;">
+            <h2>Connect to web client (alpha!)</h2>
+            <form onsubmit="return logInAction()">
+                <div>
+                    <label for="mifasolUsername">Username</label>
+                    <div>
+                        <input id="mifasolUsername" type="text">
+                    </div>
+                </div>
+                <div>
+                    <label for="mifasolPassword">Password</label>
+                    <div>
+                        <input id="mifasolPassword" type="password">
+                    </div>
+                </div>
+                <div>
+                    <label></label>
+                    <div>
+                        <label for="rememberMe">
+                            <input id="rememberMe" value="true" type="checkbox" checked>
+                            Remember me
+                        </label>
+                    </div>
+                </div>
+                <p id="message"></p>
+                <div>
+                    <label></label>
+                    <div>
+                        <button type="submit">Log in</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div style="margin: 2rem;">
+            <h2>Download console client</h2>
+            <ul>
+                <li><a href="/clients/mifasolcli-windows-amd64.exe">Windows (amd64)</a></li>
+                <li><a href="/clients/mifasolcli-linux-amd64">Linux (amd64)</a></li>
+                <li><a href="/clients/mifasolcli-linux-arm">Linux (arm)</a></li>
+            </ul>
+        </div>
+    </div>
+</main>

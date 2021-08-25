@@ -1,0 +1,26 @@
+<header style="display: flex; flex-flow: row wrap; justify-content: space-between;">
+    <h1 style="margin: 1rem;"><img src="/static/image/logo32.png" style="vertical-align:middle;"> Mifasol</h1>
+    <div>
+        <button style="margin: 1rem;" type="button" onclick="refreshAction()">Refresh</button>
+        <button style="margin: 1rem;" type="button" onclick="logOutAction()">Log out</button>
+    </div>
+</header>
+<main style="display: flex; flex-flow: column nowrap; margin: 0 2rem 0 2rem; flex: 1 1 auto; min-height: 0;">
+    <div style="display: flex; flex-flow: column wrap; flex: 1 1 auto; min-height: 0; margin: -2rem 0 0 -2rem;">
+        <div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
+            <h2 style="margin:0 0 1rem 0;">Artists</h2>
+            <div id="artistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+        </div>
+        <div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
+            <h2 style="margin:0 0 1rem 0;">Albums</h2>
+            <div id="albumList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+        </div>
+        <div style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; min-height: 0; margin: 2rem 0 0 2rem;">
+            <h2 style="margin:0 0 1rem 0;">Songs</h2>
+            <div id="songList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+        </div>
+    </div>
+</main>
+<footer style="display: flex; flex-flow: row wrap;">
+    <p style="margin: 1rem;" id="message">...</p>
+</footer>
