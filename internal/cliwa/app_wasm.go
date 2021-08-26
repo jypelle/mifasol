@@ -8,7 +8,6 @@ import (
 	"github.com/jypelle/mifasol/internal/version"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
-	"html"
 	"html/template"
 	"strconv"
 	"syscall/js"
@@ -79,43 +78,13 @@ func (c *App) Refresh() {
 	if c.localDb == nil {
 		return
 	}
-
+	c.Message("Refreshing local database...")
 	err := c.localDb.Refresh()
 	if err != nil {
 		c.Message("Unable to refresh local database")
 	} else {
 		c.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
 	}
-
-	artistListDiv := c.doc.Call("getElementById", "artistList")
-
-	var artistListDivContent string
-	for _, artist := range c.localDb.OrderedArtists {
-		if artist != nil {
-			artistListDivContent += "<p>" + html.EscapeString(artist.Name) + "</p>"
-		}
-	}
-	artistListDiv.Set("innerHTML", artistListDivContent)
-
-	albumListDiv := c.doc.Call("getElementById", "albumList")
-
-	var albumListDivContent string
-	for _, album := range c.localDb.OrderedAlbums {
-		if album != nil {
-			albumListDivContent += "<p>" + html.EscapeString(album.Name) + "</p>"
-		}
-	}
-	albumListDiv.Set("innerHTML", albumListDivContent)
-
-	songListDiv := c.doc.Call("getElementById", "songList")
-
-	var songListDivContent string
-	for _, song := range c.localDb.OrderedSongs {
-		if song != nil {
-			songListDivContent += "<p>" + html.EscapeString(song.Name) + "</p>"
-		}
-	}
-	songListDiv.Set("innerHTML", songListDivContent)
 }
 
 func (c *App) Message(msg string) {

@@ -37,6 +37,26 @@ func (c *App) logInAction(this js.Value, i []js.Value) interface{} {
 	return false
 }
 
+func (c *App) showLibraryArtistsAction(this js.Value, i []js.Value) interface{} {
+	c.showLibraryArtistsComponent()
+	return nil
+}
+
+func (c *App) showLibraryAlbumsAction(this js.Value, i []js.Value) interface{} {
+	c.showLibraryAlbumsComponent()
+	return nil
+}
+
+func (c *App) showLibrarySongsAction(this js.Value, i []js.Value) interface{} {
+	c.showLibrarySongsComponent()
+	return nil
+}
+
+func (c *App) showLibraryPlaylistsAction(this js.Value, i []js.Value) interface{} {
+	c.showLibraryPlaylistsComponent()
+	return nil
+}
+
 func (c *App) logOutAction(this js.Value, i []js.Value) interface{} {
 	c.showStartComponent()
 
