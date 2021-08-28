@@ -39,10 +39,10 @@ This software doesn’t try to satisfy the needs of everyone.
 
 - The number of features is voluntarily limited to facilitate its maintenance.
 - Only **flac** and **mp3** formats are supported (**ogg** may come later).
-- When you import some music on mifasol server, **song filenames are ignored**, only tags are used to link your song to an artist, an album or to known the song name.
+- When you import some music on mifasol server, **song filenames are ignored**, only tags are used to link your song to an artist, an album or to know the song name.
 - Once your music is imported, **song tags are partially managed by mifasol server** and are used to generate song filename on mifasol clients.
 - **Only one-way sync is supported**:  song files and playlists are copied from mifasol server to mifasol clients.
-- Even though mifasol client is able to play music, his development is more focused on music library management and its synchonization than on music streaming.
+- Even though mifasol client is able to play music, his development is more focused on music library management and its synchronization than on music streaming.
 
 ## Mifasol server
 
@@ -214,6 +214,7 @@ mifasolcli ui
 Press `h` to display available shortcuts to navigate through the interface.
 
 ##### Tips:
+
 - **After a fresh server installation, use the console user interface to change the default username/password**.
 - Windows users should use new *Windows Terminal* to correctly display unicode emojis.  
 
