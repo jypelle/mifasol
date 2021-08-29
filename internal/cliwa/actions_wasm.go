@@ -2,6 +2,7 @@ package cliwa
 
 import (
 	"github.com/jypelle/mifasol/internal/localdb"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 	"syscall/js"
@@ -48,7 +49,7 @@ func (c *App) showLibraryAlbumsAction(this js.Value, i []js.Value) interface{} {
 }
 
 func (c *App) showLibrarySongsAction(this js.Value, i []js.Value) interface{} {
-	c.showLibrarySongsComponent()
+	c.showLibrarySongsComponent(nil, nil, nil)
 	return nil
 }
 
@@ -66,5 +67,38 @@ func (c *App) logOutAction(this js.Value, i []js.Value) interface{} {
 func (c *App) refreshAction(this js.Value, i []js.Value) interface{} {
 	go c.Refresh()
 
+	return nil
+}
+
+func (c *App) playSongAction(this js.Value, i []js.Value) interface{} {
+	songId := i[0].String()
+	token, cliErr := c.restClient.GetToken()
+
+	if cliErr != nil {
+		return nil
+	}
+
+	musicPlayer := c.doc.Call("getElementById", "musicPlayer")
+	musicPlayer.Set("src", "/api/v1/songContents/"+songId+"?bearer="+token.AccessToken)
+	musicPlayer.Call("play")
+
+	return nil
+}
+
+func (c *App) openAlbumAction(this js.Value, i []js.Value) interface{} {
+	albumId := restApiV1.AlbumId(i[0].String())
+	c.showLibrarySongsComponent(nil, &albumId, nil)
+	return nil
+}
+
+func (c *App) openArtistAction(this js.Value, i []js.Value) interface{} {
+	artistId := restApiV1.ArtistId(i[0].String())
+	c.showLibrarySongsComponent(&artistId, nil, nil)
+	return nil
+}
+
+func (c *App) openPlaylistAction(this js.Value, i []js.Value) interface{} {
+	playlistId := restApiV1.PlaylistId(i[0].String())
+	c.showLibrarySongsComponent(nil, nil, &playlistId)
 	return nil
 }

@@ -3,6 +3,7 @@ package restClientV1
 import (
 	"encoding/json"
 	"github.com/jypelle/mifasol/internal/version"
+	"github.com/jypelle/mifasol/restApiV1"
 	"net/http"
 )
 
@@ -40,4 +41,13 @@ func (c *RestClient) refreshToken() ClientError {
 
 	return nil
 
+}
+
+func (c *RestClient) GetToken() (*restApiV1.Token, ClientError) {
+	var cliErr ClientError
+	if c.token == nil {
+		cliErr = c.refreshToken()
+	}
+
+	return c.token, cliErr
 }

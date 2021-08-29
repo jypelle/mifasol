@@ -173,11 +173,9 @@ func (c *RestClient) getServerApiUrl() string {
 func (c *RestClient) doRequest(method, relativeUrl string, contentType string, body io.Reader) (*http.Response, ClientError) {
 
 	// Dear mifasolsrv, could you gimme a token ?
-	if c.token == nil {
-		cliErr := c.refreshToken()
-		if cliErr != nil {
-			return nil, cliErr
-		}
+	_, cliErr := c.GetToken()
+	if cliErr != nil {
+		return nil, cliErr
 	}
 
 	// Prepare the request
@@ -213,7 +211,7 @@ func (c *RestClient) doRequest(method, relativeUrl string, contentType string, b
 	}
 
 	// Is the response OK ?
-	cliErr := checkStatusCode(response)
+	cliErr = checkStatusCode(response)
 	if cliErr != nil {
 		// Is the token expired ?
 		if cliErr.Code() == restApiV1.InvalidTokenErrorCode {
@@ -260,11 +258,10 @@ func checkStatusCode(response *http.Response) ClientError {
 }
 
 func (c *RestClient) UserId() restApiV1.UserId {
-	if c.token == nil {
-		cliErr := c.refreshToken()
-		if cliErr != nil {
-			return "xxx"
-		}
+	token, cliErr := c.GetToken()
+	if cliErr != nil {
+		return "xxx"
+	} else {
+		return token.UserId
 	}
-	return c.token.UserId
 }

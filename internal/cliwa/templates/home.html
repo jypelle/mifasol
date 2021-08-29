@@ -1,28 +1,29 @@
-<header style="display: flex; flex-flow: row wrap; justify-content: space-between;">
-    <div style="margin: 0.5rem;"><img src="/static/image/logo32.png" style="vertical-align:middle;"> Mifasol</div>
+<header class="header">
+    <div style="margin: 0.5rem; font-weight: bold;"><img src="/static/image/logo32.png" style="vertical-align:middle;margin-right: 1rem;">Mifasol</div>
     <div>
-        <button style="margin: 0.5rem;" type="button" onclick="refreshAction()">Refresh</button>
-        <button style="margin: 0.5rem;" type="button" onclick="logOutAction()">Log out</button>
+        <button style="margin: 0.5rem;" type="button" onclick="refreshAction()"><i class="fas fa-sync-alt"></i></button>
+        <button style="margin: 0.5rem;" type="button" onclick="logOutAction()"><i class="fas fa-sign-out-alt"></i></button>
     </div>
 </header>
 <main style="display: flex; flex-flow: column nowrap; margin: 0 1rem 0 1rem; flex: 1 1 auto; min-height: 0;">
     <div style="display: flex; flex-flow: row nowrap; flex: 1 1 auto; min-height: 0; margin: -1rem 0 0 -1rem;">
         <div style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; margin: 1rem 0 0 1rem;">
-            <h2 style="margin:0 0 1rem 0;">Library</h2>
+            <h2 style="margin:0.5rem 0 0.5rem 0;">Library</h2>
             <div style="margin: -0.5rem 0 0 -0.5rem;">
                 <button style="margin: 0.5rem 0 0 0.5rem;" type="button" onclick="showLibraryArtistsAction()">Artists</button>
                 <button style="margin: 0.5rem 0 0 0.5rem;" type="button" onclick="showLibraryAlbumsAction()">Albums</button>
                 <button style="margin: 0.5rem 0 0 0.5rem;" type="button" onclick="showLibrarySongsAction()">Songs</button>
                 <button style="margin: 0.5rem 0 0 0.5rem;" type="button" onclick="showLibraryPlaylistsAction()">Playlists</button>
             </div>
-            <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+            <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>
         <div style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; margin: 1rem 0 0 1rem;">
-            <h2 style="margin:0 0 1rem 0;">Playlist</h2>
-            <div id="currentPlaylistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: auto;"></div>
+            <h2 style="margin:0.5rem 0 0.5rem 0;">Playlist</h2>
+            <div id="currentPlaylistList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>
     </div>
 </main>
-<footer style="display: flex; flex-flow: row wrap;">
+<footer style="display: flex; flex-flow: row wrap; justify-content: space-between;">
     <p style="margin: 1rem;" id="message">...</p>
+    <audio style="flex: 1;" id="musicPlayer" controls ></audio>
 </footer>

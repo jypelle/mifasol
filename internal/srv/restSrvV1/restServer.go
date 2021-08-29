@@ -99,13 +99,25 @@ func NewRestServer(store *store.Store, subRouter *mux.Router) *RestServer {
 
 			// Check Token
 			if r.URL.Path != "/api/v1/token" {
+				var accessToken string
+
 				reqToken := r.Header.Get("Authorization")
-				splitToken := strings.Split(reqToken, "Bearer")
-				if len(splitToken) < 2 {
+				if reqToken != "" {
+					splitToken := strings.Split(reqToken, "Bearer")
+					if len(splitToken) == 2 {
+						accessToken = strings.Trim(splitToken[1], " ")
+					}
+				} else {
+					reqTokens, ok := r.URL.Query()["bearer"]
+					if ok || len(reqTokens) == 1 {
+						accessToken = reqTokens[0]
+					}
+				}
+
+				if accessToken == "" {
 					restServer.apiErrorCodeResponse(w, restApiV1.InvalidTokenErrorCode)
 					return
 				}
-				accessToken := strings.Trim(splitToken[1], " ")
 
 				restServer.log.Debugln("Check token " + accessToken + " for " + r.URL.Path)
 

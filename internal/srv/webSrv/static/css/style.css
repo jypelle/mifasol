@@ -3,8 +3,7 @@
     font-style: normal;
     font-weight: 300;
     font-display: swap;
-    src: url('../font/Inter-Light.woff2?v=3.12') format('woff2'),
-    url('../font/Inter-Light.woff?v=3.12') format('woff');
+    src: url('../font/Inter-Light.woff2?v=3.12') format('woff2');
 }
 
 @font-face {
@@ -12,8 +11,7 @@
     font-style: normal;
     font-weight: 500;
     font-display: swap;
-    src: url('../font/Inter-Medium.woff2?v=3.12') format('woff2'),
-    url('../font/Inter-Medium.woff?v=3.12') format('woff');
+    src: url('../font/Inter-Medium.woff2?v=3.12') format('woff2');
 }
 
 @font-face {
@@ -21,17 +19,38 @@
     font-style: normal;
     font-weight: 800;
     font-display: swap;
-    src: url('../font/Inter-ExtraBold.woff2?v=3.12') format('woff2'),
-    url('../font/Inter-ExtraBold.woff?v=3.12') format('woff');
+    src: url('../font/Inter-ExtraBold.woff2?v=3.12') format('woff2');
 }
 
 *, ::before, ::after {
     box-sizing: border-box;
 }
 
+/* Scrollbar */
+/* Works on Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #48899c #222222;
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+    width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #222222;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: #48899c;
+    border-radius: 5px;
+    border: 1px solid #222222;
+}
+
 html {
     font-family: 'Inter', sans-serif;
-    font-weight: 500;
+    font-weight: 300;
     height: 100%;
 }
 
@@ -44,6 +63,10 @@ body {
     background-color: #111;
 }
 
+a {
+    text-decoration: none;
+}
+
 /* Loader */
 .lds-ellipsis {
     display: inline-block;
@@ -51,6 +74,7 @@ body {
     width: 76px;
     height: 36px;
 }
+
 .lds-ellipsis div {
     position: absolute;
     top: 13px;
@@ -60,22 +84,27 @@ body {
     background: #fff;
     animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
+
 .lds-ellipsis div:nth-child(1) {
     left: 8px;
     animation: lds-ellipsis1 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(2) {
     left: 8px;
     animation: lds-ellipsis2 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(3) {
     left: 32px;
     animation: lds-ellipsis2 0.6s infinite;
 }
+
 .lds-ellipsis div:nth-child(4) {
     left: 56px;
     animation: lds-ellipsis3 0.6s infinite;
 }
+
 @keyframes lds-ellipsis1 {
     0% {
         transform: scale(0);
@@ -84,6 +113,7 @@ body {
         transform: scale(1);
     }
 }
+
 @keyframes lds-ellipsis3 {
     0% {
         transform: scale(1);
@@ -92,6 +122,7 @@ body {
         transform: scale(0);
     }
 }
+
 @keyframes lds-ellipsis2 {
     0% {
         transform: translate(0, 0);
@@ -99,4 +130,48 @@ body {
     100% {
         transform: translate(24px, 0);
     }
+}
+
+.header {
+    background-color: #48899c;
+    color: #eeeeee;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+}
+
+.albumItem, .artistItem, .songItem, .playlistItem {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+}
+
+.albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
+    background-color: #602020;
+}
+
+.albumItem > a, .artistItem > a, .songItem > a, .playlistItem > a {
+    margin: 0;
+    padding: 0.3rem;
+    display: block;
+}
+
+a.albumLink {
+    color: #5ADFDF;
+}
+
+a.artistLink {
+    color: #A0A9CC;
+}
+
+a.songLink {
+    color: #FFFFE5;
+}
+
+a.playlistLink {
+    color: #FFB500;
+}
+
+a.userLink {
+    color: #FFFACD;
 }

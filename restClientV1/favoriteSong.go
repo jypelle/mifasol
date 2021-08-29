@@ -22,7 +22,6 @@ func (c *RestClient) CreateFavoriteSong(favoriteSongMeta *restApiV1.FavoriteSong
 	}
 
 	return favoriteSong, nil
-
 }
 
 func (c *RestClient) DeleteFavoriteSong(favoriteSongId restApiV1.FavoriteSongId) (*restApiV1.FavoriteSong, ClientError) {
