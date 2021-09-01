@@ -93,6 +93,8 @@ func (c *App) showLibraryAlbumsComponent() {
 func (c *App) showLibrarySongsComponent(artistId *restApiV1.ArtistId, albumId *restApiV1.AlbumId, playlistId *restApiV1.PlaylistId) {
 	listDiv := c.doc.Call("getElementById", "libraryList")
 
+	listDiv.Set("innerHTML", "Loading...")
+
 	var divContent string
 	var songList []*restApiV1.Song
 
@@ -105,16 +107,36 @@ func (c *App) showLibrarySongsComponent(artistId *restApiV1.ArtistId, albumId *r
 			songList = c.localDb.OrderedSongs
 		}
 
-		for _, song := range songList {
-			divContent += c.showSongItem(song)
-		}
+		go func() {
+			listDiv.Set("innerHTML", "")
+			for idx, song := range songList {
+				if idx > 0 && idx%50 == 0 {
+					listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent)
+					divContent = ""
+				}
+				divContent += c.showSongItem(song)
+			}
+			if divContent != "" {
+				listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent)
+			}
+		}()
+
 	} else {
-		for _, songId := range c.localDb.Playlists[*playlistId].SongIds {
-			divContent += c.showSongItem(c.localDb.Songs[songId])
-		}
+		go func() {
+			listDiv.Set("innerHTML", "")
+			for idx, songId := range c.localDb.Playlists[*playlistId].SongIds {
+				if idx > 0 && idx%50 == 0 {
+					listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent)
+					divContent = ""
+				}
+				divContent += c.showSongItem(c.localDb.Songs[songId])
+			}
+			if divContent != "" {
+				listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent)
+			}
+		}()
 	}
 
-	listDiv.Set("innerHTML", divContent)
 }
 
 func (c *App) showSongItem(song *restApiV1.Song) string {
