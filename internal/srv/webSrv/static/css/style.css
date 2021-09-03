@@ -152,7 +152,7 @@ a {
 
 .albumItem > a, .artistItem > a, .songItem > a, .playlistItem > a {
     margin: 0;
-    padding: 0.3rem;
+    padding: 0.26rem 0.26rem 0.26rem 0;
     display: block;
 }
 
