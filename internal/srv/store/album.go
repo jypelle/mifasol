@@ -11,6 +11,13 @@ import (
 )
 
 func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) ([]restApiV1.Album, error) {
+
+	type tmpAlbumEntity struct {
+		entity.AlbumEntity
+		ArtistId   sql.NullString `db:"artist_id"`
+		ArtistName sql.NullString `db:"artist_name"`
+	}
+
 	if s.serverConfig.DebugMode {
 		defer tool.TimeTrack(time.Now(), "ReadAlbums")
 	}
@@ -43,12 +50,54 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 
 	rows, err := txn.NamedQuery(
 		`SELECT
-				a.*
+				a.album_id,
+				a.creation_ts,
+				a.update_ts,
+				a.name,
+				null as artist_id,
+				null as artist_name
 			FROM album a
 			WHERE 1>0
 			`+tool.TernStr(filter.FromTs != nil, "AND a.update_ts >= :from_ts ", "")+`
 			`+tool.TernStr(filter.Name != nil, "AND a.name LIKE :name ", "")+`
-			ORDER BY `+orderBy,
+			UNION ALL
+			SELECT
+				a.album_id,
+				a.creation_ts,
+				a.update_ts,
+				a.name,
+				ar.artist_id,
+				ar.name as artist_name
+			FROM (
+				SELECT
+					aa.album_id,
+					aa.creation_ts,
+					aa.update_ts,
+					aa.name,
+					count(song_id)/2 as album_minimum_song_count_per_artist
+				FROM album aa
+				LEFT JOIN song ss using(album_id)
+				WHERE 1>0
+				`+tool.TernStr(filter.FromTs != nil, "AND aa.update_ts >= :from_ts ", "")+`
+				`+tool.TernStr(filter.Name != nil, "AND aa.name LIKE :name ", "")+`
+				GROUP BY
+					aa.album_id,
+					aa.creation_ts,
+					aa.update_ts,
+					aa.name
+			) a
+			LEFT JOIN song s using(album_id)
+			LEFT JOIN artist_song ars USING (song_id)
+			LEFT JOIN artist ar ON ar.artist_id = ars.artist_id
+			GROUP BY
+				a.album_id,
+				a.creation_ts,
+				a.update_ts,
+				a.name,
+				ar.artist_id,
+				ar.name
+			HAVING count(distinct song_id) > album_minimum_song_count_per_artist
+			ORDER BY `+orderBy+`, artist_name, ar.artist_id`,
 		queryArgs,
 	)
 	if err != nil {
@@ -58,39 +107,34 @@ func (s *Store) ReadAlbums(externalTrn *sqlx.Tx, filter *restApiV1.AlbumFilter) 
 
 	albums := []restApiV1.Album{}
 
+	var currentAlbum *restApiV1.Album
 	for rows.Next() {
-		var albumEntity entity.AlbumEntity
+		var albumEntity tmpAlbumEntity
 		err = rows.StructScan(&albumEntity)
 		if err != nil {
 			return nil, err
 		}
 
-		// TODO: Need optimizations!
-		// Retrieve album artists
-		artistIds := []restApiV1.ArtistId{}
-		err = txn.Select(
-			&artistIds,
-			`SELECT
-				artist_id
-			FROM song s
-			JOIN artist_song USING (song_id)
-			JOIN artist a USING (artist_id)
-			WHERE album_id = ?
-			GROUP BY artist_id
-			HAVING count(*) > (SELECT count(*)/2 FROM song where album_id = ? )
-			ORDER BY a.name, a.artist_id`,
-			albumEntity.AlbumId,
-			albumEntity.AlbumId,
-		)
-		if err != nil {
-			return nil, err
+		if currentAlbum != nil && currentAlbum.Id != albumEntity.AlbumId {
+			// Save currentAlbum
+			albums = append(albums, *currentAlbum)
 		}
 
-		var album restApiV1.Album
-		albumEntity.Fill(&album)
-		album.ArtistIds = artistIds
+		if currentAlbum == nil || currentAlbum.Id != albumEntity.AlbumId {
+			// New currentAlbum
+			currentAlbum = &restApiV1.Album{}
+			albumEntity.Fill(currentAlbum)
+		}
 
-		albums = append(albums, album)
+		// Add artistId to current album
+		if albumEntity.ArtistId.Valid {
+			currentAlbum.ArtistIds = append(currentAlbum.ArtistIds, restApiV1.ArtistId(albumEntity.ArtistId.String))
+		}
+
+	}
+	if currentAlbum != nil {
+		// Save currentAlbum
+		albums = append(albums, *currentAlbum)
 	}
 
 	return albums, nil
