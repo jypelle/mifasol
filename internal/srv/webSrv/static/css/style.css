@@ -242,10 +242,10 @@ form > div > div > input {
     justify-content: space-between;
 }
 
-.albumItem, .artistItem, .songItem, .playlistItem {
+.albumItem, .artistItem, .playlistItem, .songItem {
     display: flex;
-    flex-flow: row wrap;
-    align-items: center;
+    flex-flow: column nowrap;
+    padding: 0.2rem 0 0.2rem 0;
 }
 
 .albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
@@ -258,7 +258,10 @@ form > div > div > input {
     display: block;
 }
 
-
+.albumItem > div, .artistItem > div, .songItem > div, .playlistItem > div {
+    margin-left: 1rem;
+    font-size: 0.8rem;
+}
 
 a.albumLink {
     color: #5ADFDF;

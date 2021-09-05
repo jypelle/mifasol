@@ -85,9 +85,15 @@ func (c *LibraryComponent) showLibraryAlbumsComponent() {
 			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
 
 			if len(album.ArtistIds) > 0 {
-				for _, artistId := range album.ArtistIds {
-					divContent.WriteString(` / <a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+				divContent.WriteString(`<div>`)
+				for idx, artistId := range album.ArtistIds {
+					if idx > 0 {
+						divContent.WriteString(` / `)
+					}
+					divContent.WriteString(`<a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
 				}
+				divContent.WriteString(`</div>`)
+
 			}
 		}
 		divContent.WriteString(`</div>`)
@@ -121,14 +127,12 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 
 		listDiv.Set("innerHTML", "")
 		for _, song := range songList {
-
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(song))
 		}
 
 	} else {
 		listDiv.Set("innerHTML", "")
 		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
-
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(c.app.localDb.Songs[songId]))
 		}
 	}
@@ -140,14 +144,20 @@ func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
 	divContent.WriteString(`<div class="songItem">`)
 	divContent.WriteString(`<a class="songLink" href="#" onclick="playSongAction(this.getAttribute('data-songId'));return false;" data-songId="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
 
-	if song.AlbumId != restApiV1.UnknownAlbumId {
-		divContent.WriteString(` / <a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
-	}
-
-	if len(song.ArtistIds) > 0 {
-		for _, artistId := range song.ArtistIds {
-			divContent.WriteString(` / <a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
+		divContent.WriteString(`<div>`)
+		if song.AlbumId != restApiV1.UnknownAlbumId {
+			divContent.WriteString(`<a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
+		} else {
+			divContent.WriteString(`<a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(song.AlbumId) + `">(Unknown album)</a>`)
 		}
+
+		if len(song.ArtistIds) > 0 {
+			for _, artistId := range song.ArtistIds {
+				divContent.WriteString(` / <a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+			}
+		}
+		divContent.WriteString(`</div>`)
 	}
 
 	divContent.WriteString(`</div>`)
