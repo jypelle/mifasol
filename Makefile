@@ -1,6 +1,8 @@
-.PHONY: release runcliui buildwa
+.PHONY: release runcliui buildwa chromewa
 
 release:
+	rm release/*; \
+	rm internal/srv/webSrv/clients/mifasol*; \
 	echo "Build windows amd64 client"; \
 	GOOS=windows GOARCH=amd64 go build -o internal/srv/webSrv/clients/mifasolcli-windows-amd64.exe ./cmd/mifasolcli; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcli-windows-amd64.exe; \
@@ -34,3 +36,6 @@ buildcliwa:
 	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolcliwa.wasm ./cmd/mifasolcliwa; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcliwa.wasm; \
 	cp "${GOROOT}/misc/wasm/wasm_exec.js" internal/srv/webSrv/static/js/;
+
+chromewa:
+	chromium ---allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:6620

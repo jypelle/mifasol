@@ -63,8 +63,110 @@ body {
     background-color: #111;
 }
 
+h1, h2, h3 {
+    font-weight: 500;
+}
+
 a {
     text-decoration: none;
+    color: #ccc;
+}
+a:hover {
+    color: #f0f0f0;
+}
+
+li {
+    margin: 0 0 0.2rem 0;
+}
+
+/* form */
+select,
+textarea,
+input {
+    display: inline-block;
+    color: #555555;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.4rem;
+    vertical-align: middle;
+    width: 20rem;
+}
+
+textarea {
+    height: auto;
+}
+
+textarea,
+input {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    transition: border linear .2s, box-shadow linear .2s;
+}
+
+textarea:focus,
+input:focus {
+    border-color: rgba(225, 225, 225, 0.8);
+    outline: 0;
+    box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.075), 0 0 8px rgba(225, 225, 225, 0.6);
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    margin: 0.3em 0 0;
+    line-height: normal;
+    cursor: pointer;
+}
+
+input[type="file"],
+input[type="image"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+input[type="radio"],
+input[type="checkbox"] {
+    width: auto;
+}
+
+select {
+    border: 1px solid #cccccc;
+    background-color: #ffffff;
+}
+select[multiple],
+select[size] {
+    height: auto;
+}
+select:focus,
+input[type="file"]:focus,
+input[type="radio"]:focus,
+input[type="checkbox"]:focus {
+    outline: thin dotted #333;
+    outline-offset: -2px;
+}
+
+::placeholder {
+    color: #999999;
+}
+
+form > div {
+    display:flex;
+    flex-flow: row wrap;
+}
+
+form > div > label {
+    flex: 0 0 14rem;
+    margin: 0 1rem 1rem 0;
+    font-weight: 500;
+}
+
+form > div > div {
+    flex: 2 2 18rem;
+    margin: 0 0rem 1.2rem 0;
+}
+
+form > div > div > select,
+form > div > div > textarea,
+form > div > div > input {
+    width: 100%;
 }
 
 /* Loader */
@@ -155,6 +257,8 @@ a {
     padding: 0.26rem 0.26rem 0.26rem 0;
     display: block;
 }
+
+
 
 a.albumLink {
     color: #5ADFDF;

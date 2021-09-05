@@ -1,0 +1,27 @@
+{
+  "name": "Mifasol",
+  "description": "Music player",
+  "short_name": "Mifasol",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/static/image/logo32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/image/logo64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/image/logo256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ],
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#48899c",
+  "background_color": "#222"
+}

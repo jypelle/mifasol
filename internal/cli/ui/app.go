@@ -351,7 +351,7 @@ func (a *App) Reload() {
 	// Refresh In memory Db
 	cliErr := a.localDb.Refresh()
 	if cliErr != nil {
-		a.ClientErrorMessage("Unable to refresh data from mifasolsrv", cliErr)
+		a.ClientErrorMessage("Unable to load data from mifasolsrv", cliErr)
 		return
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/jypelle/mifasol/internal/srv/webSrv/clients"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/static"
 	"github.com/jypelle/mifasol/internal/srv/webSrv/templates"
+	"github.com/jypelle/mifasol/internal/version"
 	"github.com/sirupsen/logrus"
 	"github.com/vearutop/statigz"
 	"html/template"
@@ -70,7 +71,14 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 	})
 
 	// Start page
-	webServer.router.HandleFunc("/", webServer.IndexAction).Methods("GET").Name("start")
+	webServer.router.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		webServer.HtmlWriterRender(w, "Mifasol", "main.html")
+	}).Methods("GET").Name("start")
+
+	// Service worker
+	webServer.router.HandleFunc("/sw.js", func(w http.ResponseWriter, _ *http.Request) {
+		webServer.JsWriterRender(w, version.AppVersion.String(), "sw.js")
+	}).Methods("GET").Name("serviceWorker")
 
 	return webServer
 }
@@ -85,13 +93,4 @@ func (d *WebServer) Config() *config.ServerConfig {
 
 type IndexView struct {
 	Title string
-}
-
-func (d *WebServer) IndexAction(w http.ResponseWriter, r *http.Request) {
-
-	view := &IndexView{
-		Title: "Mifasol",
-	}
-
-	d.HtmlWriterRender(w, view, "main.html")
 }

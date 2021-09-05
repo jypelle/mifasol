@@ -1,7 +1,9 @@
-<main style="display: flex; flex-flow: column nowrap; justify-content: center; align-items: center; flex-grow: 1;">
-    <h1 style="margin:0; margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
-    <div style="display: flex; flex-flow: row wrap;">
-        <div style="margin: 2rem;">
+<main style="display: flex; flex-flow: column nowrap; flex-grow: 1; background-color: #48899c;">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; background-color: #111; box-shadow: 0 0 1rem 0.2rem #111; ">
+        <h1 style="margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
+    </div>
+    <div style="flex: 2; display: flex; flex-flow: row wrap; align-content: flex-start; justify-content: center; padding-top: 2rem;">
+        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 22rem;">
             <h2>Connect to web client (alpha!)</h2>
             <form onsubmit="return logInAction()">
                 <div>
@@ -34,12 +36,12 @@
                 </div>
             </form>
         </div>
-        <div style="margin: 2rem;">
+        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 22rem;">
             <h2>Download console client</h2>
             <ul>
-                <li><a href="/clients/mifasolcli-windows-amd64.exe">Windows (amd64)</a></li>
-                <li><a href="/clients/mifasolcli-linux-amd64">Linux (amd64)</a></li>
-                <li><a href="/clients/mifasolcli-linux-arm">Linux (arm)</a></li>
+                <li><a href="/clients/mifasolcli-windows-amd64.exe"><i class="fab fa-windows" style="font-size: 2rem;"></i> mifasolcli (Windows amd64)</a></li>
+                <li><a href="/clients/mifasolcli-linux-amd64"><i class="fab fa-linux" style="font-size: 2rem;"></i> mifasolcli (Linux amd64)</a></li>
+                <li><a href="/clients/mifasolcli-linux-arm"><i class="fab fa-linux" style="font-size: 2rem;"></i> mifasolcli (Linux arm)</a></li>
             </ul>
         </div>
     </div>

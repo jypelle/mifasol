@@ -3,18 +3,31 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>{{.Title}}</title>
+    <title>{{.}}</title>
 
     <link rel="stylesheet" href="/static/css/normalize.css"/>
     <link rel="stylesheet" href="/static/css/style.css"/>
     <link rel="stylesheet" href="/static/css/fontawesome.min.css"/>
     <link rel="stylesheet" href="/static/css/solid.min.css"/>
+    <link rel="stylesheet" href="/static/css/brands.min.css"/>
     <link href="/static/image/logo32.png" rel="shortcut icon" type="image/png">
     <meta name="msapplication-TileColor" content="#ffffff"/>
-    <meta name="theme-color" content="#000000"/>
+    <meta name="theme-color" content="#48899c"/>
+    <link rel="manifest" href="/static/manifest.json">
     <script src="/static/js/mifasol.js"></script>
     <script src="/static/js/wasm_exec.js"></script>
     <script>
+        // register ServiceWorker
+        /*
+        window.onload = () => {
+            'use strict';
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker
+                    .register('/sw.js');
+            }
+        }
+        */
         const go = new Go();
         WebAssembly.instantiateStreaming(fetch("/clients/mifasolcliwa.wasm"), go.importObject).then((result) => {
             go.run(result.instance);

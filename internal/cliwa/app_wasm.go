@@ -20,6 +20,8 @@ type App struct {
 
 	templateHelpers template.FuncMap
 	doc             js.Value
+
+	libraryComponent *LibraryComponent
 }
 
 func NewApp(debugMode bool) *App {
@@ -32,6 +34,8 @@ func NewApp(debugMode bool) *App {
 		},
 		doc: js.Global().Get("document"),
 	}
+
+	app.libraryComponent = NewLibraryComponent(app)
 
 	logrus.Infof("Client created")
 
@@ -74,17 +78,21 @@ func (c *App) RenderTemplate(content interface{}, filenames ...string) string {
 	return w.String()
 }
 
-func (c *App) Refresh() {
+func (c *App) Reload() {
 	if c.localDb == nil {
 		return
 	}
-	c.Message("Refreshing local database...")
+	c.Message("Syncing...")
+	// Refresh In memory Db
 	err := c.localDb.Refresh()
 	if err != nil {
-		c.Message("Unable to refresh local database")
-	} else {
-		c.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
+		c.Message("Unable to load data from mifasolsrv")
+		return
 	}
+
+	c.libraryComponent.RefreshView()
+
+	c.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
 }
 
 func (c *App) Message(msg string) {

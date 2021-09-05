@@ -44,3 +44,9 @@ func (d *WebServer) HtmlWriterRender(w http.ResponseWriter, content interface{},
 
 	d.rawHtmlRender(w, content, filenames...)
 }
+
+func (d *WebServer) JsWriterRender(w http.ResponseWriter, content interface{}, filenames ...string) {
+	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+
+	d.rawHtmlRender(w, content, filenames...)
+}
