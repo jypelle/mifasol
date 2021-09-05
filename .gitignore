@@ -14,6 +14,9 @@
 # Goland config
 .idea
 
+# Blender backup files
+*.blend1
+
 # Test
 /test
 

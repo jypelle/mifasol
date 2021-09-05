@@ -100,7 +100,6 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 
 	listDiv.Set("innerHTML", "Loading...")
 
-	var divContent strings.Builder
 	var songList []*restApiV1.Song
 
 	if c.libraryState.playlistId == nil {
@@ -120,39 +119,24 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 			songList = c.app.localDb.OrderedSongs
 		}
 
-		go func() {
-			listDiv.Set("innerHTML", "")
-			for idx, song := range songList {
-				if idx > 0 && idx%50 == 0 {
-					listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent.String())
-					divContent.Reset()
-				}
-				c.showSongItem(song, &divContent)
-			}
-			if divContent.Len() > 0 {
-				listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent.String())
-			}
-		}()
+		listDiv.Set("innerHTML", "")
+		for _, song := range songList {
+
+			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(song))
+		}
 
 	} else {
-		go func() {
-			listDiv.Set("innerHTML", "")
-			for idx, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
-				if idx > 0 && idx%50 == 0 {
-					listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent.String())
-					divContent.Reset()
-				}
-				c.showSongItem(c.app.localDb.Songs[songId], &divContent)
-			}
-			if divContent.Len() > 0 {
-				listDiv.Call("insertAdjacentHTML", "beforeEnd", divContent.String())
-			}
-		}()
+		listDiv.Set("innerHTML", "")
+		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
+
+			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(c.app.localDb.Songs[songId]))
+		}
 	}
 
 }
 
-func (c *LibraryComponent) showSongItem(song *restApiV1.Song, divContent *strings.Builder) {
+func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
+	var divContent strings.Builder
 	divContent.WriteString(`<div class="songItem">`)
 	divContent.WriteString(`<a class="songLink" href="#" onclick="playSongAction(this.getAttribute('data-songId'));return false;" data-songId="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
 
@@ -168,6 +152,7 @@ func (c *LibraryComponent) showSongItem(song *restApiV1.Song, divContent *string
 
 	divContent.WriteString(`</div>`)
 
+	return divContent.String()
 }
 
 func (c *LibraryComponent) showLibraryPlaylistsComponent() {
