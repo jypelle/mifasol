@@ -141,8 +141,13 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 
 func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
-	divContent.WriteString(`<div class="songItem">`)
-	divContent.WriteString(`<a class="songLink" href="#" onclick="playSongAction(this.getAttribute('data-songId'));return false;" data-songId="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
+	divContent.WriteString(`<div class="songItem"><div><a class="songFavoriteLink" href="#" data-songId="` + string(song.Id) + `">`)
+	if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]; ok {
+		divContent.WriteString(`<i class="fas fa-star"></i>`)
+	} else {
+		divContent.WriteString(`<i class="far fa-star" style="color: #444;"></i>`)
+	}
+	divContent.WriteString(`</a></div><div><a class="songLink" href="#" onclick="playSongAction(this.getAttribute('data-songId'));return false;" data-songId="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
 
 	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
 		divContent.WriteString(`<div>`)
@@ -160,7 +165,7 @@ func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
 		divContent.WriteString(`</div>`)
 	}
 
-	divContent.WriteString(`</div>`)
+	divContent.WriteString(`</div></div>`)
 
 	return divContent.String()
 }

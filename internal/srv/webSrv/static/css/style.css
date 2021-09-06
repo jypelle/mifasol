@@ -242,25 +242,53 @@ form > div > div > input {
     justify-content: space-between;
 }
 
-.albumItem, .artistItem, .playlistItem, .songItem {
+.artistItem, .playlistItem, .albumItem {
     display: flex;
     flex-flow: column nowrap;
     padding: 0.2rem 0 0.2rem 0;
 }
 
-.albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
-    background-color: #602020;
-}
-
-.albumItem > a, .artistItem > a, .songItem > a, .playlistItem > a {
+.artistItem > a, .albumItem > a, .playlistItem > a {
     margin: 0;
     padding: 0.26rem 0.26rem 0.26rem 0;
     display: block;
 }
 
-.albumItem > div, .artistItem > div, .songItem > div, .playlistItem > div {
+.artistItem > div, .albumItem > div, .playlistItem > div {
     margin-left: 1rem;
     font-size: 0.8rem;
+}
+
+.songItem {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    padding: 0.2rem 0 0.2rem 0;
+}
+
+.songItem > div:nth-child(1) {
+    flex: 0;
+    margin-right:0.7rem;
+}
+
+.songItem > div:nth-child(2) {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.songItem > div:nth-child(2) > :first-child {
+    margin: 0;
+    padding: 0.26rem 0.26rem 0.26rem 0;
+    display: block;
+}
+
+.songItem > div:nth-child(2) > :nth-child(2) {
+    margin-left: 1rem;
+    font-size: 0.8rem;
+}
+
+.albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
+    background-color: #602020;
 }
 
 a.albumLink {
