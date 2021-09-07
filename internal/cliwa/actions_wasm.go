@@ -80,47 +80,40 @@ func (c *App) refreshAction(this js.Value, i []js.Value) interface{} {
 	return nil
 }
 
-func (c *App) playSongAction(this js.Value, i []js.Value) interface{} {
-	songId := i[0].String()
+func (c *App) playSong(songId restApiV1.SongId) {
 	token, cliErr := c.restClient.GetToken()
 
 	if cliErr != nil {
-		return nil
+		return
 	}
 
 	musicPlayer := c.doc.Call("getElementById", "musicPlayer")
-	musicPlayer.Set("src", "/api/v1/songContents/"+songId+"?bearer="+token.AccessToken)
+	musicPlayer.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
 	musicPlayer.Call("play")
 
-	return nil
+	return
 }
 
-func (c *App) openAlbumAction(this js.Value, i []js.Value) interface{} {
-	albumId := restApiV1.AlbumId(i[0].String())
+func (c *App) openAlbum(albumId restApiV1.AlbumId) {
 	c.libraryComponent.libraryState = libraryState{
 		libraryType: libraryTypeSongs,
 		albumId:     &albumId,
 	}
 	c.libraryComponent.RefreshView()
-	return nil
 }
 
-func (c *App) openArtistAction(this js.Value, i []js.Value) interface{} {
-	artistId := restApiV1.ArtistId(i[0].String())
+func (c *App) openArtist(artistId restApiV1.ArtistId) {
 	c.libraryComponent.libraryState = libraryState{
 		libraryType: libraryTypeSongs,
 		artistId:    &artistId,
 	}
 	c.libraryComponent.RefreshView()
-	return nil
 }
 
-func (c *App) openPlaylistAction(this js.Value, i []js.Value) interface{} {
-	playlistId := restApiV1.PlaylistId(i[0].String())
+func (c *App) openPlaylist(playlistId restApiV1.PlaylistId) {
 	c.libraryComponent.libraryState = libraryState{
 		libraryType: libraryTypeSongs,
 		playlistId:  &playlistId,
 	}
 	c.libraryComponent.RefreshView()
-	return nil
 }

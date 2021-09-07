@@ -65,9 +65,9 @@ func (c *LibraryComponent) showLibraryArtistsComponent() {
 	var divContent strings.Builder
 	for _, artist := range c.app.localDb.OrderedArtists {
 		if artist == nil {
-			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(restApiV1.UnknownArtistId) + `">(Unknown artist)</a></div>`)
+			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" data-artistid="` + string(restApiV1.UnknownArtistId) + `">(Unknown artist)</a></div>`)
 		} else {
-			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artist.Id) + `">` + html.EscapeString(artist.Name) + `</a></div>`)
+			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" data-artistid="` + string(artist.Id) + `">` + html.EscapeString(artist.Name) + `</a></div>`)
 		}
 	}
 	listDiv.Set("innerHTML", divContent.String())
@@ -80,9 +80,9 @@ func (c *LibraryComponent) showLibraryAlbumsComponent() {
 
 	for _, album := range c.app.localDb.OrderedAlbums {
 		if album == nil {
-			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a>`)
+			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a>`)
 		} else {
-			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
+			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" data-albumid="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
 
 			if len(album.ArtistIds) > 0 {
 				divContent.WriteString(`<div>`)
@@ -90,7 +90,7 @@ func (c *LibraryComponent) showLibraryAlbumsComponent() {
 					if idx > 0 {
 						divContent.WriteString(` / `)
 					}
-					divContent.WriteString(`<a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+					divContent.WriteString(`<a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
 				}
 				divContent.WriteString(`</div>`)
 
@@ -136,30 +136,29 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(c.app.localDb.Songs[songId]))
 		}
 	}
-
 }
 
 func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
-	divContent.WriteString(`<div class="songItem"><div><a class="songFavoriteLink" href="#" data-songId="` + string(song.Id) + `">`)
+	divContent.WriteString(`<div class="songItem"><div><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
 	if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]; ok {
 		divContent.WriteString(`<i class="fas fa-star"></i>`)
 	} else {
 		divContent.WriteString(`<i class="far fa-star" style="color: #444;"></i>`)
 	}
-	divContent.WriteString(`</a></div><div><a class="songLink" href="#" onclick="playSongAction(this.getAttribute('data-songId'));return false;" data-songId="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
+	divContent.WriteString(`</a></div><div><a class="songLink" href="#" data-songid="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
 
 	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
 		divContent.WriteString(`<div>`)
 		if song.AlbumId != restApiV1.UnknownAlbumId {
-			divContent.WriteString(`<a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
+			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
 		} else {
-			divContent.WriteString(`<a class="albumLink" href="#" onclick="openAlbumAction(this.getAttribute('data-albumId'));return false;" data-albumId="` + string(song.AlbumId) + `">(Unknown album)</a>`)
+			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(song.AlbumId) + `">(Unknown album)</a>`)
 		}
 
 		if len(song.ArtistIds) > 0 {
 			for _, artistId := range song.ArtistIds {
-				divContent.WriteString(` / <a class="artistLink" href="#" onclick="openArtistAction(this.getAttribute('data-artistId'));return false;" data-artistId="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+				divContent.WriteString(` / <a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
 			}
 		}
 		divContent.WriteString(`</div>`)
@@ -176,7 +175,7 @@ func (c *LibraryComponent) showLibraryPlaylistsComponent() {
 	var divContent string
 	for _, playlist := range c.app.localDb.OrderedPlaylists {
 		if playlist != nil {
-			divContent += `<div class="playlistItem"><a class="playlistLink" href="#" onclick="openPlaylistAction(this.getAttribute('data-playlistId'));return false;" data-playlistId="` + string(playlist.Id) + `">` + html.EscapeString(playlist.Name) + `</a></div>`
+			divContent += `<div class="playlistItem"><a class="playlistLink" href="#" data-playlistid="` + string(playlist.Id) + `">` + html.EscapeString(playlist.Name) + `</a></div>`
 		}
 	}
 	listDiv.Set("innerHTML", divContent)
