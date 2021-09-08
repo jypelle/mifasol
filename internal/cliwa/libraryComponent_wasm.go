@@ -2,8 +2,10 @@ package cliwa
 
 import (
 	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/sirupsen/logrus"
 	"html"
 	"strings"
+	"syscall/js"
 )
 
 type LibraryComponent struct {
@@ -46,20 +48,107 @@ func NewLibraryComponent(app *App) *LibraryComponent {
 	return c
 }
 
+func (c *LibraryComponent) Show() {
+	libraryArtistsButton := c.app.doc.Call("getElementById", "libraryArtistsButton")
+	libraryArtistsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.ShowArtistsAction()
+		return nil
+	}))
+	libraryAlbumsButton := c.app.doc.Call("getElementById", "libraryAlbumsButton")
+	libraryAlbumsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.ShowAlbumsAction()
+		return nil
+	}))
+	librarySongsButton := c.app.doc.Call("getElementById", "librarySongsButton")
+	librarySongsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.ShowSongsAction()
+		return nil
+	}))
+	libraryPlaylistsButton := c.app.doc.Call("getElementById", "libraryPlaylistsButton")
+	libraryPlaylistsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.ShowPlaylistsAction()
+		return nil
+	}))
+
+	listDiv := c.app.doc.Call("getElementById", "libraryList")
+	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink")
+		if !link.Truthy() {
+			return nil
+		}
+		dataset := link.Get("dataset")
+
+		switch link.Get("className").String() {
+		case "songLink":
+			songId := dataset.Get("songid").String()
+			logrus.Infof("click on %v - %v", dataset, songId)
+			c.app.playSong(restApiV1.SongId(songId))
+		case "artistLink":
+			artistId := dataset.Get("artistid").String()
+			c.OpenArtistAction(restApiV1.ArtistId(artistId))
+		case "albumLink":
+			albumId := dataset.Get("albumid").String()
+			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
+		case "playlistLink":
+			playlistId := dataset.Get("playlistid").String()
+			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
+		case "songFavoriteLink":
+			songId := dataset.Get("songid").String()
+			favoriteSongId := restApiV1.FavoriteSongId{
+				UserId: c.app.restClient.UserId(),
+				SongId: restApiV1.SongId(songId),
+			}
+
+			go func() {
+
+				if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][restApiV1.SongId(songId)]; ok {
+					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+
+					_, cliErr := c.app.restClient.DeleteFavoriteSong(favoriteSongId)
+					if cliErr != nil {
+						c.app.messageComponent.Message("Unable to add song to favorites")
+						link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+						return
+					}
+					c.app.localDb.RemoveSongFromMyFavorite(restApiV1.SongId(songId))
+
+					logrus.Info("Deactivate")
+				} else {
+					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+
+					_, cliErr := c.app.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
+					if cliErr != nil {
+						c.app.messageComponent.Message("Unable to remove song from favorites")
+						link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+						return
+					}
+					c.app.localDb.AddSongToMyFavorite(restApiV1.SongId(songId))
+
+					logrus.Info("Activate")
+				}
+			}()
+
+		}
+
+		return nil
+	}))
+
+}
+
 func (c *LibraryComponent) RefreshView() {
 	switch c.libraryState.libraryType {
 	case libraryTypeArtists:
-		c.showLibraryArtistsComponent()
+		c.refreshArtists()
 	case libraryTypeAlbums:
-		c.showLibraryAlbumsComponent()
+		c.refreshAlbums()
 	case libraryTypePlaylists:
-		c.showLibraryPlaylistsComponent()
+		c.refreshPlaylists()
 	case libraryTypeSongs:
-		c.showLibrarySongsComponent()
+		c.refreshSongs()
 	}
 }
 
-func (c *LibraryComponent) showLibraryArtistsComponent() {
+func (c *LibraryComponent) refreshArtists() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent strings.Builder
@@ -73,7 +162,7 @@ func (c *LibraryComponent) showLibraryArtistsComponent() {
 	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) showLibraryAlbumsComponent() {
+func (c *LibraryComponent) refreshAlbums() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent strings.Builder
@@ -101,7 +190,8 @@ func (c *LibraryComponent) showLibraryAlbumsComponent() {
 	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) showLibrarySongsComponent() {
+func (c *LibraryComponent) refreshSongs() {
+
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	listDiv.Set("innerHTML", "Loading...")
@@ -127,18 +217,18 @@ func (c *LibraryComponent) showLibrarySongsComponent() {
 
 		listDiv.Set("innerHTML", "")
 		for _, song := range songList {
-			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(song))
+			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(song))
 		}
 
 	} else {
 		listDiv.Set("innerHTML", "")
 		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
-			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.showSongItem(c.app.localDb.Songs[songId]))
+			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(c.app.localDb.Songs[songId]))
 		}
 	}
 }
 
-func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
+func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
 	divContent.WriteString(`<div class="songItem"><div><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
 	if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]; ok {
@@ -169,7 +259,7 @@ func (c *LibraryComponent) showSongItem(song *restApiV1.Song) string {
 	return divContent.String()
 }
 
-func (c *LibraryComponent) showLibraryPlaylistsComponent() {
+func (c *LibraryComponent) refreshPlaylists() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent string
@@ -179,4 +269,56 @@ func (c *LibraryComponent) showLibraryPlaylistsComponent() {
 		}
 	}
 	listDiv.Set("innerHTML", divContent)
+}
+
+func (c *LibraryComponent) ShowArtistsAction() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeArtists,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) ShowAlbumsAction() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeAlbums,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) ShowSongsAction() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeSongs,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) ShowPlaylistsAction() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypePlaylists,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) OpenAlbumAction(albumId restApiV1.AlbumId) {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeSongs,
+		albumId:     &albumId,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) OpenArtistAction(artistId restApiV1.ArtistId) {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeSongs,
+		artistId:    &artistId,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeSongs,
+		playlistId:  &playlistId,
+	}
+	c.RefreshView()
 }

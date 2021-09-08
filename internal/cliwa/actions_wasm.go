@@ -38,38 +38,6 @@ func (c *App) logInAction(this js.Value, i []js.Value) interface{} {
 	return false
 }
 
-func (c *App) showLibraryArtistsAction(this js.Value, i []js.Value) interface{} {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeArtists,
-	}
-	c.libraryComponent.RefreshView()
-	return nil
-}
-
-func (c *App) showLibraryAlbumsAction(this js.Value, i []js.Value) interface{} {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeAlbums,
-	}
-	c.libraryComponent.RefreshView()
-	return nil
-}
-
-func (c *App) showLibrarySongsAction(this js.Value, i []js.Value) interface{} {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeSongs,
-	}
-	c.libraryComponent.RefreshView()
-	return nil
-}
-
-func (c *App) showLibraryPlaylistsAction(this js.Value, i []js.Value) interface{} {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypePlaylists,
-	}
-	c.libraryComponent.RefreshView()
-	return nil
-}
-
 func (c *App) logOutAction(this js.Value, i []js.Value) interface{} {
 	c.showStartComponent()
 	return nil
@@ -87,33 +55,9 @@ func (c *App) playSong(songId restApiV1.SongId) {
 		return
 	}
 
-	musicPlayer := c.doc.Call("getElementById", "musicPlayer")
-	musicPlayer.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
-	musicPlayer.Call("play")
+	player := c.doc.Call("getElementById", "player")
+	player.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
+	player.Call("play")
 
 	return
-}
-
-func (c *App) openAlbum(albumId restApiV1.AlbumId) {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeSongs,
-		albumId:     &albumId,
-	}
-	c.libraryComponent.RefreshView()
-}
-
-func (c *App) openArtist(artistId restApiV1.ArtistId) {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeSongs,
-		artistId:    &artistId,
-	}
-	c.libraryComponent.RefreshView()
-}
-
-func (c *App) openPlaylist(playlistId restApiV1.PlaylistId) {
-	c.libraryComponent.libraryState = libraryState{
-		libraryType: libraryTypeSongs,
-		playlistId:  &playlistId,
-	}
-	c.libraryComponent.RefreshView()
 }

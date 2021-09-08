@@ -21,7 +21,10 @@ type App struct {
 	templateHelpers template.FuncMap
 	doc             js.Value
 
+	messageComponent *MessageComponent
 	libraryComponent *LibraryComponent
+	currentComponent *CurrentComponent
+	playerComponent  *PlayerComponent
 }
 
 func NewApp(debugMode bool) *App {
@@ -35,7 +38,10 @@ func NewApp(debugMode bool) *App {
 		doc: js.Global().Get("document"),
 	}
 
+	app.messageComponent = NewMessageComponent(app)
 	app.libraryComponent = NewLibraryComponent(app)
+	app.currentComponent = NewCurrentComponent(app)
+	app.playerComponent = NewPlayerComponent(app)
 
 	logrus.Infof("Client created")
 
@@ -47,7 +53,7 @@ func (c *App) Start() {
 
 	c.showStartComponent()
 
-	// Keep goroutine running
+	// Keep wasm app alive
 	<-make(chan bool)
 }
 
@@ -82,20 +88,15 @@ func (c *App) Reload() {
 	if c.localDb == nil {
 		return
 	}
-	c.Message("Syncing...")
+	c.messageComponent.Message("Syncing...")
 	// Refresh In memory Db
 	err := c.localDb.Refresh()
 	if err != nil {
-		c.Message("Unable to load data from mifasolsrv")
+		c.messageComponent.Message("Unable to load data from mifasolsrv")
 		return
 	}
 
 	c.libraryComponent.RefreshView()
 
-	c.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
-}
-
-func (c *App) Message(msg string) {
-	message := c.doc.Call("getElementById", "message")
-	message.Set("innerHTML", msg)
+	c.messageComponent.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
 }
