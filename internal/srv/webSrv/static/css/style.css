@@ -263,7 +263,7 @@ form > div > div > input {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    padding: 0.2rem 0 0.2rem 0;
+    padding: 0.2rem 0.1rem 0.2rem 0;
 }
 
 .songItem > div:nth-child(1) {
@@ -272,6 +272,7 @@ form > div > div > input {
 }
 
 .songItem > div:nth-child(2) {
+    flex: 1;
     display: flex;
     flex-flow: column nowrap;
 }
@@ -285,6 +286,13 @@ form > div > div > input {
 .songItem > div:nth-child(2) > :nth-child(2) {
     margin-left: 1rem;
     font-size: 0.8rem;
+}
+
+.songItem > div:nth-child(3) {
+    flex: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    margin: 0 0.1rem 0 0.1rem;
 }
 
 .albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {

@@ -34,8 +34,16 @@ func (c *App) showHomeComponent() {
 	body.Set("innerHTML", c.RenderTemplate(nil, "home.html"))
 
 	// Set buttons
-	js.Global().Set("logOutAction", js.FuncOf(c.logOutAction))
-	js.Global().Set("refreshAction", js.FuncOf(c.refreshAction))
+	logOutButton := c.doc.Call("getElementById", "logOutButton")
+	logOutButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.showStartComponent()
+		return nil
+	}))
+	refreshButton := c.doc.Call("getElementById", "refreshButton")
+	refreshButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.refreshAction()
+		return nil
+	}))
 
 	c.libraryComponent.Show()
 

@@ -72,7 +72,7 @@ func (c *LibraryComponent) Show() {
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink")
+		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink")
 		if !link.Truthy() {
 			return nil
 		}
@@ -127,7 +127,9 @@ func (c *LibraryComponent) Show() {
 					logrus.Info("Activate")
 				}
 			}()
-
+		case "songAddToPlaylistLink":
+			songId := dataset.Get("songid").String()
+			c.app.currentComponent.AddSongAction(restApiV1.SongId(songId))
 		}
 
 		return nil
@@ -230,14 +232,19 @@ func (c *LibraryComponent) refreshSongs() {
 
 func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
-	divContent.WriteString(`<div class="songItem"><div><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<div class="songItem">`)
+
+	// Switch favorite button
+	divContent.WriteString(`<div><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
 	if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]; ok {
 		divContent.WriteString(`<i class="fas fa-star"></i>`)
 	} else {
 		divContent.WriteString(`<i class="far fa-star" style="color: #444;"></i>`)
 	}
-	divContent.WriteString(`</a></div><div><a class="songLink" href="#" data-songid="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
+	divContent.WriteString(`</a></div>`)
 
+	// Song block
+	divContent.WriteString(`<div><a class="songLink" href="#" data-songid="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
 	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
 		divContent.WriteString(`<div>`)
 		if song.AlbumId != restApiV1.UnknownAlbumId {
@@ -253,8 +260,14 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 		}
 		divContent.WriteString(`</div>`)
 	}
+	divContent.WriteString(`</div>`)
 
-	divContent.WriteString(`</div></div>`)
+	// Add to current playlist button
+	divContent.WriteString(`<div><a class="songAddToPlaylistLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<i class="fas fa-plus"></i>`)
+	divContent.WriteString(`</a></div>`)
+
+	divContent.WriteString(`</div>`)
 
 	return divContent.String()
 }

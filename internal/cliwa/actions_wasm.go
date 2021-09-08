@@ -38,14 +38,8 @@ func (c *App) logInAction(this js.Value, i []js.Value) interface{} {
 	return false
 }
 
-func (c *App) logOutAction(this js.Value, i []js.Value) interface{} {
-	c.showStartComponent()
-	return nil
-}
-
-func (c *App) refreshAction(this js.Value, i []js.Value) interface{} {
+func (c *App) refreshAction() {
 	go c.Reload()
-	return nil
 }
 
 func (c *App) playSong(songId restApiV1.SongId) {

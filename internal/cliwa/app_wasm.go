@@ -97,6 +97,7 @@ func (c *App) Reload() {
 	}
 
 	c.libraryComponent.RefreshView()
+	c.currentComponent.RefreshView()
 
 	c.messageComponent.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
 }
