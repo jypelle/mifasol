@@ -72,14 +72,15 @@ func (c *LibraryComponent) Show() {
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink")
+		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink")
 		if !link.Truthy() {
 			return nil
 		}
 		dataset := link.Get("dataset")
 
 		switch link.Get("className").String() {
-		case "songLink":
+		//		case "songLink":
+		case "songPlayNowLink":
 			songId := dataset.Get("songid").String()
 			logrus.Infof("click on %v - %v", dataset, songId)
 			c.app.playSong(restApiV1.SongId(songId))
@@ -262,10 +263,19 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	}
 	divContent.WriteString(`</div>`)
 
-	// Add to current playlist button
-	divContent.WriteString(`<div><a class="songAddToPlaylistLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<div>`)
+
+	// 'Play now' button
+	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<i class="fas fa-play"></i>`)
+	divContent.WriteString(`</a>`)
+
+	// 'Add to current playlist' button
+	divContent.WriteString(`<a class="songAddToPlaylistLink" href="#" data-songid="` + string(song.Id) + `">`)
 	divContent.WriteString(`<i class="fas fa-plus"></i>`)
-	divContent.WriteString(`</a></div>`)
+	divContent.WriteString(`</a>`)
+
+	divContent.WriteString(`</div>`)
 
 	divContent.WriteString(`</div>`)
 

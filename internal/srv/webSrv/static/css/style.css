@@ -29,13 +29,13 @@
 /* Scrollbar */
 /* Works on Firefox */
 * {
-    scrollbar-width: thin;
+    scrollbar-width: auto;
     scrollbar-color: #48899c #222222;
 }
 
 /* Works on Chrome, Edge, and Safari */
 *::-webkit-scrollbar {
-    width: 8px;
+    width: 12px;
 }
 
 *::-webkit-scrollbar-track {
@@ -262,13 +262,23 @@ form > div > div > input {
 .songItem {
     display: flex;
     flex-flow: row nowrap;
-    align-items: center;
-    padding: 0.2rem 0.1rem 0.2rem 0;
+    align-items: stretch;
 }
 
 .songItem > div:nth-child(1) {
     flex: 0;
-    margin-right:0.7rem;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.songItem > div:nth-child(1) > * {
+    display: flex;
+    padding: 0.3rem;
+    align-items: center;
+}
+
+.songItem > div:nth-child(1) > *:hover {
+    background-color: #802121;
 }
 
 .songItem > div:nth-child(2) {
@@ -279,11 +289,12 @@ form > div > div > input {
 
 .songItem > div:nth-child(2) > :first-child {
     margin: 0;
-    padding: 0.26rem 0.26rem 0.26rem 0;
+    padding: 0.3rem 0.3rem 0.18rem 0.3rem;
     display: block;
 }
 
 .songItem > div:nth-child(2) > :nth-child(2) {
+    padding: 0.18rem 0.3rem 0.3rem 0.3rem;
     margin-left: 1rem;
     font-size: 0.8rem;
 }
@@ -293,6 +304,20 @@ form > div > div > input {
     display: flex;
     flex-flow: row nowrap;
     margin: 0 0.1rem 0 0.1rem;
+}
+
+.songItem > div:nth-child(3) > * {
+    display: flex;
+    padding: 0.3rem;
+    align-items: center;
+}
+
+.songItem > div:nth-child(3) > *:not(:hover) {
+    color: #444;
+}
+
+.songItem > div:nth-child(3) > *:hover {
+    background-color: #802121;
 }
 
 .albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
