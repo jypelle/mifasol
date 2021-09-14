@@ -242,21 +242,66 @@ form > div > div > input {
     justify-content: space-between;
 }
 
-.artistItem, .playlistItem, .albumItem {
+.artistItem, .playlistItem {
     display: flex;
     flex-flow: column nowrap;
     padding: 0.2rem 0 0.2rem 0;
 }
 
-.artistItem > a, .albumItem > a, .playlistItem > a {
+.artistItem > a, .playlistItem > a {
     margin: 0;
     padding: 0.26rem 0.26rem 0.26rem 0;
     display: block;
 }
 
-.artistItem > div, .albumItem > div, .playlistItem > div {
+.artistItem > div, .playlistItem > div {
     margin-left: 1rem;
     font-size: 0.8rem;
+}
+
+.albumItem {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+}
+
+.albumItem > div:nth-child(1) {
+    flex: 1;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.albumItem > div:nth-child(1) > :first-child {
+    margin: 0;
+    padding: 0.3rem 0.3rem 0.18rem 0.3rem;
+    display: block;
+}
+
+.albumItem > div:nth-child(1) > :nth-child(2) {
+    padding: 0.18rem 0.3rem 0.3rem 0.3rem;
+    margin-left: 1rem;
+    font-size: 0.8rem;
+}
+
+.albumItem > div:nth-child(2) {
+    flex: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    margin: 0 0.1rem 0 0.1rem;
+}
+
+.albumItem > div:nth-child(2) > * {
+    display: flex;
+    padding: 0.3rem;
+    align-items: center;
+}
+
+.albumItem > div:nth-child(2) > *:not(:hover) {
+    color: #444;
+}
+
+.albumItem > div:nth-child(2) > *:hover {
+    background-color: #802121;
 }
 
 .songItem {
@@ -324,22 +369,22 @@ form > div > div > input {
     background-color: #602020;
 }
 
-a.albumLink {
+.albumLink {
     color: #5ADFDF;
 }
 
-a.artistLink {
+.artistLink {
     color: #A0A9CC;
 }
 
-a.songLink {
+.songLink {
     color: #FFFFE5;
 }
 
-a.playlistLink {
+.playlistLink {
     color: #FFB500;
 }
 
-a.userLink {
+.userLink {
     color: #FFFACD;
 }

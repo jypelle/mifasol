@@ -78,7 +78,7 @@ func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 	}
 }
 
-func (c *CurrentComponent) AddSongsFromArtist(artistId restApiV1.ArtistId) {
+func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
 			c.AddSongAction(song.Id)

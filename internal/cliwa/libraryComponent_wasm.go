@@ -72,24 +72,25 @@ func (c *LibraryComponent) Show() {
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		link := i[0].Get("target").Call("closest", ".songLink, .artistLink, .albumLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
 		if !link.Truthy() {
 			return nil
 		}
 		dataset := link.Get("dataset")
 
 		switch link.Get("className").String() {
-		//		case "songLink":
-		case "songPlayNowLink":
-			songId := dataset.Get("songid").String()
-			logrus.Infof("click on %v - %v", dataset, songId)
-			c.app.playSong(restApiV1.SongId(songId))
 		case "artistLink":
 			artistId := dataset.Get("artistid").String()
 			c.OpenArtistAction(restApiV1.ArtistId(artistId))
+		case "artistAddToPlaylistLink":
+			artistId := dataset.Get("artistid").String()
+			c.app.currentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
 		case "albumLink":
 			albumId := dataset.Get("albumid").String()
 			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
+		case "albumAddToPlaylistLink":
+			albumId := dataset.Get("albumid").String()
+			c.app.currentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
 		case "playlistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
@@ -127,6 +128,27 @@ func (c *LibraryComponent) Show() {
 
 					logrus.Info("Activate")
 				}
+			}()
+		case "songPlayNowLink":
+			songId := dataset.Get("songid").String()
+			//			logrus.Debugf("click on %v - %v", dataset, songId)
+			c.app.playSong(restApiV1.SongId(songId))
+		case "songDownloadLink":
+			songId := dataset.Get("songid").String()
+			song := c.app.localDb.Songs[restApiV1.SongId(songId)]
+
+			go func() {
+				token, cliErr := c.app.restClient.GetToken()
+				if cliErr != nil {
+					return
+				}
+
+				anchor := c.app.doc.Call("createElement", "a")
+				anchor.Set("href", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
+				anchor.Set("download", song.Name+song.Format.Extension())
+				c.app.doc.Get("body").Call("appendChild", anchor)
+				anchor.Call("click")
+				c.app.doc.Get("body").Call("removeChild", anchor)
 			}()
 		case "songAddToPlaylistLink":
 			songId := dataset.Get("songid").String()
@@ -171,10 +193,14 @@ func (c *LibraryComponent) refreshAlbums() {
 	var divContent strings.Builder
 
 	for _, album := range c.app.localDb.OrderedAlbums {
+		divContent.WriteString(`<div class="albumItem">`)
+
+		// Album block
+		divContent.WriteString(`<div>`)
 		if album == nil {
-			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a>`)
+			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a>`)
 		} else {
-			divContent.WriteString(`<div class="albumItem"><a class="albumLink" href="#" data-albumid="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
+			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
 
 			if len(album.ArtistIds) > 0 {
 				divContent.WriteString(`<div>`)
@@ -188,6 +214,21 @@ func (c *LibraryComponent) refreshAlbums() {
 
 			}
 		}
+		divContent.WriteString(`</div>`)
+
+		divContent.WriteString(`<div>`)
+
+		// 'Add to current playlist' button
+		if album == nil {
+			divContent.WriteString(`<a class="albumAddToPlaylistLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">`)
+		} else {
+			divContent.WriteString(`<a class="albumAddToPlaylistLink" href="#" data-albumid="` + string(album.Id) + `">`)
+		}
+		divContent.WriteString(`<i class="fas fa-plus"></i>`)
+		divContent.WriteString(`</a>`)
+
+		divContent.WriteString(`</div>`)
+
 		divContent.WriteString(`</div>`)
 	}
 	listDiv.Set("innerHTML", divContent.String())
@@ -245,7 +286,7 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	divContent.WriteString(`</a></div>`)
 
 	// Song block
-	divContent.WriteString(`<div><a class="songLink" href="#" data-songid="` + string(song.Id) + `">` + html.EscapeString(song.Name) + `</a>`)
+	divContent.WriteString(`<div><p class="songLink">` + html.EscapeString(song.Name) + `</p>`)
 	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
 		divContent.WriteString(`<div>`)
 		if song.AlbumId != restApiV1.UnknownAlbumId {
@@ -264,6 +305,11 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	divContent.WriteString(`</div>`)
 
 	divContent.WriteString(`<div>`)
+
+	// 'Download song' button
+	divContent.WriteString(`<a class="songDownloadLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<i class="fas fa-arrow-down"></i>`)
+	divContent.WriteString(`</a>`)
 
 	// 'Play now' button
 	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `">`)
