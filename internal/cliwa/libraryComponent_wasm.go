@@ -133,7 +133,7 @@ func (c *LibraryComponent) Show() {
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .playlistAddToPlaylistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
 		if !link.Truthy() {
 			return nil
 		}
@@ -155,6 +155,41 @@ func (c *LibraryComponent) Show() {
 		case "playlistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
+		case "playlistFavoriteLink":
+			playlistId := dataset.Get("playlistid").String()
+			favoritePlaylistId := restApiV1.FavoritePlaylistId{
+				UserId:     c.app.restClient.UserId(),
+				PlaylistId: restApiV1.PlaylistId(playlistId),
+			}
+
+			go func() {
+
+				if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][restApiV1.PlaylistId(playlistId)]; ok {
+					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+
+					_, cliErr := c.app.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
+					if cliErr != nil {
+						c.app.messageComponent.Message("Unable to add playlist to favorites")
+						link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+						return
+					}
+					go c.app.Reload()
+					//c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
+
+				} else {
+					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+
+					_, cliErr := c.app.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
+					if cliErr != nil {
+						c.app.messageComponent.Message("Unable to remove playlist from favorites")
+						link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+						return
+					}
+					go c.app.Reload()
+					//c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
+
+				}
+			}()
 		case "playlistAddToPlaylistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.app.currentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
@@ -428,6 +463,15 @@ func (c *LibraryComponent) refreshPlaylistList() {
 	for _, playlist := range c.app.localDb.OrderedPlaylists {
 		if playlist != nil {
 			divContent.WriteString(`<div class="item playlistItem">`)
+
+			// Favorite item
+			divContent.WriteString(`<div class="itemFavorite"><a class="playlistFavoriteLink" href="#" data-playlistid="` + string(playlist.Id) + `">`)
+			if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][playlist.Id]; ok {
+				divContent.WriteString(`<i class="fas fa-star"></i>`)
+			} else {
+				divContent.WriteString(`<i class="far fa-star" style="color: #444;"></i>`)
+			}
+			divContent.WriteString(`</a></div>`)
 
 			// Title item
 			divContent.WriteString(`<div class="itemTitle">`)
