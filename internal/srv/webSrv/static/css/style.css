@@ -242,132 +242,76 @@ form > div > div > input {
     justify-content: space-between;
 }
 
-.artistItem, .playlistItem {
-    display: flex;
-    flex-flow: column nowrap;
-    padding: 0.2rem 0 0.2rem 0;
-}
 
-.artistItem > a, .playlistItem > a {
-    margin: 0;
-    padding: 0.26rem 0.26rem 0.26rem 0;
-    display: block;
-}
-
-.artistItem > div, .playlistItem > div {
-    margin-left: 1rem;
-    font-size: 0.8rem;
-}
-
-.albumItem {
+.item {
     display: flex;
     flex-flow: row nowrap;
     align-items: stretch;
 }
 
-.albumItem > div:nth-child(1) {
-    flex: 1;
-    display: flex;
-    flex-flow: column nowrap;
-}
-
-.albumItem > div:nth-child(1) > :first-child {
-    margin: 0;
-    padding: 0.3rem 0.3rem 0.18rem 0.3rem;
-    display: block;
-}
-
-.albumItem > div:nth-child(1) > :nth-child(2) {
-    padding: 0.18rem 0.3rem 0.3rem 0.3rem;
-    margin-left: 1rem;
-    font-size: 0.8rem;
-}
-
-.albumItem > div:nth-child(2) {
-    flex: 0;
-    display: flex;
-    flex-flow: row nowrap;
-    margin: 0 0.1rem 0 0.1rem;
-}
-
-.albumItem > div:nth-child(2) > * {
-    display: flex;
-    padding: 0.3rem;
-    align-items: center;
-}
-
-.albumItem > div:nth-child(2) > *:not(:hover) {
-    color: #444;
-}
-
-.albumItem > div:nth-child(2) > *:hover {
-    background-color: #802121;
-}
-
-.songItem {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: stretch;
-}
-
-.songItem > div:nth-child(1) {
-    flex: 0;
-    display: flex;
-    flex-flow: row nowrap;
-}
-
-.songItem > div:nth-child(1) > * {
-    display: flex;
-    padding: 0.3rem;
-    align-items: center;
-}
-
-.songItem > div:nth-child(1) > *:hover {
-    background-color: #802121;
-}
-
-.songItem > div:nth-child(2) {
-    flex: 1;
-    display: flex;
-    flex-flow: column nowrap;
-}
-
-.songItem > div:nth-child(2) > :first-child {
-    margin: 0;
-    padding: 0.3rem 0.3rem 0.18rem 0.3rem;
-    display: block;
-}
-
-.songItem > div:nth-child(2) > :nth-child(2) {
-    padding: 0.18rem 0.3rem 0.3rem 0.3rem;
-    margin-left: 1rem;
-    font-size: 0.8rem;
-}
-
-.songItem > div:nth-child(3) {
-    flex: 0;
-    display: flex;
-    flex-flow: row nowrap;
-    margin: 0 0.1rem 0 0.1rem;
-}
-
-.songItem > div:nth-child(3) > * {
-    display: flex;
-    padding: 0.3rem;
-    align-items: center;
-}
-
-.songItem > div:nth-child(3) > *:not(:hover) {
-    color: #444;
-}
-
-.songItem > div:nth-child(3) > *:hover {
-    background-color: #802121;
-}
-
-.albumItem:hover, .artistItem:hover, .songItem:hover, .playlistItem:hover {
+.item:hover {
     background-color: #602020;
 }
+
+.itemFavorite {
+
+}
+
+.itemFavorite {
+    flex: 0;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.itemFavorite > * {
+    display: flex;
+    padding: 0.3rem;
+    align-items: center;
+}
+
+.itemFavorite > *:hover {
+    background-color: #802121;
+}
+
+.itemTitle {
+    flex: 1;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.itemTitle > :first-child {
+    margin: 0;
+    padding: 0.3rem 0.3rem 0.18rem 0.3rem;
+    display: block;
+}
+
+.itemTitle > :nth-child(2) {
+    padding: 0.18rem 0.3rem 0.3rem 0.3rem;
+    margin-left: 1rem;
+    font-size: 0.8rem;
+}
+
+.itemButtons {
+    flex: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    margin: 0 0.1rem 0 0.1rem;
+}
+
+.itemButtons > * {
+    display: flex;
+    padding: 0.3rem;
+    align-items: center;
+}
+
+.itemButtons > *:not(:hover) {
+    color: #444;
+}
+
+.itemButtons > *:hover {
+    background-color: #802121;
+}
+
 
 .albumLink {
     color: #5ADFDF;

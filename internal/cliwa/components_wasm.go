@@ -46,6 +46,7 @@ func (c *App) showHomeComponent() {
 	}))
 
 	c.libraryComponent.Show()
+	c.currentComponent.Show()
 
 	go func() {
 		c.Reload()

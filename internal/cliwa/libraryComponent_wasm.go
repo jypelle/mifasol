@@ -1,26 +1,13 @@
 package cliwa
 
 import (
+	"fmt"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
 	"html"
 	"strings"
 	"syscall/js"
 )
-
-type LibraryComponent struct {
-	app          *App
-	libraryState libraryState
-}
-
-type libraryState struct {
-	libraryType libraryType
-	artistId    *restApiV1.ArtistId
-	albumId     *restApiV1.AlbumId
-	playlistId  *restApiV1.PlaylistId
-	userId      *restApiV1.UserId
-	nameFilter  *string
-}
 
 type libraryType int64
 
@@ -31,6 +18,75 @@ const (
 	libraryTypeSongs
 	libraryTypeUsers
 )
+
+type libraryState struct {
+	libraryType libraryType
+	artistId    *restApiV1.ArtistId
+	albumId     *restApiV1.AlbumId
+	playlistId  *restApiV1.PlaylistId
+	userId      *restApiV1.UserId
+	nameFilter  *string
+}
+
+func (c *LibraryComponent) refreshTitle() {
+
+	var title string
+
+	switch c.libraryState.libraryType {
+	case libraryTypeArtists:
+		if c.libraryState.userId == nil {
+			title = "Artists"
+		} else {
+			title = fmt.Sprintf("Favorite artists from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+		}
+	case libraryTypeAlbums:
+		if c.libraryState.userId == nil {
+			title = "Albums"
+		} else {
+			title = fmt.Sprintf("Favorite albums from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+		}
+	case libraryTypePlaylists:
+		if c.libraryState.userId == nil {
+			title = "Playlists"
+		} else {
+			title = fmt.Sprintf("Favorite playlists from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+		}
+	case libraryTypeSongs:
+		if c.libraryState.userId == nil && c.libraryState.playlistId == nil && c.libraryState.artistId == nil && c.libraryState.albumId == nil {
+			title = "Songs"
+		}
+		if c.libraryState.playlistId != nil {
+			title = fmt.Sprintf("Songs from %s", c.app.localDb.Playlists[*c.libraryState.playlistId].Name)
+		}
+		if c.libraryState.userId != nil {
+			title = fmt.Sprintf("Favorite songs from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+		}
+		if c.libraryState.artistId != nil {
+			if *c.libraryState.artistId != restApiV1.UnknownArtistId {
+				title = fmt.Sprintf("Songs from %s", c.app.localDb.Artists[*c.libraryState.artistId].Name)
+			} else {
+				title = "Songs from unknown artists"
+			}
+		}
+		if c.libraryState.albumId != nil {
+			if *c.libraryState.albumId != restApiV1.UnknownAlbumId {
+				title = fmt.Sprintf("Songs from %s", c.app.localDb.Albums[*c.libraryState.albumId].Name)
+			} else {
+				title = "Songs from unknown albums"
+			}
+		}
+	case libraryTypeUsers:
+		title = "Users"
+	}
+
+	titleSpan := c.app.doc.Call("getElementById", "libraryTitle")
+	titleSpan.Set("innerHTML", title)
+}
+
+type LibraryComponent struct {
+	app          *App
+	libraryState libraryState
+}
 
 func NewLibraryComponent(app *App) *LibraryComponent {
 	c := &LibraryComponent{
@@ -69,10 +125,15 @@ func (c *LibraryComponent) Show() {
 		c.ShowPlaylistsAction()
 		return nil
 	}))
+	libraryUsersButton := c.app.doc.Call("getElementById", "libraryUsersButton")
+	libraryUsersButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+		c.ShowUsersAction()
+		return nil
+	}))
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .playlistAddToPlaylistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
 		if !link.Truthy() {
 			return nil
 		}
@@ -94,6 +155,9 @@ func (c *LibraryComponent) Show() {
 		case "playlistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
+		case "playlistAddToPlaylistLink":
+			playlistId := dataset.Get("playlistid").String()
+			c.app.currentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
@@ -161,62 +225,89 @@ func (c *LibraryComponent) Show() {
 }
 
 func (c *LibraryComponent) RefreshView() {
+	// Refresh library list
 	switch c.libraryState.libraryType {
 	case libraryTypeArtists:
-		c.refreshArtists()
+		c.refreshArtistList()
 	case libraryTypeAlbums:
-		c.refreshAlbums()
+		c.refreshAlbumList()
 	case libraryTypePlaylists:
-		c.refreshPlaylists()
+		c.refreshPlaylistList()
 	case libraryTypeSongs:
-		c.refreshSongs()
+		c.refreshSongList()
+	case libraryTypeUsers:
+		c.refreshUserList()
 	}
+
+	// Refresh library title
+	c.refreshTitle()
 }
 
-func (c *LibraryComponent) refreshArtists() {
+func (c *LibraryComponent) refreshArtistList() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent strings.Builder
 	for _, artist := range c.app.localDb.OrderedArtists {
+		divContent.WriteString(`<div class="item artistItem">`)
+
+		// Title item
+		divContent.WriteString(`<div class="itemTitle">`)
+
 		if artist == nil {
-			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" data-artistid="` + string(restApiV1.UnknownArtistId) + `">(Unknown artist)</a></div>`)
+			divContent.WriteString(`<a class="artistLink" href="#" data-artistid="` + string(restApiV1.UnknownArtistId) + `">(Unknown artist)</a><div></div>`)
 		} else {
-			divContent.WriteString(`<div class="artistItem"><a class="artistLink" href="#" data-artistid="` + string(artist.Id) + `">` + html.EscapeString(artist.Name) + `</a></div>`)
+			divContent.WriteString(`<a class="artistLink" href="#" data-artistid="` + string(artist.Id) + `">` + html.EscapeString(artist.Name) + `</a><div></div>`)
 		}
+		divContent.WriteString(`</div>`)
+
+		// Buttons item
+		divContent.WriteString(`<div class="itemButtons">`)
+
+		// 'Add to current playlist' button
+		if artist == nil {
+			divContent.WriteString(`<a class="artistAddToPlaylistLink" href="#" data-artistid="` + string(restApiV1.UnknownArtistId) + `">`)
+		} else {
+			divContent.WriteString(`<a class="artistAddToPlaylistLink" href="#" data-artistid="` + string(artist.Id) + `">`)
+		}
+		divContent.WriteString(`<i class="fas fa-plus"></i>`)
+		divContent.WriteString(`</a>`)
+
+		divContent.WriteString(`</div>`)
+
+		divContent.WriteString(`</div>`)
+
 	}
 	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) refreshAlbums() {
+func (c *LibraryComponent) refreshAlbumList() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent strings.Builder
 
 	for _, album := range c.app.localDb.OrderedAlbums {
-		divContent.WriteString(`<div class="albumItem">`)
+		divContent.WriteString(`<div class="item albumItem">`)
 
-		// Album block
-		divContent.WriteString(`<div>`)
+		// Title item
+		divContent.WriteString(`<div class="itemTitle">`)
 		if album == nil {
-			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a>`)
+			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(restApiV1.UnknownAlbumId) + `">(Unknown album)</a><div></div>`)
 		} else {
 			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(album.Id) + `">` + html.EscapeString(album.Name) + `</a>`)
 
-			if len(album.ArtistIds) > 0 {
-				divContent.WriteString(`<div>`)
-				for idx, artistId := range album.ArtistIds {
-					if idx > 0 {
-						divContent.WriteString(` / `)
-					}
-					divContent.WriteString(`<a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
+			divContent.WriteString(`<div>`)
+			for idx, artistId := range album.ArtistIds {
+				if idx > 0 {
+					divContent.WriteString(` / `)
 				}
-				divContent.WriteString(`</div>`)
-
+				divContent.WriteString(`<a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
 			}
+			divContent.WriteString(`</div>`)
 		}
 		divContent.WriteString(`</div>`)
 
-		divContent.WriteString(`<div>`)
+		// Buttons item
+		divContent.WriteString(`<div class="itemButtons">`)
 
 		// 'Add to current playlist' button
 		if album == nil {
@@ -234,7 +325,7 @@ func (c *LibraryComponent) refreshAlbums() {
 	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) refreshSongs() {
+func (c *LibraryComponent) refreshSongList() {
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
@@ -274,10 +365,10 @@ func (c *LibraryComponent) refreshSongs() {
 
 func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
-	divContent.WriteString(`<div class="songItem">`)
+	divContent.WriteString(`<div class="item songItem">`)
 
-	// Switch favorite button
-	divContent.WriteString(`<div><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
+	// Favorite item
+	divContent.WriteString(`<div class="itemFavorite"><a class="songFavoriteLink" href="#" data-songid="` + string(song.Id) + `">`)
 	if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]; ok {
 		divContent.WriteString(`<i class="fas fa-star"></i>`)
 	} else {
@@ -285,8 +376,8 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	}
 	divContent.WriteString(`</a></div>`)
 
-	// Song block
-	divContent.WriteString(`<div><p class="songLink">` + html.EscapeString(song.Name) + `</p>`)
+	// Title item
+	divContent.WriteString(`<div class="itemTitle"><p class="songLink">` + html.EscapeString(song.Name) + `</p>`)
 	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
 		divContent.WriteString(`<div>`)
 		if song.AlbumId != restApiV1.UnknownAlbumId {
@@ -304,7 +395,8 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	}
 	divContent.WriteString(`</div>`)
 
-	divContent.WriteString(`<div>`)
+	// Buttons item
+	divContent.WriteString(`<div class="itemButtons">`)
 
 	// 'Download song' button
 	divContent.WriteString(`<a class="songDownloadLink" href="#" data-songid="` + string(song.Id) + `">`)
@@ -328,18 +420,59 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	return divContent.String()
 }
 
-func (c *LibraryComponent) refreshPlaylists() {
+func (c *LibraryComponent) refreshPlaylistList() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
-	var divContent string
+	var divContent strings.Builder
+
 	for _, playlist := range c.app.localDb.OrderedPlaylists {
 		if playlist != nil {
-			divContent += `<div class="playlistItem"><a class="playlistLink" href="#" data-playlistid="` + string(playlist.Id) + `">` + html.EscapeString(playlist.Name) + `</a></div>`
+			divContent.WriteString(`<div class="item playlistItem">`)
+
+			// Title item
+			divContent.WriteString(`<div class="itemTitle">`)
+
+			divContent.WriteString(`<a class="playlistLink" href="#" data-playlistid="` + string(playlist.Id) + `">` + html.EscapeString(playlist.Name) + `</a><div></div>`)
+
+			divContent.WriteString(`</div>`)
+
+			// Buttons item
+			divContent.WriteString(`<div class="itemButtons">`)
+
+			// 'Add to current playlist' button
+			divContent.WriteString(`<a class="playlistAddToPlaylistLink" href="#" data-playlistid="` + string(playlist.Id) + `">`)
+			divContent.WriteString(`<i class="fas fa-plus"></i>`)
+			divContent.WriteString(`</a>`)
+
+			divContent.WriteString(`</div>`)
+
+			divContent.WriteString(`</div>`)
 		}
 	}
-	listDiv.Set("innerHTML", divContent)
+	listDiv.Set("innerHTML", divContent.String())
 }
 
+func (c *LibraryComponent) refreshUserList() {
+	listDiv := c.app.doc.Call("getElementById", "libraryList")
+
+	var divContent strings.Builder
+
+	for _, user := range c.app.localDb.OrderedUsers {
+		if user != nil {
+			divContent.WriteString(`<div class="item userItem">`)
+
+			// Title item
+			divContent.WriteString(`<div class="itemTitle">`)
+
+			divContent.WriteString(`<a class="userLink" href="#" data-userid="` + string(user.Id) + `">` + html.EscapeString(user.Name) + `</a><div></div>`)
+
+			divContent.WriteString(`</div>`)
+
+			divContent.WriteString(`</div>`)
+		}
+	}
+	listDiv.Set("innerHTML", divContent.String())
+}
 func (c *LibraryComponent) ShowArtistsAction() {
 	c.libraryState = libraryState{
 		libraryType: libraryTypeArtists,
@@ -364,6 +497,13 @@ func (c *LibraryComponent) ShowSongsAction() {
 func (c *LibraryComponent) ShowPlaylistsAction() {
 	c.libraryState = libraryState{
 		libraryType: libraryTypePlaylists,
+	}
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) ShowUsersAction() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeUsers,
 	}
 	c.RefreshView()
 }
