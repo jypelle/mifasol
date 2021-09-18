@@ -69,7 +69,7 @@ h1, h2, h3 {
 
 a {
     text-decoration: none;
-    color: #ccc;
+    color: #ddd;
 }
 a:hover {
     color: #f0f0f0;
@@ -105,7 +105,6 @@ input {
 
 textarea:focus,
 input:focus {
-    border-color: rgba(225, 225, 225, 0.8);
     outline: 0;
     box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.075), 0 0 8px rgba(225, 225, 225, 0.6);
 }
@@ -167,6 +166,71 @@ form > div > div > select,
 form > div > div > textarea,
 form > div > div > input {
     width: 100%;
+}
+
+/* Switch */
+
+input[type="checkbox"] {
+    width: 0;
+    height: 0;
+    visibility: hidden;
+}
+
+input[type="checkbox"] + label {
+    width: 40px;
+    height: 19px;
+    display:inline-block;
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    transition: 0.1s;
+}
+input[type="checkbox"] + label:after {
+    content: "";
+    width: 13px;
+    height: 13px;
+    background-color: #ccc;
+    position: absolute;
+    border-radius: 19px;
+    top: 3px;
+    left: 3px;
+    transition: 0.1s;
+}
+
+input[type="checkbox"]:checked + label:after {
+    left: calc(100% - 3px);
+    transform: translateX(-100%);
+}
+
+input[type="checkbox"]:checked + label::after {
+    background-color: #48899c;
+}
+
+
+
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ffffff;
+    transition: .1s;
+    border-radius: 19px;
+    border: 3px solid #ffffff;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 13px;
+    width: 13px;
+    background-color: #333;
+    transition: .1s;
+    border-radius: 50%;
 }
 
 /* Loader */
@@ -300,7 +364,7 @@ form > div > div > input {
 
 .itemButtons > * {
     display: flex;
-    padding: 0.3rem;
+    padding: 0.4rem;
     align-items: center;
 }
 

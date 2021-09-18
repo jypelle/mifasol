@@ -25,6 +25,8 @@ type App struct {
 	libraryComponent *LibraryComponent
 	currentComponent *CurrentComponent
 	playerComponent  *PlayerComponent
+
+	eventFunc chan func()
 }
 
 func NewApp(debugMode bool) *App {
@@ -35,7 +37,8 @@ func NewApp(debugMode bool) *App {
 		config: config.ClientConfig{
 			ClientEditableConfig: config.NewClientEditableConfig(nil),
 		},
-		doc: js.Global().Get("document"),
+		doc:       js.Global().Get("document"),
+		eventFunc: make(chan func(), 100),
 	}
 
 	app.messageComponent = NewMessageComponent(app)
@@ -53,8 +56,15 @@ func (c *App) Start() {
 
 	c.showStartComponent()
 
-	// Keep wasm app alive
-	<-make(chan bool)
+	// Keep wasm app alive with event func loop
+	func() {
+		for {
+			select {
+			case f := <-c.eventFunc:
+				f()
+			}
+		}
+	}()
 }
 
 func (c *App) RenderTemplate(content interface{}, filenames ...string) string {
@@ -100,4 +110,22 @@ func (c *App) Reload() {
 	c.currentComponent.RefreshView()
 
 	c.messageComponent.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
+}
+
+func (c *App) AddRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		c.eventFunc <- func() {
+			fn(this, args)
+		}
+		return nil
+	})
+}
+
+func (c *App) AddEventFunc(fn func()) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		c.eventFunc <- func() {
+			fn()
+		}
+		return nil
+	})
 }

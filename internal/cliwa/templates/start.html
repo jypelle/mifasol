@@ -1,11 +1,11 @@
-<main style="display: flex; flex-flow: column nowrap; flex-grow: 1; background-color: #48899c;">
+<main style="display: flex; flex-flow: column nowrap; flex-grow: 1; background-color: #07586a;">
     <div style="flex: 1; display: flex; align-items: center; justify-content: center; background-color: #111; box-shadow: 0 0 1rem 0.2rem #111; ">
         <h1 style="margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
     </div>
     <div style="flex: 2; display: flex; flex-flow: row wrap; align-content: flex-start; justify-content: center; padding-top: 2rem;">
         <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 22rem;">
             <h2>Connect to web client (alpha!)</h2>
-            <form onsubmit="return logInAction()">
+            <form onsubmit="logInAction();return false;">
                 <div>
                     <label for="mifasolUsername">Username</label>
                     <div>
@@ -20,11 +20,8 @@
                 </div>
                 <div>
                     <label></label>
-                    <div>
-                        <label for="rememberMe">
-                            <input id="rememberMe" value="true" type="checkbox" checked>
-                            Remember me
-                        </label>
+                    <div><input id="rememberMe" value="true" type="checkbox" checked><label for="rememberMe"></label>
+                        Remember me
                     </div>
                 </div>
                 <p id="message"></p>

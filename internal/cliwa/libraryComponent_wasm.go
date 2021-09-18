@@ -72,7 +72,7 @@ func (c *LibraryComponent) refreshTitle() {
 			if *c.libraryState.albumId != restApiV1.UnknownAlbumId {
 				title = fmt.Sprintf("Songs from %s", c.app.localDb.Albums[*c.libraryState.albumId].Name)
 			} else {
-				title = "Songs from unknown albums"
+				title = "Songs from unknown album"
 			}
 		}
 	case libraryTypeUsers:
@@ -84,8 +84,9 @@ func (c *LibraryComponent) refreshTitle() {
 }
 
 type LibraryComponent struct {
-	app          *App
-	libraryState libraryState
+	app           *App
+	libraryState  libraryState
+	onlyFavorites bool
 }
 
 func NewLibraryComponent(app *App) *LibraryComponent {
@@ -106,36 +107,23 @@ func NewLibraryComponent(app *App) *LibraryComponent {
 
 func (c *LibraryComponent) Show() {
 	libraryArtistsButton := c.app.doc.Call("getElementById", "libraryArtistsButton")
-	libraryArtistsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.ShowArtistsAction()
-		return nil
-	}))
+	libraryArtistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowArtistsAction))
 	libraryAlbumsButton := c.app.doc.Call("getElementById", "libraryAlbumsButton")
-	libraryAlbumsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.ShowAlbumsAction()
-		return nil
-	}))
+	libraryAlbumsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowAlbumsAction))
 	librarySongsButton := c.app.doc.Call("getElementById", "librarySongsButton")
-	librarySongsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.ShowSongsAction()
-		return nil
-	}))
+	librarySongsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowSongsAction))
 	libraryPlaylistsButton := c.app.doc.Call("getElementById", "libraryPlaylistsButton")
-	libraryPlaylistsButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.ShowPlaylistsAction()
-		return nil
-	}))
+	libraryPlaylistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowPlaylistsAction))
 	libraryUsersButton := c.app.doc.Call("getElementById", "libraryUsersButton")
-	libraryUsersButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.ShowUsersAction()
-		return nil
-	}))
+	libraryUsersButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowUsersAction))
+	libraryFavoritesSwitch := c.app.doc.Call("getElementById", "libraryFavoritesSwitch")
+	libraryFavoritesSwitch.Call("addEventListener", "click", c.app.AddRichEventFunc(c.FavoritesSwitchAction))
 
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
-	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
 		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
 		if !link.Truthy() {
-			return nil
+			return
 		}
 		dataset := link.Get("dataset")
 
@@ -162,33 +150,31 @@ func (c *LibraryComponent) Show() {
 				PlaylistId: restApiV1.PlaylistId(playlistId),
 			}
 
-			go func() {
+			if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][restApiV1.PlaylistId(playlistId)]; ok {
+				link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 
-				if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][restApiV1.PlaylistId(playlistId)]; ok {
-					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
-
-					_, cliErr := c.app.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
-					if cliErr != nil {
-						c.app.messageComponent.Message("Unable to add playlist to favorites")
-						link.Set("innerHTML", `<i class="fas fa-star"></i>`)
-						return
-					}
-					c.app.Reload()
-					//c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
-				} else {
+				_, cliErr := c.app.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
+				if cliErr != nil {
+					c.app.messageComponent.Message("Unable to add playlist to favorites")
 					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
-
-					_, cliErr := c.app.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
-					if cliErr != nil {
-						c.app.messageComponent.Message("Unable to remove playlist from favorites")
-						link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
-						return
-					}
-					c.app.Reload()
-					//c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
-
+					return
 				}
-			}()
+				c.app.Reload()
+				//c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
+			} else {
+				link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+
+				_, cliErr := c.app.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
+				if cliErr != nil {
+					c.app.messageComponent.Message("Unable to remove playlist from favorites")
+					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+					return
+				}
+				c.app.Reload()
+				//c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
+
+			}
+
 		case "playlistAddToPlaylistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.app.currentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
@@ -199,34 +185,31 @@ func (c *LibraryComponent) Show() {
 				SongId: restApiV1.SongId(songId),
 			}
 
-			go func() {
+			if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][restApiV1.SongId(songId)]; ok {
+				link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 
-				if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][restApiV1.SongId(songId)]; ok {
-					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
-
-					_, cliErr := c.app.restClient.DeleteFavoriteSong(favoriteSongId)
-					if cliErr != nil {
-						c.app.messageComponent.Message("Unable to add song to favorites")
-						link.Set("innerHTML", `<i class="fas fa-star"></i>`)
-						return
-					}
-					c.app.localDb.RemoveSongFromMyFavorite(restApiV1.SongId(songId))
-
-					logrus.Info("Deactivate")
-				} else {
+				_, cliErr := c.app.restClient.DeleteFavoriteSong(favoriteSongId)
+				if cliErr != nil {
+					c.app.messageComponent.Message("Unable to add song to favorites")
 					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
-
-					_, cliErr := c.app.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
-					if cliErr != nil {
-						c.app.messageComponent.Message("Unable to remove song from favorites")
-						link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
-						return
-					}
-					c.app.localDb.AddSongToMyFavorite(restApiV1.SongId(songId))
-
-					logrus.Info("Activate")
+					return
 				}
-			}()
+				c.app.localDb.RemoveSongFromMyFavorite(restApiV1.SongId(songId))
+
+				logrus.Info("Deactivate")
+			} else {
+				link.Set("innerHTML", `<i class="fas fa-star"></i>`)
+
+				_, cliErr := c.app.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
+				if cliErr != nil {
+					c.app.messageComponent.Message("Unable to remove song from favorites")
+					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
+					return
+				}
+				c.app.localDb.AddSongToMyFavorite(restApiV1.SongId(songId))
+
+				logrus.Info("Activate")
+			}
 		case "songPlayNowLink":
 			songId := dataset.Get("songid").String()
 			//			logrus.Debugf("click on %v - %v", dataset, songId)
@@ -235,25 +218,22 @@ func (c *LibraryComponent) Show() {
 			songId := dataset.Get("songid").String()
 			song := c.app.localDb.Songs[restApiV1.SongId(songId)]
 
-			go func() {
-				token, cliErr := c.app.restClient.GetToken()
-				if cliErr != nil {
-					return
-				}
+			token, cliErr := c.app.restClient.GetToken()
+			if cliErr != nil {
+				return
+			}
 
-				anchor := c.app.doc.Call("createElement", "a")
-				anchor.Set("href", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
-				anchor.Set("download", song.Name+song.Format.Extension())
-				c.app.doc.Get("body").Call("appendChild", anchor)
-				anchor.Call("click")
-				c.app.doc.Get("body").Call("removeChild", anchor)
-			}()
+			anchor := c.app.doc.Call("createElement", "a")
+			anchor.Set("href", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
+			anchor.Set("download", song.Name+song.Format.Extension())
+			c.app.doc.Get("body").Call("appendChild", anchor)
+			anchor.Call("click")
+			c.app.doc.Get("body").Call("removeChild", anchor)
+
 		case "songAddToPlaylistLink":
 			songId := dataset.Get("songid").String()
 			c.app.currentComponent.AddSongAction(restApiV1.SongId(songId))
 		}
-
-		return nil
 	}))
 
 }
@@ -281,7 +261,15 @@ func (c *LibraryComponent) refreshArtistList() {
 	listDiv := c.app.doc.Call("getElementById", "libraryList")
 
 	var divContent strings.Builder
-	for _, artist := range c.app.localDb.OrderedArtists {
+
+	var artists []*restApiV1.Artist
+	if c.onlyFavorites {
+		artists = c.app.localDb.UserOrderedFavoriteArtists[c.app.restClient.UserId()]
+	} else {
+		artists = c.app.localDb.OrderedArtists
+	}
+
+	for _, artist := range artists {
 		divContent.WriteString(`<div class="item artistItem">`)
 
 		// Title item
@@ -319,7 +307,14 @@ func (c *LibraryComponent) refreshAlbumList() {
 
 	var divContent strings.Builder
 
-	for _, album := range c.app.localDb.OrderedAlbums {
+	var albums []*restApiV1.Album
+	if c.onlyFavorites {
+		albums = c.app.localDb.UserOrderedFavoriteAlbums[c.app.restClient.UserId()]
+	} else {
+		albums = c.app.localDb.OrderedAlbums
+	}
+
+	for _, album := range albums {
 		divContent.WriteString(`<div class="item albumItem">`)
 
 		// Title item
@@ -381,7 +376,11 @@ func (c *LibraryComponent) refreshSongList() {
 				songList = c.app.localDb.AlbumOrderedSongs[*c.libraryState.albumId]
 			}
 		} else {
-			songList = c.app.localDb.OrderedSongs
+			if c.onlyFavorites {
+				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.restClient.UserId()]
+			} else {
+				songList = c.app.localDb.OrderedSongs
+			}
 		}
 
 		listDiv.Set("innerHTML", "")
@@ -572,5 +571,11 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 		libraryType: libraryTypeSongs,
 		playlistId:  &playlistId,
 	}
+
+	c.RefreshView()
+}
+
+func (c *LibraryComponent) FavoritesSwitchAction(this js.Value, args []js.Value) {
+	c.onlyFavorites = this.Get("checked").Bool()
 	c.RefreshView()
 }

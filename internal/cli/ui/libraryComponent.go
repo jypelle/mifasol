@@ -91,7 +91,7 @@ func (l libraryFilter) label() string {
 			if *l.albumId != restApiV1.UnknownAlbumId {
 				return "Songs from %s album"
 			} else {
-				return "Songs from unknown albums"
+				return "Songs from unknown album"
 			}
 		}
 	case libraryTypeUsers:

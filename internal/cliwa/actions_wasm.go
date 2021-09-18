@@ -5,43 +5,37 @@ import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
-	"syscall/js"
 )
 
-func (c *App) logInAction(this js.Value, i []js.Value) interface{} {
+func (c *App) logInAction() {
 	serverUsername := c.doc.Call("getElementById", "mifasolUsername")
 	serverPassword := c.doc.Call("getElementById", "mifasolPassword")
 	c.config.Username = serverUsername.Get("value").String()
 	c.config.Password = serverPassword.Get("value").String()
 
-	go func() {
-		// Create rest Client
-		restClient, err := restClientV1.NewRestClient(&c.config, true)
-		if err != nil {
-			message := c.doc.Call("getElementById", "message")
-			message.Set("innerHTML", "Unable to connect to server")
-			logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
-			return
-		}
-		if restClient.UserId() == "xxx" {
-			message := c.doc.Call("getElementById", "message")
-			message.Set("innerHTML", "Wrong credentials")
-			return
-		}
+	// Create rest Client
+	restClient, err := restClientV1.NewRestClient(&c.config, true)
+	if err != nil {
+		message := c.doc.Call("getElementById", "message")
+		message.Set("innerHTML", "Unable to connect to server")
+		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
+		return
+	}
+	if restClient.UserId() == "xxx" {
+		message := c.doc.Call("getElementById", "message")
+		message.Set("innerHTML", "Wrong credentials")
+		return
+	}
 
-		c.restClient = restClient
-		c.localDb = localdb.NewLocalDb(c.restClient, c.config.Collator())
+	c.restClient = restClient
+	c.localDb = localdb.NewLocalDb(c.restClient, c.config.Collator())
 
-		c.showHomeComponent()
-	}()
+	c.showHomeComponent()
 
-	return false
 }
 
 func (c *App) refreshAction() {
-	go func() {
-		c.Reload()
-	}()
+	c.Reload()
 }
 
 func (c *App) playSong(songId restApiV1.SongId) {

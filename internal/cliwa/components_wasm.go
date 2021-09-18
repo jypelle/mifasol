@@ -26,7 +26,7 @@ func (c *App) showStartComponent() {
 	c.doc.Call("getElementById", "mifasolUsername").Call("focus")
 
 	// Set button
-	js.Global().Set("logInAction", js.FuncOf(c.logInAction))
+	js.Global().Set("logInAction", c.AddEventFunc(c.logInAction))
 }
 
 func (c *App) showHomeComponent() {
@@ -35,21 +35,13 @@ func (c *App) showHomeComponent() {
 
 	// Set buttons
 	logOutButton := c.doc.Call("getElementById", "logOutButton")
-	logOutButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.showStartComponent()
-		return nil
-	}))
+	logOutButton.Call("addEventListener", "click", c.AddEventFunc(c.showStartComponent))
 	refreshButton := c.doc.Call("getElementById", "refreshButton")
-	refreshButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
-		c.refreshAction()
-		return nil
-	}))
+	refreshButton.Call("addEventListener", "click", c.AddEventFunc(c.refreshAction))
 
 	c.libraryComponent.Show()
 	c.currentComponent.Show()
 
-	go func() {
-		c.Reload()
-	}()
+	c.Reload()
 
 }

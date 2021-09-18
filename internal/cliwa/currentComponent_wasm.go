@@ -25,17 +25,16 @@ func NewCurrentComponent(app *App) *CurrentComponent {
 
 func (c *CurrentComponent) Show() {
 	currentClearButton := c.app.doc.Call("getElementById", "currentClearButton")
-	currentClearButton.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+	currentClearButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
 		c.RefreshView()
-		return nil
 	}))
 
 	listDiv := c.app.doc.Call("getElementById", "currentList")
-	listDiv.Call("addEventListener", "click", js.FuncOf(func(this js.Value, i []js.Value) interface{} {
+	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
 		link := i[0].Get("target").Call("closest", ".artistLink, .albumLink, .songPlayNowLink")
 		if !link.Truthy() {
-			return nil
+			return
 		}
 		dataset := link.Get("dataset")
 
@@ -50,9 +49,6 @@ func (c *CurrentComponent) Show() {
 			songId := dataset.Get("songid").String()
 			c.app.playSong(restApiV1.SongId(songId))
 		}
-
-		return nil
-
 	}))
 
 }

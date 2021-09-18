@@ -8,12 +8,16 @@
     <div style="display: flex; flex-flow: row nowrap; flex: 1 1 auto; min-height: 0; margin: -1rem 0 0 -1rem;">
         <div id="libraryComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; margin: 1rem 0 0 1rem;">
             <h2 id="libraryTitle" style="margin:0.5rem 0 0.5rem 0;"></h2>
-            <div id="libraryButtons" style="margin: -0.5rem 0 0 -0.5rem;">
-                <button id="libraryArtistsButton" style="margin: 0.5rem 0 0 0.5rem;" type="button" >Artists</button>
-                <button id="libraryAlbumsButton" style="margin: 0.5rem 0 0 0.5rem;" type="button" >Albums</button>
-                <button id="librarySongsButton" style="margin: 0.5rem 0 0 0.5rem;" type="button" >Songs</button>
-                <button id="libraryPlaylistsButton" style="margin: 0.5rem 0 0 0.5rem;" type="button" >Playlists</button>
-                <button id="libraryUsersButton" style="margin: 0.5rem 0 0 0.5rem;" type="button" >Users</button>
+            <div id="libraryButtons" style="display: flex; flex-flow: row wrap; gap: 0.5rem;">
+                <button id="libraryArtistsButton" type="button" >Artists</button>
+                <button id="libraryAlbumsButton" type="button" >Albums</button>
+                <button id="librarySongsButton" type="button" >Songs</button>
+                <button id="libraryPlaylistsButton" type="button" >Playlists</button>
+                <button id="libraryUsersButton" type="button" >Users</button>
+                <div style="flex:1;"></div>
+                <div>
+                    <input type="checkbox" id="libraryFavoritesSwitch"><label for="libraryFavoritesSwitch"></label> Favorites
+                </div>
             </div>
             <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>
