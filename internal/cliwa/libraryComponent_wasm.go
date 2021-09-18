@@ -173,9 +173,8 @@ func (c *LibraryComponent) Show() {
 						link.Set("innerHTML", `<i class="fas fa-star"></i>`)
 						return
 					}
-					go c.app.Reload()
+					c.app.Reload()
 					//c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
-
 				} else {
 					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
 
@@ -185,7 +184,7 @@ func (c *LibraryComponent) Show() {
 						link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 						return
 					}
-					go c.app.Reload()
+					c.app.Reload()
 					//c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
 
 				}

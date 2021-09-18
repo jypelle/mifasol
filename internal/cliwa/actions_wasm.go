@@ -39,7 +39,9 @@ func (c *App) logInAction(this js.Value, i []js.Value) interface{} {
 }
 
 func (c *App) refreshAction() {
-	go c.Reload()
+	go func() {
+		c.Reload()
+	}()
 }
 
 func (c *App) playSong(songId restApiV1.SongId) {
