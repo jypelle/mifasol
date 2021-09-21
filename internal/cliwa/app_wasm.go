@@ -9,6 +9,7 @@ import (
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 	"html/template"
+	"net/url"
 	"strconv"
 	"syscall/js"
 )
@@ -21,10 +22,8 @@ type App struct {
 	templateHelpers template.FuncMap
 	doc             js.Value
 
-	messageComponent *MessageComponent
-	libraryComponent *LibraryComponent
-	currentComponent *CurrentComponent
-	playerComponent  *PlayerComponent
+	StartComponent *StartComponent
+	HomeComponent  *HomeComponent
 
 	eventFunc chan func()
 }
@@ -41,10 +40,7 @@ func NewApp(debugMode bool) *App {
 		eventFunc: make(chan func(), 100),
 	}
 
-	app.messageComponent = NewMessageComponent(app)
-	app.libraryComponent = NewLibraryComponent(app)
-	app.currentComponent = NewCurrentComponent(app)
-	app.playerComponent = NewPlayerComponent(app)
+	app.StartComponent = NewStartComponent(app)
 
 	logrus.Infof("Client created")
 
@@ -54,7 +50,7 @@ func NewApp(debugMode bool) *App {
 func (c *App) Start() {
 	c.retrieveServerCredentials()
 
-	c.showStartComponent()
+	c.StartComponent.Show()
 
 	// Keep wasm app alive with event func loop
 	func() {
@@ -94,24 +90,6 @@ func (c *App) RenderTemplate(content interface{}, filenames ...string) string {
 	return w.String()
 }
 
-func (c *App) Reload() {
-	if c.localDb == nil {
-		return
-	}
-	c.messageComponent.Message("Syncing...")
-	// Refresh In memory Db
-	err := c.localDb.Refresh()
-	if err != nil {
-		c.messageComponent.Message("Unable to load data from mifasolsrv")
-		return
-	}
-
-	c.libraryComponent.RefreshView()
-	c.currentComponent.RefreshView()
-
-	c.messageComponent.Message(strconv.Itoa(len(c.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.localDb.Users)) + " users.")
-}
-
 func (c *App) AddRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		c.eventFunc <- func() {
@@ -128,4 +106,13 @@ func (c *App) AddEventFunc(fn func()) js.Func {
 		}
 		return nil
 	})
+}
+
+func (c *App) retrieveServerCredentials() {
+	rawUrl := js.Global().Get("window").Get("location").Get("href").String()
+	baseUrl, _ := url.Parse(rawUrl)
+
+	c.config.ServerHostname = baseUrl.Hostname()
+	c.config.ServerPort, _ = strconv.ParseInt(baseUrl.Port(), 10, 64)
+	c.config.ServerSsl = baseUrl.Scheme == "https"
 }

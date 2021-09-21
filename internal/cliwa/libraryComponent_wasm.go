@@ -92,17 +92,22 @@ type LibraryComponent struct {
 func NewLibraryComponent(app *App) *LibraryComponent {
 	c := &LibraryComponent{
 		app: app,
-		libraryState: libraryState{
-			libraryType: libraryTypeArtists,
-			artistId:    nil,
-			albumId:     nil,
-			playlistId:  nil,
-			userId:      nil,
-			nameFilter:  nil,
-		},
 	}
+	c.Reset()
 
 	return c
+}
+
+func (c *LibraryComponent) Reset() {
+	c.libraryState = libraryState{
+		libraryType: libraryTypeArtists,
+		artistId:    nil,
+		albumId:     nil,
+		playlistId:  nil,
+		userId:      nil,
+		nameFilter:  nil,
+	}
+	c.onlyFavorites = false
 }
 
 func (c *LibraryComponent) Show() {
@@ -133,13 +138,13 @@ func (c *LibraryComponent) Show() {
 			c.OpenArtistAction(restApiV1.ArtistId(artistId))
 		case "artistAddToPlaylistLink":
 			artistId := dataset.Get("artistid").String()
-			c.app.currentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
+			c.app.HomeComponent.CurrentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
 		case "albumLink":
 			albumId := dataset.Get("albumid").String()
 			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
 		case "albumAddToPlaylistLink":
 			albumId := dataset.Get("albumid").String()
-			c.app.currentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
+			c.app.HomeComponent.CurrentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
 		case "playlistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
@@ -155,29 +160,27 @@ func (c *LibraryComponent) Show() {
 
 				_, cliErr := c.app.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
 				if cliErr != nil {
-					c.app.messageComponent.Message("Unable to add playlist to favorites")
+					c.app.HomeComponent.MessageComponent.Message("Unable to add playlist to favorites")
 					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
 					return
 				}
-				c.app.Reload()
-				//c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
+				c.app.localDb.RemovePlaylistFromMyFavorite(restApiV1.PlaylistId(playlistId))
 			} else {
 				link.Set("innerHTML", `<i class="fas fa-star"></i>`)
 
 				_, cliErr := c.app.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
 				if cliErr != nil {
-					c.app.messageComponent.Message("Unable to remove playlist from favorites")
+					c.app.HomeComponent.MessageComponent.Message("Unable to remove playlist from favorites")
 					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 					return
 				}
-				c.app.Reload()
-				//c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
+				c.app.localDb.AddPlaylistToMyFavorite(restApiV1.PlaylistId(playlistId))
 
 			}
 
 		case "playlistAddToPlaylistLink":
 			playlistId := dataset.Get("playlistid").String()
-			c.app.currentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
+			c.app.HomeComponent.CurrentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
@@ -190,7 +193,7 @@ func (c *LibraryComponent) Show() {
 
 				_, cliErr := c.app.restClient.DeleteFavoriteSong(favoriteSongId)
 				if cliErr != nil {
-					c.app.messageComponent.Message("Unable to add song to favorites")
+					c.app.HomeComponent.MessageComponent.Message("Unable to add song to favorites")
 					link.Set("innerHTML", `<i class="fas fa-star"></i>`)
 					return
 				}
@@ -202,7 +205,7 @@ func (c *LibraryComponent) Show() {
 
 				_, cliErr := c.app.restClient.CreateFavoriteSong(&restApiV1.FavoriteSongMeta{Id: favoriteSongId})
 				if cliErr != nil {
-					c.app.messageComponent.Message("Unable to remove song from favorites")
+					c.app.HomeComponent.MessageComponent.Message("Unable to remove song from favorites")
 					link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 					return
 				}
@@ -212,8 +215,7 @@ func (c *LibraryComponent) Show() {
 			}
 		case "songPlayNowLink":
 			songId := dataset.Get("songid").String()
-			//			logrus.Debugf("click on %v - %v", dataset, songId)
-			c.app.playSong(restApiV1.SongId(songId))
+			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
 		case "songDownloadLink":
 			songId := dataset.Get("songid").String()
 			song := c.app.localDb.Songs[restApiV1.SongId(songId)]
@@ -232,7 +234,7 @@ func (c *LibraryComponent) Show() {
 
 		case "songAddToPlaylistLink":
 			songId := dataset.Get("songid").String()
-			c.app.currentComponent.AddSongAction(restApiV1.SongId(songId))
+			c.app.HomeComponent.CurrentComponent.AddSongAction(restApiV1.SongId(songId))
 		}
 	}))
 
@@ -458,37 +460,28 @@ func (c *LibraryComponent) refreshPlaylistList() {
 
 	var divContent strings.Builder
 
-	for _, playlist := range c.app.localDb.OrderedPlaylists {
+	var playlists []*restApiV1.Playlist
+	if c.onlyFavorites {
+		playlists = c.app.localDb.UserOrderedFavoritePlaylists[c.app.restClient.UserId()]
+	} else {
+		playlists = c.app.localDb.OrderedPlaylists
+	}
+
+	for _, playlist := range playlists {
 		if playlist != nil {
-			divContent.WriteString(`<div class="item playlistItem">`)
+			_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][playlist.Id]
+			divContent.WriteString(c.app.RenderTemplate(
+				struct {
+					PlaylistId string
+					Favorite   bool
+					Name       string
+				}{
+					PlaylistId: string(playlist.Id),
+					Favorite:   favorite,
+					Name:       playlist.Name,
+				}, "playlistItem.html"),
+			)
 
-			// Favorite item
-			divContent.WriteString(`<div class="itemFavorite"><a class="playlistFavoriteLink" href="#" data-playlistid="` + string(playlist.Id) + `">`)
-			if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][playlist.Id]; ok {
-				divContent.WriteString(`<i class="fas fa-star"></i>`)
-			} else {
-				divContent.WriteString(`<i class="far fa-star" style="color: #444;"></i>`)
-			}
-			divContent.WriteString(`</a></div>`)
-
-			// Title item
-			divContent.WriteString(`<div class="itemTitle">`)
-
-			divContent.WriteString(`<a class="playlistLink" href="#" data-playlistid="` + string(playlist.Id) + `">` + html.EscapeString(playlist.Name) + `</a><div></div>`)
-
-			divContent.WriteString(`</div>`)
-
-			// Buttons item
-			divContent.WriteString(`<div class="itemButtons">`)
-
-			// 'Add to current playlist' button
-			divContent.WriteString(`<a class="playlistAddToPlaylistLink" href="#" data-playlistid="` + string(playlist.Id) + `">`)
-			divContent.WriteString(`<i class="fas fa-plus"></i>`)
-			divContent.WriteString(`</a>`)
-
-			divContent.WriteString(`</div>`)
-
-			divContent.WriteString(`</div>`)
 		}
 	}
 	listDiv.Set("innerHTML", divContent.String())
@@ -501,16 +494,15 @@ func (c *LibraryComponent) refreshUserList() {
 
 	for _, user := range c.app.localDb.OrderedUsers {
 		if user != nil {
-			divContent.WriteString(`<div class="item userItem">`)
-
-			// Title item
-			divContent.WriteString(`<div class="itemTitle">`)
-
-			divContent.WriteString(`<a class="userLink" href="#" data-userid="` + string(user.Id) + `">` + html.EscapeString(user.Name) + `</a><div></div>`)
-
-			divContent.WriteString(`</div>`)
-
-			divContent.WriteString(`</div>`)
+			divContent.WriteString(c.app.RenderTemplate(
+				struct {
+					UserId string
+					Name   string
+				}{
+					UserId: string(user.Id),
+					Name:   user.Name,
+				}, "userItem.html"),
+			)
 		}
 	}
 	listDiv.Set("innerHTML", divContent.String())
@@ -571,7 +563,6 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 		libraryType: libraryTypeSongs,
 		playlistId:  &playlistId,
 	}
-
 	c.RefreshView()
 }
 

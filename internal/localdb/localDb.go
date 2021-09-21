@@ -67,6 +67,16 @@ func (l *LocalDb) RemoveSongFromMyFavorite(songId restApiV1.SongId) {
 	l.refreshUserOrderedFavoriteSongs(l.restClient.UserId())
 }
 
+func (l *LocalDb) AddPlaylistToMyFavorite(playlistId restApiV1.PlaylistId) {
+	l.UserFavoritePlaylistIds[l.restClient.UserId()][playlistId] = struct{}{}
+	l.refreshUserOrderedFavoritePlaylists(l.restClient.UserId())
+}
+
+func (l *LocalDb) RemovePlaylistFromMyFavorite(playlistId restApiV1.PlaylistId) {
+	delete(l.UserFavoritePlaylistIds[l.restClient.UserId()], playlistId)
+	l.refreshUserOrderedFavoritePlaylists(l.restClient.UserId())
+}
+
 func (l *LocalDb) Refresh() restClientV1.ClientError {
 
 	// Retrieve library content from mifasolsrv

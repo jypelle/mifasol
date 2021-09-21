@@ -3,6 +3,7 @@ package cliwa
 import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"html"
+	"strconv"
 	"strings"
 	"syscall/js"
 )
@@ -10,9 +11,10 @@ import (
 type CurrentComponent struct {
 	app *App
 
-	songIds       []restApiV1.SongId
-	srcPlaylistId *restApiV1.PlaylistId
-	modified      bool
+	songIds        []restApiV1.SongId
+	currentSongIdx int
+	srcPlaylistId  *restApiV1.PlaylistId
+	modified       bool
 }
 
 func NewCurrentComponent(app *App) *CurrentComponent {
@@ -41,28 +43,36 @@ func (c *CurrentComponent) Show() {
 		switch link.Get("className").String() {
 		case "artistLink":
 			artistId := dataset.Get("artistid").String()
-			c.app.libraryComponent.OpenArtistAction(restApiV1.ArtistId(artistId))
+			c.app.HomeComponent.LibraryComponent.OpenArtistAction(restApiV1.ArtistId(artistId))
 		case "albumLink":
 			albumId := dataset.Get("albumid").String()
-			c.app.libraryComponent.OpenAlbumAction(restApiV1.AlbumId(albumId))
+			c.app.HomeComponent.LibraryComponent.OpenAlbumAction(restApiV1.AlbumId(albumId))
 		case "songPlayNowLink":
 			songId := dataset.Get("songid").String()
-			c.app.playSong(restApiV1.SongId(songId))
+			c.currentSongIdx, _ = strconv.Atoi(dataset.Get("songidx").String())
+			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
 		}
 	}))
 
+}
+
+func (c *CurrentComponent) PlayNextSongAction() {
+	if c.currentSongIdx < len(c.songIds)-1 {
+		c.currentSongIdx++
+		c.app.HomeComponent.PlayerComponent.PlaySongAction(c.songIds[c.currentSongIdx])
+	}
 }
 
 func (c *CurrentComponent) RefreshView() {
 	listDiv := c.app.doc.Call("getElementById", "currentList")
 
 	listDiv.Set("innerHTML", "")
-	for _, songId := range c.songIds {
-		listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(c.app.localDb.Songs[songId]))
+	for songIdx, songId := range c.songIds {
+		listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
 	}
 }
 
-func (c *CurrentComponent) addSongItem(song *restApiV1.Song) string {
+func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
 	var divContent strings.Builder
 	divContent.WriteString(`<div class="item">`)
 
@@ -89,7 +99,7 @@ func (c *CurrentComponent) addSongItem(song *restApiV1.Song) string {
 	divContent.WriteString(`<div class="itemButtons">`)
 
 	// 'Play now' button
-	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `">`)
+	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `" data-songidx="` + strconv.Itoa(songIdx) + `">`)
 	divContent.WriteString(`<i class="fas fa-play"></i>`)
 	divContent.WriteString(`</a>`)
 
