@@ -29,6 +29,7 @@ func (c *CurrentComponent) Show() {
 	currentClearButton := c.app.doc.Call("getElementById", "currentClearButton")
 	currentClearButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
+		c.srcPlaylistId = nil
 		c.RefreshView()
 	}))
 
@@ -70,9 +71,20 @@ func (c *CurrentComponent) RefreshView() {
 	for songIdx, songId := range c.songIds {
 		listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
 	}
+
+	// Refresh current playlist title
+	titleSpan := c.app.doc.Call("getElementById", "currentTitle")
+	if c.srcPlaylistId == nil {
+		titleSpan.Set("innerHTML", "Playlist")
+	} else {
+		titleSpan.Set("innerHTML", c.app.localDb.Playlists[*c.srcPlaylistId].Name)
+	}
+
 }
 
 func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
+	c.modified = true
+
 	var divContent strings.Builder
 	divContent.WriteString(`<div class="item">`)
 
@@ -140,6 +152,14 @@ func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId)
 }
 
 func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
+	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
+		c.AddSongAction(songId)
+	}
+}
+
+func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
+	c.songIds = nil
+	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
 		c.AddSongAction(songId)
 	}

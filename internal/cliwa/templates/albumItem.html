@@ -1,0 +1,16 @@
+<div class="item albumItem">
+    <div class="itemTitle">
+        <a class="albumLink" href="#" data-albumid="{{.AlbumId}}">{{.AlbumName}}</a>
+        <div>
+            {{range $index, $artist := .Artists}}
+                {{if ne $index 0 }} / {{end}}
+                <a class="artistLink" href="#" data-artistid="{{.ArtistId}}">{{.ArtistName}}</a>
+            {{end}}
+        </div>
+    </div>
+    <div class="itemButtons">
+        <a class="albumAddToPlaylistLink" href="#" data-albumid="{{.AlbumId}}">
+            <i class="fas fa-plus"></i>
+        </a>
+    </div>
+</div>

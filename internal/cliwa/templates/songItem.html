@@ -1,0 +1,11 @@
+<div class="item songItem">
+    <div class="itemFavorite"><a class="songFavoriteLink" href="#" data-songid="{{.SongId}}">
+        {{if .Favorite}}
+        <i class="fas fa-star"></i>
+        {{else}}
+        <i class="fas fa-star" style="color: #444;"></i>
+        {{end}}
+    </a></div>
+    <div class="itemTitle">
+        <p class="songLink">{{.SongName}}</p>
+        <div>
