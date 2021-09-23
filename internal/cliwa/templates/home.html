@@ -9,11 +9,11 @@
         <div id="libraryComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; margin: 1rem 0 0 1rem;">
             <h2 id="libraryTitle" style="margin:0.5rem 0 0.5rem 0;"></h2>
             <div id="libraryButtons" style="display: flex; flex-flow: row wrap; gap: 0.5rem;">
-                <button id="libraryArtistsButton" type="button" >Artists</button>
-                <button id="libraryAlbumsButton" type="button" >Albums</button>
-                <button id="librarySongsButton" type="button" >Songs</button>
-                <button id="libraryPlaylistsButton" type="button" >Playlists</button>
-                <button id="libraryUsersButton" type="button" >Users</button>
+                <button id="libraryArtistsButton" type="button" title="Artists"><i class="fas fa-microphone-alt"></i></button>
+                <button id="libraryAlbumsButton" type="button" title="Albums"><i class="fas fa-compact-disc"></i></button>
+                <button id="librarySongsButton" type="button" title="Songs"><i class="fas fa-music"></i></button>
+                <button id="libraryPlaylistsButton" type="button" title="Playlists"><i class="fas fa-list-alt"></i></button>
+                <button id="libraryUsersButton" type="button" title="Users"><i class="fas fa-user"></i></button>
                 <div style="flex:1;"></div>
                 <div>
                     <input type="checkbox" id="libraryFavoritesSwitch"><label for="libraryFavoritesSwitch"></label> Favorites
@@ -24,7 +24,8 @@
         <div id="currentComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; margin: 1rem 0 0 1rem;">
             <h2 id="currentTitle"  style="margin:0.5rem 0 0.5rem 0;">Playlist</h2>
             <div id="currentButtons" style="display: flex; flex-flow: row wrap; gap: 0.5rem;">
-                <button id="currentClearButton" type="button" >Clear</button>
+                <button id="currentCleanButton" type="button" title="Clean"><i class="fas fa-broom"></i></button>
+                <button id="currentShuffleButton" type="button" title="Shuffle"><i class="fas fa-random"></i></button>
             </div>
             <div id="currentList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>

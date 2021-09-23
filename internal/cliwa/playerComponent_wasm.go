@@ -18,8 +18,8 @@ func NewPlayerComponent(app *App) *PlayerComponent {
 }
 
 func (c *PlayerComponent) Show() {
-	currentClearButton := c.app.doc.Call("getElementById", "player")
-	currentClearButton.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
+	player := c.app.doc.Call("getElementById", "player")
+	player.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
 }
 
 func (c *PlayerComponent) PlaySongAction(songId restApiV1.SongId) {

@@ -35,42 +35,42 @@ func (c *LibraryComponent) refreshTitle() {
 	switch c.libraryState.libraryType {
 	case libraryTypeArtists:
 		if c.libraryState.userId == nil {
-			title = "Artists"
+			title = `Artists`
 		} else {
-			title = fmt.Sprintf("Favorite artists from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+			title = fmt.Sprintf(`Favorite artists from <span class="userLink">%s</span>`, c.app.localDb.Users[*c.libraryState.userId].Name)
 		}
 	case libraryTypeAlbums:
 		if c.libraryState.userId == nil {
-			title = "Albums"
+			title = `Albums`
 		} else {
-			title = fmt.Sprintf("Favorite albums from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+			title = fmt.Sprintf(`Favorite albums from <span class="userLink">%s</span>`, c.app.localDb.Users[*c.libraryState.userId].Name)
 		}
 	case libraryTypePlaylists:
 		if c.libraryState.userId == nil {
-			title = "Playlists"
+			title = `Playlists`
 		} else {
-			title = fmt.Sprintf("Favorite playlists from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+			title = fmt.Sprintf(`Favorite playlists from <span class="userLink">%s</span>`, c.app.localDb.Users[*c.libraryState.userId].Name)
 		}
 	case libraryTypeSongs:
 		if c.libraryState.userId == nil && c.libraryState.playlistId == nil && c.libraryState.artistId == nil && c.libraryState.albumId == nil {
-			title = "Songs"
+			title = `Songs`
 		}
 		if c.libraryState.playlistId != nil {
-			title = fmt.Sprintf("Songs from %s", c.app.localDb.Playlists[*c.libraryState.playlistId].Name)
+			title = fmt.Sprintf(`Songs from <span class="playlistLink">%s</span>`, c.app.localDb.Playlists[*c.libraryState.playlistId].Name)
 		}
 		if c.libraryState.userId != nil {
-			title = fmt.Sprintf("Favorite songs from %s", c.app.localDb.Users[*c.libraryState.userId].Name)
+			title = fmt.Sprintf(`Favorite songs from <span class="userLink">%s</span>`, c.app.localDb.Users[*c.libraryState.userId].Name)
 		}
 		if c.libraryState.artistId != nil {
 			if *c.libraryState.artistId != restApiV1.UnknownArtistId {
-				title = fmt.Sprintf("Songs from %s", c.app.localDb.Artists[*c.libraryState.artistId].Name)
+				title = fmt.Sprintf(`Songs from <span class="artistLink">%s</span>`, c.app.localDb.Artists[*c.libraryState.artistId].Name)
 			} else {
 				title = "Songs from unknown artists"
 			}
 		}
 		if c.libraryState.albumId != nil {
 			if *c.libraryState.albumId != restApiV1.UnknownAlbumId {
-				title = fmt.Sprintf("Songs from %s", c.app.localDb.Albums[*c.libraryState.albumId].Name)
+				title = fmt.Sprintf(`Songs from <span class="albumLink">%s</span>`, c.app.localDb.Albums[*c.libraryState.albumId].Name)
 			} else {
 				title = "Songs from unknown album"
 			}

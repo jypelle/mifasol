@@ -3,7 +3,6 @@ package store
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/config"
-	"github.com/jypelle/mifasol/internal/srv/legacy/oldstore"
 	"github.com/jypelle/mifasol/internal/srv/storeerror"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
@@ -33,23 +32,9 @@ func NewStore(serverConfig *config.ServerConfig) *Store {
 		logrus.Fatalf("Unable to migrate the database: %v", err)
 	}
 
-	// Import old store
+	// Check old store
 	if _, err := os.Stat(serverConfig.GetCompleteConfigOldDbFilename()); err == nil {
-		logrus.Info("Import of old database...")
-		oldStore := oldstore.NewOldStore(serverConfig)
-		err = store.oldStoreImport(oldStore)
-		if err != nil {
-			logrus.Fatalf("Unable to import old database : %v\n", err)
-			os.Remove(serverConfig.GetCompleteConfigDbFilename())
-		}
-		err := oldStore.Close()
-		if err != nil {
-			logrus.Fatalf("Unable to close the old database: %v", err)
-		}
-		err = os.Rename(serverConfig.GetCompleteConfigOldDbFilename(), serverConfig.GetCompleteConfigOldDbFilename()+".old")
-		if err != nil {
-			logrus.Fatalf("Unable to archive the old database: %v", err)
-		}
+		logrus.Fatalf("Database format is too old, you must install and run the program once in version 0.3.2 before installing a more recent version")
 	}
 
 	// Check existence of the (incoming) playlist

@@ -3,6 +3,7 @@ package cliwa
 import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"html"
+	"math/rand"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -26,10 +27,16 @@ func NewCurrentComponent(app *App) *CurrentComponent {
 }
 
 func (c *CurrentComponent) Show() {
-	currentClearButton := c.app.doc.Call("getElementById", "currentClearButton")
-	currentClearButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+	currentCleanButton := c.app.doc.Call("getElementById", "currentCleanButton")
+	currentCleanButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
 		c.srcPlaylistId = nil
+		c.RefreshView()
+	}))
+	currentShuffleButton := c.app.doc.Call("getElementById", "currentShuffleButton")
+	currentShuffleButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		rand.Shuffle(len(c.songIds), func(i, j int) { c.songIds[i], c.songIds[j] = c.songIds[j], c.songIds[i] })
+		c.modified = true
 		c.RefreshView()
 	}))
 
