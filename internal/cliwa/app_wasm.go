@@ -108,6 +108,16 @@ func (c *App) AddEventFunc(fn func()) js.Func {
 	})
 }
 
+func (c *App) AddEventFuncPreventDefault(fn func()) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		args[0].Call("preventDefault")
+		c.eventFunc <- func() {
+			fn()
+		}
+		return nil
+	})
+}
+
 func (c *App) retrieveServerCredentials() {
 	rawUrl := js.Global().Get("window").Get("location").Get("href").String()
 	baseUrl, _ := url.Parse(rawUrl)
@@ -115,4 +125,11 @@ func (c *App) retrieveServerCredentials() {
 	c.config.ServerHostname = baseUrl.Hostname()
 	c.config.ServerPort, _ = strconv.ParseInt(baseUrl.Port(), 10, 64)
 	c.config.ServerSsl = baseUrl.Scheme == "https"
+	if c.config.ServerPort == 0 {
+		if c.config.ServerSsl {
+			c.config.ServerPort = 443
+		} else {
+			c.config.ServerPort = 80
+		}
+	}
 }

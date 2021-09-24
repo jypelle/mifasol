@@ -4,7 +4,6 @@ import (
 	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
-	"syscall/js"
 )
 
 type StartComponent struct {
@@ -30,7 +29,9 @@ func (c *StartComponent) Show() {
 	c.app.doc.Call("getElementById", "mifasolUsername").Call("focus")
 
 	// Set button
-	js.Global().Set("logInAction", c.app.AddEventFunc(c.logInAction))
+	//js.Global().Set("logInAction", c.app.AddEventFunc(c.logInAction))
+	startForm := c.app.doc.Call("getElementById", "startForm")
+	startForm.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.logInAction))
 }
 
 func (c *StartComponent) logInAction() {

@@ -42,7 +42,7 @@ func (c *CurrentComponent) Show() {
 
 	listDiv := c.app.doc.Call("getElementById", "currentList")
 	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("target").Call("closest", ".artistLink, .albumLink, .songPlayNowLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .albumLink, .currentPlaySongNowLink, .currentRemoveSongFromPlaylistLink")
 		if !link.Truthy() {
 			return
 		}
@@ -55,10 +55,14 @@ func (c *CurrentComponent) Show() {
 		case "albumLink":
 			albumId := dataset.Get("albumid").String()
 			c.app.HomeComponent.LibraryComponent.OpenAlbumAction(restApiV1.AlbumId(albumId))
-		case "songPlayNowLink":
+		case "currentPlaySongNowLink":
 			songId := dataset.Get("songid").String()
 			c.currentSongIdx, _ = strconv.Atoi(dataset.Get("songidx").String())
 			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
+		case "currentRemoveSongFromPlaylistLink":
+			songIdx, _ := strconv.Atoi(dataset.Get("songidx").String())
+			c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
+			c.RefreshView()
 		}
 	}))
 
@@ -117,8 +121,13 @@ func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string
 	// Buttons item
 	divContent.WriteString(`<div class="itemButtons">`)
 
+	// 'Remove' button
+	divContent.WriteString(`<a class="currentRemoveSongFromPlaylistLink" href="#" title="Remove" data-songidx="` + strconv.Itoa(songIdx) + `">`)
+	divContent.WriteString(`<i class="fas fa-times"></i>`)
+	divContent.WriteString(`</a>`)
+
 	// 'Play now' button
-	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `" data-songidx="` + strconv.Itoa(songIdx) + `">`)
+	divContent.WriteString(`<a class="currentPlaySongNowLink" href="#" title="Play" data-songid="` + string(song.Id) + `" data-songidx="` + strconv.Itoa(songIdx) + `">`)
 	divContent.WriteString(`<i class="fas fa-play"></i>`)
 	divContent.WriteString(`</a>`)
 
@@ -137,37 +146,41 @@ func (c *CurrentComponent) AddSongAction(songId restApiV1.SongId) {
 func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 	if albumId != restApiV1.UnknownAlbumId {
 		for _, song := range c.app.localDb.AlbumOrderedSongs[albumId] {
-			c.AddSongAction(song.Id)
+			c.songIds = append(c.songIds, song.Id)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownAlbumSongs {
-			c.AddSongAction(song.Id)
+			c.songIds = append(c.songIds, song.Id)
 		}
 	}
+	c.RefreshView()
 }
 
 func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
-			c.AddSongAction(song.Id)
+			c.songIds = append(c.songIds, song.Id)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownArtistSongs {
-			c.AddSongAction(song.Id)
+			c.songIds = append(c.songIds, song.Id)
 		}
 	}
+	c.RefreshView()
 }
 
 func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.AddSongAction(songId)
+		c.songIds = append(c.songIds, songId)
 	}
+	c.RefreshView()
 }
 
 func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	c.songIds = nil
 	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.AddSongAction(songId)
+		c.songIds = append(c.songIds, songId)
 	}
+	c.RefreshView()
 }
