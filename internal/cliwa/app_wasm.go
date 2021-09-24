@@ -20,7 +20,6 @@ type App struct {
 	localDb    *localdb.LocalDb
 
 	templateHelpers template.FuncMap
-	doc             js.Value
 
 	StartComponent *StartComponent
 	HomeComponent  *HomeComponent
@@ -36,7 +35,6 @@ func NewApp(debugMode bool) *App {
 		config: config.ClientConfig{
 			ClientEditableConfig: config.NewClientEditableConfig(nil),
 		},
-		doc:       js.Global().Get("document"),
 		eventFunc: make(chan func(), 100),
 	}
 

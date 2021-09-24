@@ -1,7 +1,7 @@
 package cliwa
 
 import (
-	"github.com/jypelle/mifasol/internal/cliwa/jstool"
+	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
@@ -24,43 +24,60 @@ func (c *StartComponent) Show() {
 	c.app.restClient = nil
 	c.app.localDb = nil
 
-	body := c.app.doc.Get("body")
+	body := jst.Document.Get("body")
 	body.Set("innerHTML", c.app.RenderTemplate(nil, "start.html"))
 
 	// Set focus
-	c.app.doc.Call("getElementById", "mifasolUsername").Call("focus")
+	jst.Document.Call("getElementById", "mifasolUsername").Call("focus")
 
 	// Set button
 	//js.Global().Set("logInAction", c.app.AddEventFunc(c.logInAction))
-	startForm := c.app.doc.Call("getElementById", "startForm")
+	startForm := jst.Document.Call("getElementById", "startForm")
 	startForm.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.logInAction))
+
+	// Autolog ?
+	username := jst.LocalStorage.Get("mifasolUsername").String()
+	password := jst.LocalStorage.Get("mifasolPassword").String()
+	if username != "" || password != "" {
+		c.app.config.Username = username
+		c.app.config.Password = password
+		c.logIn()
+	}
 }
 
 func (c *StartComponent) logInAction() {
-	serverUsername := c.app.doc.Call("getElementById", "mifasolUsername")
-	serverPassword := c.app.doc.Call("getElementById", "mifasolPassword")
+	serverUsername := jst.Document.Call("getElementById", "mifasolUsername")
+	serverPassword := jst.Document.Call("getElementById", "mifasolPassword")
 	c.app.config.Username = serverUsername.Get("value").String()
 	c.app.config.Password = serverPassword.Get("value").String()
+
+	c.logIn()
+}
+
+func (c *StartComponent) logIn() {
 
 	// Create rest Client
 	restClient, err := restClientV1.NewRestClient(&c.app.config, true)
 	if err != nil {
-		message := c.app.doc.Call("getElementById", "message")
+		message := jst.Document.Call("getElementById", "message")
 		message.Set("innerHTML", "Unable to connect to server")
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
 	if restClient.UserId() == restApiV1.UndefinedUserId {
-		message := c.app.doc.Call("getElementById", "message")
+		message := jst.Document.Call("getElementById", "message")
 		message.Set("innerHTML", "Wrong credentials")
+		jst.LocalStorage.Set("mifasolUsername", "")
+		jst.LocalStorage.Set("mifasolPassword", "")
 		return
 	}
 
-	rememberMe := jstool.Document.Call("getElementById", "rememberMe").Get("value").Bool()
+	rememberMe := jst.Document.Call("getElementById", "rememberMe").Get("checked").Bool()
+
 	if rememberMe {
 		// Store user & password in localStorage
-		//		jstool.LocalStorage.Set("mifasolUsername",c.app.config.Username)
-		//		jstool.LocalStorage.Set("mifasolPassword",c.app.config.Password)
+		jst.LocalStorage.Set("mifasolUsername", c.app.config.Username)
+		jst.LocalStorage.Set("mifasolPassword", c.app.config.Password)
 	}
 
 	c.app.restClient = restClient
@@ -68,4 +85,5 @@ func (c *StartComponent) logInAction() {
 
 	c.app.HomeComponent = NewHomeComponent(c.app)
 	c.app.HomeComponent.Show()
+
 }

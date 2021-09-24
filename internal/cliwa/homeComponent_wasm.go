@@ -1,6 +1,9 @@
 package cliwa
 
-import "strconv"
+import (
+	"github.com/jypelle/mifasol/internal/cliwa/jst"
+	"strconv"
+)
 
 type HomeComponent struct {
 	app *App
@@ -25,13 +28,13 @@ func NewHomeComponent(app *App) *HomeComponent {
 }
 
 func (c *HomeComponent) Show() {
-	body := c.app.doc.Get("body")
+	body := jst.Document.Get("body")
 	body.Set("innerHTML", c.app.RenderTemplate(nil, "home.html"))
 
 	// Set buttons
-	logOutButton := c.app.doc.Call("getElementById", "logOutButton")
+	logOutButton := jst.Document.Call("getElementById", "logOutButton")
 	logOutButton.Call("addEventListener", "click", c.app.AddEventFunc(c.logOutAction))
-	refreshButton := c.app.doc.Call("getElementById", "refreshButton")
+	refreshButton := jst.Document.Call("getElementById", "refreshButton")
 	refreshButton.Call("addEventListener", "click", c.app.AddEventFunc(c.refreshAction))
 
 	c.LibraryComponent.Show()
@@ -43,6 +46,8 @@ func (c *HomeComponent) Show() {
 }
 
 func (c *HomeComponent) logOutAction() {
+	jst.LocalStorage.Set("mifasolUsername", "")
+	jst.LocalStorage.Set("mifasolPassword", "")
 	c.app.StartComponent.Show()
 }
 

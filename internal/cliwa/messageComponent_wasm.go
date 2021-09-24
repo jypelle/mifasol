@@ -1,5 +1,7 @@
 package cliwa
 
+import "github.com/jypelle/mifasol/internal/cliwa/jst"
+
 type MessageComponent struct {
 	app *App
 }
@@ -13,6 +15,6 @@ func NewMessageComponent(app *App) *MessageComponent {
 }
 
 func (c *MessageComponent) Message(msg string) {
-	message := c.app.doc.Call("getElementById", "message")
+	message := jst.Document.Call("getElementById", "message")
 	message.Set("innerHTML", msg)
 }

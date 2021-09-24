@@ -1,4 +1,4 @@
-package jstool
+package jst
 
 import (
 	"syscall/js"

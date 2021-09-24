@@ -1,6 +1,8 @@
 package cliwa
 
 import (
+	"fmt"
+	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
 	"html"
 	"math/rand"
@@ -20,27 +22,29 @@ type CurrentComponent struct {
 
 func NewCurrentComponent(app *App) *CurrentComponent {
 	c := &CurrentComponent{
-		app: app,
+		app:      app,
+		modified: true,
 	}
 
 	return c
 }
 
 func (c *CurrentComponent) Show() {
-	currentCleanButton := c.app.doc.Call("getElementById", "currentCleanButton")
+	currentCleanButton := jst.Document.Call("getElementById", "currentCleanButton")
 	currentCleanButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
 		c.srcPlaylistId = nil
+		c.modified = true
 		c.RefreshView()
 	}))
-	currentShuffleButton := c.app.doc.Call("getElementById", "currentShuffleButton")
+	currentShuffleButton := jst.Document.Call("getElementById", "currentShuffleButton")
 	currentShuffleButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		rand.Shuffle(len(c.songIds), func(i, j int) { c.songIds[i], c.songIds[j] = c.songIds[j], c.songIds[i] })
 		c.modified = true
 		c.RefreshView()
 	}))
 
-	listDiv := c.app.doc.Call("getElementById", "currentList")
+	listDiv := jst.Document.Call("getElementById", "currentList")
 	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
 		link := i[0].Get("target").Call("closest", ".artistLink, .albumLink, .currentPlaySongNowLink, .currentRemoveSongFromPlaylistLink")
 		if !link.Truthy() {
@@ -61,8 +65,7 @@ func (c *CurrentComponent) Show() {
 			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
 		case "currentRemoveSongFromPlaylistLink":
 			songIdx, _ := strconv.Atoi(dataset.Get("songidx").String())
-			c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
-			c.RefreshView()
+			c.RemoveSongFromPlaylistAction(songIdx)
 		}
 	}))
 
@@ -76,7 +79,7 @@ func (c *CurrentComponent) PlayNextSongAction() {
 }
 
 func (c *CurrentComponent) RefreshView() {
-	listDiv := c.app.doc.Call("getElementById", "currentList")
+	listDiv := jst.Document.Call("getElementById", "currentList")
 
 	listDiv.Set("innerHTML", "")
 	for songIdx, songId := range c.songIds {
@@ -84,18 +87,21 @@ func (c *CurrentComponent) RefreshView() {
 	}
 
 	// Refresh current playlist title
-	titleSpan := c.app.doc.Call("getElementById", "currentTitle")
+	titleSpan := jst.Document.Call("getElementById", "currentTitle")
+	var title string
 	if c.srcPlaylistId == nil {
-		titleSpan.Set("innerHTML", "Playlist")
+		title = "New playlist"
 	} else {
-		titleSpan.Set("innerHTML", c.app.localDb.Playlists[*c.srcPlaylistId].Name)
+		title = fmt.Sprintf(`<span class="playlistLink">%s</span>`, html.EscapeString(c.app.localDb.Playlists[*c.srcPlaylistId].Name))
 	}
+	if c.modified {
+		title += " *"
+	}
+	titleSpan.Set("innerHTML", title)
 
 }
 
 func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
-	c.modified = true
-
 	var divContent strings.Builder
 	divContent.WriteString(`<div class="item">`)
 
@@ -139,11 +145,13 @@ func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string
 }
 
 func (c *CurrentComponent) AddSongAction(songId restApiV1.SongId) {
+	c.modified = true
 	c.songIds = append(c.songIds, songId)
 	c.RefreshView()
 }
 
 func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
+	c.modified = true
 	if albumId != restApiV1.UnknownAlbumId {
 		for _, song := range c.app.localDb.AlbumOrderedSongs[albumId] {
 			c.songIds = append(c.songIds, song.Id)
@@ -157,6 +165,7 @@ func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 }
 
 func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
+	c.modified = true
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
 			c.songIds = append(c.songIds, song.Id)
@@ -170,6 +179,7 @@ func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId)
 }
 
 func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
+	c.modified = true
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
 		c.songIds = append(c.songIds, songId)
 	}
@@ -178,9 +188,16 @@ func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.Playl
 
 func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	c.songIds = nil
+	c.modified = false
 	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
 		c.songIds = append(c.songIds, songId)
 	}
+	c.RefreshView()
+}
+
+func (c *CurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
+	c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
+	c.modified = true
 	c.RefreshView()
 }
