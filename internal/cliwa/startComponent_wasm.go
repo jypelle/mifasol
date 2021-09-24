@@ -1,7 +1,9 @@
 package cliwa
 
 import (
+	"github.com/jypelle/mifasol/internal/cliwa/jstool"
 	"github.com/jypelle/mifasol/internal/localdb"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 )
@@ -48,10 +50,17 @@ func (c *StartComponent) logInAction() {
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
-	if restClient.UserId() == "xxx" {
+	if restClient.UserId() == restApiV1.UndefinedUserId {
 		message := c.app.doc.Call("getElementById", "message")
 		message.Set("innerHTML", "Wrong credentials")
 		return
+	}
+
+	rememberMe := jstool.Document.Call("getElementById", "rememberMe").Get("value").Bool()
+	if rememberMe {
+		// Store user & password in localStorage
+		//		jstool.LocalStorage.Set("mifasolUsername",c.app.config.Username)
+		//		jstool.LocalStorage.Set("mifasolPassword",c.app.config.Password)
 	}
 
 	c.app.restClient = restClient

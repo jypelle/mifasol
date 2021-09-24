@@ -1,6 +1,9 @@
 package restApiV1
 
 // User
+
+var UndefinedUserId UserId = "xxx"
+
 type UserId string
 
 type User struct {

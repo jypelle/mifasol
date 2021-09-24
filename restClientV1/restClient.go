@@ -260,7 +260,7 @@ func checkStatusCode(response *http.Response) ClientError {
 func (c *RestClient) UserId() restApiV1.UserId {
 	token, cliErr := c.GetToken()
 	if cliErr != nil {
-		return "xxx"
+		return restApiV1.UndefinedUserId
 	} else {
 		return token.UserId
 	}
