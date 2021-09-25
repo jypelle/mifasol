@@ -9,8 +9,8 @@ release:
 	echo "Build linux amd64 client"; \
 	GOOS=linux GOARCH=amd64 go build -o internal/srv/webSrv/clients/mifasolcli-linux-amd64 ./cmd/mifasolcli; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcli-linux-amd64; \
-	echo "Build linux arm client"; \
-	GOOS=linux GOARCH=arm GOARM=7 go build -o internal/srv/webSrv/clients/mifasolcli-linux-arm ./cmd/mifasolcli; \
+	echo "Build android arm client"; \
+	GOOS=android GOARCH=arm GOARM=7 go build -o internal/srv/webSrv/clients/mifasolcli-android-arm ./cmd/mifasolcli; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcli-linux-arm; \
 #	echo "Build darwin amd64 client"; \
 #	GOOS=darwin GOARCH=amd64 go build -o internal/srv/webSrv/clients/mifasolcli-darwin-amd64 ./cmd/mifasolcli; \
