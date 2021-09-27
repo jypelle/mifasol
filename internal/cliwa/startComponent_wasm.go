@@ -24,6 +24,32 @@ func (c *StartComponent) Show() {
 	c.app.restClient = nil
 	c.app.localDb = nil
 
+	// Autolog ?
+	username := jst.LocalStorage.Get("mifasolUsername").String()
+	password := jst.LocalStorage.Get("mifasolPassword").String()
+	if username != "" || password != "" {
+		c.app.config.Username = username
+		c.app.config.Password = password
+
+		// Create rest Client
+		var err error
+		c.app.restClient, err = restClientV1.NewRestClient(&c.app.config, true)
+		if err != nil {
+			logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
+		} else {
+			if c.app.restClient.UserId() == restApiV1.UndefinedUserId {
+				logrus.Errorf("Wrong credentials")
+
+				jst.LocalStorage.Set("mifasolUsername", "")
+				jst.LocalStorage.Set("mifasolPassword", "")
+			} else {
+				c.goHome()
+				return
+			}
+		}
+	}
+
+	// No autolog or autolog failed
 	body := jst.Document.Get("body")
 	body.Set("innerHTML", c.app.RenderTemplate(nil, "start.html"))
 
@@ -35,14 +61,6 @@ func (c *StartComponent) Show() {
 	startForm := jst.Document.Call("getElementById", "startForm")
 	startForm.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.logInAction))
 
-	// Autolog ?
-	username := jst.LocalStorage.Get("mifasolUsername").String()
-	password := jst.LocalStorage.Get("mifasolPassword").String()
-	if username != "" || password != "" {
-		c.app.config.Username = username
-		c.app.config.Password = password
-		c.logIn()
-	}
 }
 
 func (c *StartComponent) logInAction() {
@@ -51,20 +69,16 @@ func (c *StartComponent) logInAction() {
 	c.app.config.Username = serverUsername.Get("value").String()
 	c.app.config.Password = serverPassword.Get("value").String()
 
-	c.logIn()
-}
-
-func (c *StartComponent) logIn() {
-
 	// Create rest Client
-	restClient, err := restClientV1.NewRestClient(&c.app.config, true)
+	var err error
+	c.app.restClient, err = restClientV1.NewRestClient(&c.app.config, true)
 	if err != nil {
 		message := jst.Document.Call("getElementById", "message")
 		message.Set("innerHTML", "Unable to connect to server")
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
-	if restClient.UserId() == restApiV1.UndefinedUserId {
+	if c.app.restClient.UserId() == restApiV1.UndefinedUserId {
 		message := jst.Document.Call("getElementById", "message")
 		message.Set("innerHTML", "Wrong credentials")
 		jst.LocalStorage.Set("mifasolUsername", "")
@@ -80,7 +94,11 @@ func (c *StartComponent) logIn() {
 		jst.LocalStorage.Set("mifasolPassword", c.app.config.Password)
 	}
 
-	c.app.restClient = restClient
+	c.goHome()
+}
+
+func (c *StartComponent) goHome() {
+	//	c.app.restClient = restClient
 	c.app.localDb = localdb.NewLocalDb(c.app.restClient, c.app.config.Collator())
 
 	c.app.HomeComponent = NewHomeComponent(c.app)
