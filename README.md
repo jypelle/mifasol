@@ -54,10 +54,14 @@ Drop the dedicated `mifasolsrv` binary on your server and you are done.
 
 #### From sources
 
-You need golang >= 1.16
+You need:
+
+- Linux
+- Golang >= 1.16
+- ANDROID_NDK_HOME set (to build android console client).
 
 ```
-go install ./cmd/mifasolsrv
+make release
 ```
 
 ### Usage

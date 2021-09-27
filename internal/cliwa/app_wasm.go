@@ -131,3 +131,10 @@ func (c *App) retrieveServerCredentials() {
 		}
 	}
 }
+
+func (c *App) HideExplicitSongForConnectedUser() bool {
+	if user, ok := c.localDb.Users[c.restClient.UserId()]; ok == true {
+		return user.HideExplicitFg
+	}
+	return false
+}

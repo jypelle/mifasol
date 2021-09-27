@@ -373,12 +373,28 @@ func (c *LibraryComponent) refreshSongList() {
 
 		listDiv.Set("innerHTML", "")
 		for _, song := range songList {
+
+			// Remove explicit songs if user profile ask for it
+			if c.app.HideExplicitSongForConnectedUser() {
+				if song.ExplicitFg {
+					continue
+				}
+			}
+
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(song))
 		}
 
 	} else {
 		listDiv.Set("innerHTML", "")
 		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
+
+			// Remove explicit songs if user profile ask for it
+			if c.app.HideExplicitSongForConnectedUser() {
+				if c.app.localDb.Songs[songId].ExplicitFg {
+					continue
+				}
+			}
+
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(c.app.localDb.Songs[songId]))
 		}
 	}

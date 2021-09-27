@@ -1,8 +1,11 @@
 package ui
 
 import (
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/effects"
 	"github.com/jypelle/mifasol/restApiV1"
 	"gitlab.com/tslocum/cview"
+	"time"
 )
 
 type PlayerComponent struct {
@@ -11,6 +14,14 @@ type PlayerComponent struct {
 	volumeBox   *cview.TextView
 	progressBox *cview.TextView
 	uiApp       *App
+
+	volume          int
+	musicStreamer   beep.StreamSeekCloser
+	musicFormat     beep.Format
+	controlStreamer *beep.Ctrl
+	volumeStreamer  *effects.Volume
+
+	refreshTicker *time.Ticker
 
 	playingSong *restApiV1.Song
 }
