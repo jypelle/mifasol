@@ -6,6 +6,7 @@ import (
 	"github.com/jypelle/mifasol/internal/cliwa/templates"
 	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/internal/version"
+	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
 	"html/template"
@@ -45,26 +46,26 @@ func NewApp(debugMode bool) *App {
 	return app
 }
 
-func (c *App) Start() {
-	c.retrieveServerCredentials()
+func (a *App) Start() {
+	a.retrieveServerCredentials()
 
-	c.StartComponent.Show()
+	a.StartComponent.Show()
 
 	// Keep wasm app alive with event func loop
 	func() {
 		for {
 			select {
-			case f := <-c.eventFunc:
+			case f := <-a.eventFunc:
 				f()
 			}
 		}
 	}()
 }
 
-func (c *App) RenderTemplate(content interface{}, filenames ...string) string {
+func (a *App) RenderTemplate(content interface{}, filenames ...string) string {
 
 	// Parsing template files
-	t := template.New("").Funcs(c.templateHelpers)
+	t := template.New("").Funcs(a.templateHelpers)
 
 	for _, filename := range filenames {
 
@@ -88,52 +89,63 @@ func (c *App) RenderTemplate(content interface{}, filenames ...string) string {
 	return w.String()
 }
 
-func (c *App) AddRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
+func (a *App) AddRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		c.eventFunc <- func() {
+		a.eventFunc <- func() {
 			fn(this, args)
 		}
 		return nil
 	})
 }
 
-func (c *App) AddEventFunc(fn func()) js.Func {
+func (a *App) AddEventFunc(fn func()) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		c.eventFunc <- func() {
+		a.eventFunc <- func() {
 			fn()
 		}
 		return nil
 	})
 }
 
-func (c *App) AddEventFuncPreventDefault(fn func()) js.Func {
+func (a *App) AddEventFuncPreventDefault(fn func()) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		args[0].Call("preventDefault")
-		c.eventFunc <- func() {
+		a.eventFunc <- func() {
 			fn()
 		}
 		return nil
 	})
 }
 
-func (c *App) retrieveServerCredentials() {
+func (a *App) retrieveServerCredentials() {
 	rawUrl := js.Global().Get("window").Get("location").Get("href").String()
 	baseUrl, _ := url.Parse(rawUrl)
 
-	c.config.ServerHostname = baseUrl.Hostname()
-	c.config.ServerPort, _ = strconv.ParseInt(baseUrl.Port(), 10, 64)
-	c.config.ServerSsl = baseUrl.Scheme == "https"
-	if c.config.ServerPort == 0 {
-		if c.config.ServerSsl {
-			c.config.ServerPort = 443
+	a.config.ServerHostname = baseUrl.Hostname()
+	a.config.ServerPort, _ = strconv.ParseInt(baseUrl.Port(), 10, 64)
+	a.config.ServerSsl = baseUrl.Scheme == "https"
+	if a.config.ServerPort == 0 {
+		if a.config.ServerSsl {
+			a.config.ServerPort = 443
 		} else {
-			c.config.ServerPort = 80
+			a.config.ServerPort = 80
 		}
 	}
 }
 
-func (c *App) HideExplicitSongForConnectedUser() bool {
-	if user, ok := c.localDb.Users[c.restClient.UserId()]; ok == true {
+func (a *App) ConnectedUserId() restApiV1.UserId {
+	return a.restClient.UserId()
+}
+
+func (a *App) IsConnectedUserAdmin() bool {
+	if user, ok := a.localDb.Users[a.ConnectedUserId()]; ok == true {
+		return user.AdminFg
+	}
+	return false
+}
+
+func (a *App) HideExplicitSongForConnectedUser() bool {
+	if user, ok := a.localDb.Users[a.ConnectedUserId()]; ok == true {
 		return user.HideExplicitFg
 	}
 	return false

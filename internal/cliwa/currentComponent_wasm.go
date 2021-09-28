@@ -43,6 +43,41 @@ func (c *CurrentComponent) Show() {
 		c.modified = true
 		c.RefreshView()
 	}))
+	currentSaveButton := jst.Document.Call("getElementById", "currentSaveButton")
+	currentSaveButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		if c.modified {
+			if c.srcPlaylistId == nil {
+				// Save as
+				// OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+			} else {
+				// Save
+				// Only admin or playlist owner can edit playlist content
+				if !c.app.IsConnectedUserAdmin() && !c.app.localDb.IsPlaylistOwnedBy(*c.srcPlaylistId, c.app.ConnectedUserId()) {
+					c.app.HomeComponent.MessageComponent.WarningMessage("Only administrator or playlist owner can edit playlist content")
+				} else {
+					selectedPlaylist := c.app.localDb.Playlists[*c.srcPlaylistId]
+					playlistMeta := selectedPlaylist.PlaylistMeta
+					playlistMeta.SongIds = c.songIds
+
+					_, cliErr := c.app.restClient.UpdatePlaylist(selectedPlaylist.Id, &playlistMeta)
+					if cliErr != nil {
+						c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to update the playlist", cliErr)
+					} else {
+						var id = selectedPlaylist.Id
+						c.srcPlaylistId = &id
+						c.modified = false
+						c.app.HomeComponent.Reload()
+					}
+
+				}
+			}
+		}
+	}))
+	currentSaveAsButton := jst.Document.Call("getElementById", "currentSaveAsButton")
+	currentSaveAsButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		// Save as
+		// OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+	}))
 
 	listDiv := jst.Document.Call("getElementById", "currentList")
 	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
@@ -151,48 +186,45 @@ func (c *CurrentComponent) AddSongAction(songId restApiV1.SongId) {
 }
 
 func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
-	c.modified = true
 	if albumId != restApiV1.UnknownAlbumId {
 		for _, song := range c.app.localDb.AlbumOrderedSongs[albumId] {
-			c.songIds = append(c.songIds, song.Id)
+			c.tryToAppendSong(song.Id)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownAlbumSongs {
-			c.songIds = append(c.songIds, song.Id)
+			c.tryToAppendSong(song.Id)
 		}
 	}
 	c.RefreshView()
 }
 
 func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
-	c.modified = true
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
-			c.songIds = append(c.songIds, song.Id)
+			c.tryToAppendSong(song.Id)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownArtistSongs {
-			c.songIds = append(c.songIds, song.Id)
+			c.tryToAppendSong(song.Id)
 		}
 	}
 	c.RefreshView()
 }
 
 func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
-	c.modified = true
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.songIds = append(c.songIds, songId)
+		c.tryToAppendSong(songId)
 	}
 	c.RefreshView()
 }
 
 func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	c.songIds = nil
-	c.modified = false
 	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.songIds = append(c.songIds, songId)
+		c.tryToAppendSong(songId)
 	}
+	c.modified = false
 	c.RefreshView()
 }
 
@@ -200,4 +232,13 @@ func (c *CurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
 	c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
 	c.modified = true
 	c.RefreshView()
+}
+
+func (c *CurrentComponent) tryToAppendSong(songId restApiV1.SongId) {
+	// Don't append explicit songs if user profile ask for it
+	if c.app.HideExplicitSongForConnectedUser() && c.app.localDb.Songs[songId].ExplicitFg {
+		return
+	}
+	c.modified = true
+	c.songIds = append(c.songIds, songId)
 }

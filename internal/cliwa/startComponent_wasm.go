@@ -37,7 +37,7 @@ func (c *StartComponent) Show() {
 		if err != nil {
 			logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		} else {
-			if c.app.restClient.UserId() == restApiV1.UndefinedUserId {
+			if c.app.ConnectedUserId() == restApiV1.UndefinedUserId {
 				logrus.Errorf("Wrong credentials")
 
 				jst.LocalStorage.Set("mifasolUsername", "")
@@ -78,7 +78,7 @@ func (c *StartComponent) logInAction() {
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
-	if c.app.restClient.UserId() == restApiV1.UndefinedUserId {
+	if c.app.ConnectedUserId() == restApiV1.UndefinedUserId {
 		message := jst.Document.Call("getElementById", "message")
 		message.Set("innerHTML", "Wrong credentials")
 		jst.LocalStorage.Set("mifasolUsername", "")

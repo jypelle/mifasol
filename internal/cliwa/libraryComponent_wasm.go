@@ -152,11 +152,11 @@ func (c *LibraryComponent) Show() {
 		case "playlistFavoriteLink":
 			playlistId := dataset.Get("playlistid").String()
 			favoritePlaylistId := restApiV1.FavoritePlaylistId{
-				UserId:     c.app.restClient.UserId(),
+				UserId:     c.app.ConnectedUserId(),
 				PlaylistId: restApiV1.PlaylistId(playlistId),
 			}
 
-			if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][restApiV1.PlaylistId(playlistId)]; ok {
+			if _, ok := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][restApiV1.PlaylistId(playlistId)]; ok {
 				link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 
 				_, cliErr := c.app.restClient.DeleteFavoritePlaylist(favoritePlaylistId)
@@ -188,11 +188,11 @@ func (c *LibraryComponent) Show() {
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
-				UserId: c.app.restClient.UserId(),
+				UserId: c.app.ConnectedUserId(),
 				SongId: restApiV1.SongId(songId),
 			}
 
-			if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][restApiV1.SongId(songId)]; ok {
+			if _, ok := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][restApiV1.SongId(songId)]; ok {
 				link.Set("innerHTML", `<i class="far fa-star" style="color: #444;"></i>`)
 
 				_, cliErr := c.app.restClient.DeleteFavoriteSong(favoriteSongId)
@@ -270,7 +270,7 @@ func (c *LibraryComponent) refreshArtistList() {
 
 	var artists []*restApiV1.Artist
 	if c.onlyFavorites {
-		artists = c.app.localDb.UserOrderedFavoriteArtists[c.app.restClient.UserId()]
+		artists = c.app.localDb.UserOrderedFavoriteArtists[c.app.ConnectedUserId()]
 	} else {
 		artists = c.app.localDb.OrderedArtists
 	}
@@ -303,7 +303,7 @@ func (c *LibraryComponent) refreshAlbumList() {
 
 	var albums []*restApiV1.Album
 	if c.onlyFavorites {
-		albums = c.app.localDb.UserOrderedFavoriteAlbums[c.app.restClient.UserId()]
+		albums = c.app.localDb.UserOrderedFavoriteAlbums[c.app.ConnectedUserId()]
 	} else {
 		albums = c.app.localDb.OrderedAlbums
 	}
@@ -365,7 +365,7 @@ func (c *LibraryComponent) refreshSongList() {
 			}
 		} else {
 			if c.onlyFavorites {
-				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.restClient.UserId()]
+				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.ConnectedUserId()]
 			} else {
 				songList = c.app.localDb.OrderedSongs
 			}
@@ -403,7 +403,7 @@ func (c *LibraryComponent) refreshSongList() {
 func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	var divContent strings.Builder
 
-	_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.restClient.UserId()][song.Id]
+	_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
 
 	songItem := struct {
 		SongId    string
@@ -491,14 +491,14 @@ func (c *LibraryComponent) refreshPlaylistList() {
 
 	var playlists []*restApiV1.Playlist
 	if c.onlyFavorites {
-		playlists = c.app.localDb.UserOrderedFavoritePlaylists[c.app.restClient.UserId()]
+		playlists = c.app.localDb.UserOrderedFavoritePlaylists[c.app.ConnectedUserId()]
 	} else {
 		playlists = c.app.localDb.OrderedPlaylists
 	}
 
 	for _, playlist := range playlists {
 		if playlist != nil {
-			_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.restClient.UserId()][playlist.Id]
+			_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
 			divContent.WriteString(c.app.RenderTemplate(
 				struct {
 					PlaylistId string
