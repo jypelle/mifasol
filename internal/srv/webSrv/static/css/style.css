@@ -35,7 +35,7 @@
 
 /* Works on Chrome, Edge, and Safari */
 *::-webkit-scrollbar {
-    width: 12px;
+    width: 0.6rem;
 }
 
 *::-webkit-scrollbar-track {
@@ -44,11 +44,12 @@
 
 *::-webkit-scrollbar-thumb {
     background-color: #48899c;
-    border-radius: 5px;
+    border-radius: 0.25rem;
     border: 1px solid #222222;
 }
 
 html {
+    font-size: 16px;
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     height: 100%;
@@ -67,6 +68,14 @@ h1, h2, h3 {
     font-weight: 500;
 }
 
+h1 {
+    font-size: 1.8rem;
+}
+
+h2 {
+    font-size: 1.4rem;
+}
+
 a {
     text-decoration: none;
     color: #ddd;
@@ -78,6 +87,21 @@ a:hover {
 li {
     margin: 0 0 0.2rem 0;
 }
+
+button {
+    background-color: transparent;
+    color: #48899c;
+    border: 2px solid #48899c;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.2rem;
+    min-width: 1.9rem;
+}
+
+button:hover {
+    color: #f0f0f0;
+    border: 2px solid #f0f0f0;
+}
+
 
 /* form */
 select,
@@ -306,6 +330,10 @@ input[type="checkbox"]:checked + label::after {
     justify-content: space-between;
 }
 
+button.light:not(:hover)  {
+    color: #cccccc;
+    border-color: #cccccc;
+}
 
 .item {
     display: flex;

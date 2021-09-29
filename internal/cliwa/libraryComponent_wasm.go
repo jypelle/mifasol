@@ -409,7 +409,7 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 		SongId    string
 		Favorite  bool
 		SongName  string
-		AlbumId   string
+		AlbumId   *string
 		AlbumName string
 		Artists   []struct {
 			ArtistId   string
@@ -419,67 +419,28 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 		SongId:   string(song.Id),
 		Favorite: favorite,
 		SongName: song.Name,
-		AlbumId:  string(song.AlbumId),
 	}
 
-	if song.AlbumId != restApiV1.UnknownAlbumId {
+	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
 		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
+		songItem.AlbumId = (*string)(&song.AlbumId)
 	}
 
 	for _, artistId := range song.ArtistIds {
-		songItem.Artists = append(songItem.Artists, struct {
-			ArtistId   string
-			ArtistName string
-		}{
-			ArtistId:   string(artistId),
-			ArtistName: c.app.localDb.Artists[artistId].Name,
-		})
+		if c.libraryState.artistId == nil || (c.libraryState.artistId != nil && artistId != *c.libraryState.artistId) {
+			songItem.Artists = append(songItem.Artists, struct {
+				ArtistId   string
+				ArtistName string
+			}{
+				ArtistId:   string(artistId),
+				ArtistName: c.app.localDb.Artists[artistId].Name,
+			})
+		}
 	}
 
 	divContent.WriteString(c.app.RenderTemplate(
 		&songItem, "songItem.html"),
 	)
-
-	// Title item
-	separator := ""
-
-	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
-		divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
-		separator = " / "
-	}
-
-	if len(song.ArtistIds) > 0 {
-		for _, artistId := range song.ArtistIds {
-			if c.libraryState.artistId == nil || (c.libraryState.artistId != nil && artistId != *c.libraryState.artistId) {
-				divContent.WriteString(separator + `<a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
-				separator = " / "
-			}
-		}
-	}
-
-	divContent.WriteString(`</div></div>`)
-
-	// Buttons item
-	divContent.WriteString(`<div class="itemButtons">`)
-
-	// 'Download song' button
-	divContent.WriteString(`<a class="songDownloadLink" href="#" data-songid="` + string(song.Id) + `">`)
-	divContent.WriteString(`<i class="fas fa-file-download"></i>`)
-	divContent.WriteString(`</a>`)
-
-	// 'Add to current playlist' button
-	divContent.WriteString(`<a class="songAddToPlaylistLink" href="#" data-songid="` + string(song.Id) + `">`)
-	divContent.WriteString(`<i class="fas fa-plus"></i>`)
-	divContent.WriteString(`</a>`)
-
-	// 'Play now' button
-	divContent.WriteString(`<a class="songPlayNowLink" href="#" data-songid="` + string(song.Id) + `">`)
-	divContent.WriteString(`<i class="fas fa-play"></i>`)
-	divContent.WriteString(`</a>`)
-
-	divContent.WriteString(`</div>`)
-
-	divContent.WriteString(`</div>`)
 
 	return divContent.String()
 }
@@ -499,16 +460,33 @@ func (c *LibraryComponent) refreshPlaylistList() {
 	for _, playlist := range playlists {
 		if playlist != nil {
 			_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
-			divContent.WriteString(c.app.RenderTemplate(
-				struct {
-					PlaylistId string
-					Favorite   bool
-					Name       string
+
+			playlistItem := struct {
+				PlaylistId string
+				Favorite   bool
+				Name       string
+				OwnerUsers []struct {
+					UserId   string
+					UserName string
+				}
+			}{
+				PlaylistId: string(playlist.Id),
+				Favorite:   favorite,
+				Name:       playlist.Name,
+			}
+
+			for _, userId := range playlist.OwnerUserIds {
+				playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
+					UserId   string
+					UserName string
 				}{
-					PlaylistId: string(playlist.Id),
-					Favorite:   favorite,
-					Name:       playlist.Name,
-				}, "playlistItem.html"),
+					UserId:   string(userId),
+					UserName: c.app.localDb.Users[userId].Name,
+				})
+			}
+
+			divContent.WriteString(c.app.RenderTemplate(
+				&playlistItem, "playlistItem.html"),
 			)
 
 		}

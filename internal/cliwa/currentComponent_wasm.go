@@ -138,43 +138,41 @@ func (c *CurrentComponent) RefreshView() {
 
 func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
 	var divContent strings.Builder
-	divContent.WriteString(`<div class="item">`)
 
-	// Title item
-	divContent.WriteString(`<div class="itemTitle"><p class="songLink">` + html.EscapeString(song.Name) + `</p>`)
-	if song.AlbumId != restApiV1.UnknownAlbumId || len(song.ArtistIds) > 0 {
-		divContent.WriteString(`<div>`)
-		if song.AlbumId != restApiV1.UnknownAlbumId {
-			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(song.AlbumId) + `">` + html.EscapeString(c.app.localDb.Albums[song.AlbumId].Name) + `</a>`)
-		} else {
-			divContent.WriteString(`<a class="albumLink" href="#" data-albumid="` + string(song.AlbumId) + `">(Unknown album)</a>`)
+	songItem := struct {
+		SongId    string
+		SongIdx   int
+		SongName  string
+		AlbumId   *string
+		AlbumName string
+		Artists   []struct {
+			ArtistId   string
+			ArtistName string
 		}
-
-		if len(song.ArtistIds) > 0 {
-			for _, artistId := range song.ArtistIds {
-				divContent.WriteString(` / <a class="artistLink" href="#" data-artistid="` + string(artistId) + `">` + html.EscapeString(c.app.localDb.Artists[artistId].Name) + `</a>`)
-			}
-		}
-		divContent.WriteString(`</div>`)
+	}{
+		SongId:   string(song.Id),
+		SongIdx:  songIdx,
+		SongName: song.Name,
 	}
-	divContent.WriteString(`</div>`)
 
-	// Buttons item
-	divContent.WriteString(`<div class="itemButtons">`)
+	if song.AlbumId != restApiV1.UnknownAlbumId {
+		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
+		songItem.AlbumId = (*string)(&song.AlbumId)
+	}
 
-	// 'Remove' button
-	divContent.WriteString(`<a class="currentRemoveSongFromPlaylistLink" href="#" title="Remove" data-songidx="` + strconv.Itoa(songIdx) + `">`)
-	divContent.WriteString(`<i class="fas fa-times"></i>`)
-	divContent.WriteString(`</a>`)
+	for _, artistId := range song.ArtistIds {
+		songItem.Artists = append(songItem.Artists, struct {
+			ArtistId   string
+			ArtistName string
+		}{
+			ArtistId:   string(artistId),
+			ArtistName: c.app.localDb.Artists[artistId].Name,
+		})
+	}
 
-	// 'Play now' button
-	divContent.WriteString(`<a class="currentPlaySongNowLink" href="#" title="Play" data-songid="` + string(song.Id) + `" data-songidx="` + strconv.Itoa(songIdx) + `">`)
-	divContent.WriteString(`<i class="fas fa-play"></i>`)
-	divContent.WriteString(`</a>`)
-
-	divContent.WriteString(`</div>`)
-
-	divContent.WriteString(`</div>`)
+	divContent.WriteString(c.app.RenderTemplate(
+		&songItem, "currentSongItem.html"),
+	)
 
 	return divContent.String()
 }

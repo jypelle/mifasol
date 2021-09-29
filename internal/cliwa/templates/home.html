@@ -1,14 +1,14 @@
 <header class="header">
     <div style="margin: 0 0.3rem 0 0.3rem;font-weight: bold;"><img src="/static/image/logo32.png" style="vertical-align:middle;margin: 0.1rem 0.6rem 0.1rem 0;width:32px;"><span style="">Mifasol</span></div>
     <div style="margin: 0 0.3rem 0.3rem 0;">
-        <button id="refreshButton" style="margin: 0.3rem 0 0 0.3rem;" type="button" ><i class="fas fa-sync-alt"></i></button><button id="logOutButton" style="margin: 0.3rem 0 0 0.3rem;" type="button" ><i class="fas fa-sign-out-alt"></i></button>
+        <button id="refreshButton" class="light" title="Sync" style="margin: 0.3rem 0 0 0.3rem;" type="button" ><i class="fas fa-sync-alt"></i></button><button id="logOutButton" class="light" style="margin: 0.3rem 0 0 0.3rem;" type="button" ><i class="fas fa-sign-out-alt"></i></button>
     </div>
 </header>
-<main style="display: flex; flex-flow: column nowrap; margin: 0 1rem 0 1rem; flex: 1 1 auto; min-height: 0;">
+<main style="display: flex; flex-flow: column nowrap; margin: 0.3rem 0.5rem 0 0.5rem; flex: 1 1 auto; min-height: 0;">
     <div style="display: flex; flex-flow: row nowrap; flex: 1 1 auto; min-height: 0; gap: 1rem;">
-        <div id="libraryComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0;">
-            <h2 id="libraryTitle" style="margin:0.5rem 0 0.5rem 0;"></h2>
-            <div id="libraryButtons" style="display: flex; flex-flow: row wrap; gap: 0.5rem;">
+        <div id="libraryComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; gap: 0.3rem;">
+            <h2 id="libraryTitle" style="margin: 0;">...</h2>
+            <div id="libraryButtons" style="display: flex; flex-flow: row wrap; gap: 0.3rem;">
                 <button id="libraryArtistsButton" type="button" title="Artists"><i class="fas fa-microphone-alt"></i></button>
                 <button id="libraryAlbumsButton" type="button" title="Albums"><i class="fas fa-compact-disc"></i></button>
                 <button id="librarySongsButton" type="button" title="Songs"><i class="fas fa-music"></i></button>
@@ -21,9 +21,9 @@
             </div>
             <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>
-        <div id="currentComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0;">
-            <h2 id="currentTitle"  style="margin:0.5rem 0 0.5rem 0;">Playlist</h2>
-            <div id="currentButtons" style="display: flex; flex-flow: row wrap; gap: 0.5rem;">
+        <div id="currentComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; gap: 0.3rem;">
+            <h2 id="currentTitle" style="margin: 0;">Playlist</h2>
+            <div id="currentButtons" style="display: flex; flex-flow: row wrap; gap: 0.3rem;">
                 <button id="currentCleanButton" type="button" title="Clean"><i class="fas fa-broom"></i></button>
                 <button id="currentShuffleButton" type="button" title="Shuffle"><i class="fas fa-random"></i></button>
                 <button id="currentSaveButton" type="button" title="Save"><i class="fas fa-file"></i></button>
@@ -33,7 +33,15 @@
         </div>
     </div>
 </main>
-<footer style="display: flex; flex-flow: row wrap; justify-content: space-between;">
-    <p style="flex: 4 4 320px; margin: 1rem;" id="message">...</p>
-    <audio style="flex: 5;" id="player" controls ></audio>
+<footer style="display: flex; flex-flow: row wrap; justify-content: space-between; gap: 0.3rem; margin: 0.3rem;">
+    <div style="flex: 1 0 320px;" id="message">...</div>
+    <div style="flex: 1 0 320px; display:flex; flex-flow: row nowrap; gap: 0.3rem; align-items:center;">
+        <audio id="playerAudio" ></audio>
+        <button style="flex:0;" id="playerPlayButton" type="button" title="Play/Pause"><i class="fas fa-play"></i></button>
+        <input style="flex:3;width: 4rem;padding:0;" type="range" id="playerSeekSlider" max="100" value="0">
+        <div style="white-space: nowrap;">
+            <span id="playerCurrentTime">0:00</span> / <span id="playerDuration">0:00</span>
+        </div>
+        <input style="flex:1;width: 4rem;padding:0;" type="range" id="playerVolumeSlider" max="100" value="0">
+    </div>
 </footer>

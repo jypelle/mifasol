@@ -1,4 +1,4 @@
-<div class="item playlistItem">
+<div class="item playlistItem" draggable="true">
     <div class="itemFavorite"><a class="playlistFavoriteLink" href="#" data-playlistid="{{.PlaylistId}}">
         {{if .Favorite}}
             <i class="fas fa-star"></i>
@@ -8,7 +8,12 @@
     </a></div>
     <div class="itemTitle">
         <a class="playlistLink" href="#" data-playlistid="{{.PlaylistId}}">{{.Name}}</a>
-        <div></div>
+        <div>
+            {{range $index, $user := .OwnerUsers}}
+            {{if ne $index 0 }} / {{end}}
+            <span class="userLink" >{{.UserName}}</span>
+            {{end}}
+        </div>
     </div>
     <div class="itemButtons">
         <a class="playlistAddToPlaylistLink" href="#" data-playlistid="{{.PlaylistId}}">

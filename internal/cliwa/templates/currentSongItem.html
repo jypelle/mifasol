@@ -1,11 +1,4 @@
-<div class="item songItem" draggable="true">
-    <div class="itemFavorite"><a class="songFavoriteLink" href="#" data-songid="{{.SongId}}">
-        {{if .Favorite}}
-        <i class="fas fa-star"></i>
-        {{else}}
-        <i class="fas fa-star" style="color: #444;"></i>
-        {{end}}
-    </a></div>
+<div class="item currentSongItem" draggable="true">
     <div class="itemTitle">
         <p class="songLink">{{.SongName}}</p>
         <div>
@@ -22,13 +15,10 @@
         </div>
     </div>
     <div class="itemButtons">
-        <a class="songDownloadLink" href="#" data-songid="{{.SongId}}">
-            <i class="fas fa-file-download"></i>
+        <a class="currentRemoveSongFromPlaylistLink" href="#" title="Remove" data-songidx="{{.SongIdx}}">
+            <i class="fas fa-times"></i>
         </a>
-        <a class="songAddToPlaylistLink" href="#" data-songid="{{.SongId}}">
-            <i class="fas fa-plus"></i>
-        </a>
-        <a class="songPlayNowLink" href="#" data-songid="{{.SongId}}">
+        <a class="currentPlaySongNowLink" href="#" title="Play" data-songid="{{.SongId}}" data-songidx="{{.SongIdx}}">
             <i class="fas fa-play"></i>
         </a>
     </div>
