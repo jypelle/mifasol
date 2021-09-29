@@ -42,7 +42,7 @@ func (c *PlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 	}
 
 	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
-	playerPlayButton.Set("innerHTML", `<i class="far fa-pause"></i>`)
+	playerPlayButton.Set("innerHTML", `<i class="fas fa-pause"></i>`)
 
 	player := jst.Document.Call("getElementById", "playerAudio")
 	player.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
