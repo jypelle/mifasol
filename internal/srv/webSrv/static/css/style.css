@@ -26,6 +26,10 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-wrap: anywhere;
+}
+
 /* Scrollbar */
 /* Works on Firefox */
 * {
@@ -91,15 +95,15 @@ li {
 button {
     background-color: transparent;
     color: #48899c;
-    border: 2px solid #48899c;
-    border-radius: 0.25rem;
-    padding: 0.1rem 0.2rem;
+    border: 0.1rem solid #48899c;
+    border-radius: 0.3rem;
+    padding: 0.3rem 0.3rem;
     min-width: 1.9rem;
 }
 
 button:hover {
     color: #f0f0f0;
-    border: 2px solid #f0f0f0;
+    border-color: #f0f0f0;
 }
 
 
@@ -109,8 +113,8 @@ textarea,
 input {
     display: inline-block;
     color: #555555;
-    border-radius: 0.5rem;
-    padding: 0.4rem 0.4rem;
+    border-radius: 0.3rem;
+    padding: 0.4rem;
     vertical-align: middle;
     width: 20rem;
 }
@@ -122,8 +126,7 @@ textarea {
 textarea,
 input {
     background-color: #ffffff;
-    border: 1px solid #cccccc;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    border-width: 0px;
     transition: border linear .2s, box-shadow linear .2s;
 }
 
@@ -195,44 +198,44 @@ form > div > div > input {
 /* Switch */
 
 input[type="checkbox"] {
-    width: 0;
-    height: 0;
-    visibility: hidden;
+    opacity: 0;
+    position: absolute;
 }
 
 input[type="checkbox"] + label {
-    width: 40px;
-    height: 19px;
+    width: 2.6rem;
+    height: 1.4rem;
     display:inline-block;
     background-color: #ffffff;
-    border-radius: 0.5rem;
+    border-radius: 0.3rem;
     position: relative;
     cursor: pointer;
     transition: 0.1s;
+    vertical-align: middle;
+    margin-right: 0.5rem;
 }
+
+input[type="checkbox"]:focus + label {
+    box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.075), 0 0 8px rgba(225, 225, 225, 0.6);
+}
+
 input[type="checkbox"] + label:after {
     content: "";
-    width: 13px;
-    height: 13px;
+    width: 1rem;
+    height: 0.8rem;
     background-color: #ccc;
     position: absolute;
-    border-radius: 19px;
-    top: 3px;
-    left: 3px;
+    border-radius: 0.3rem;
+    top: 0.3rem;
+    left: 0.3rem;
     transition: 0.1s;
 }
 
 input[type="checkbox"]:checked + label:after {
-    left: calc(100% - 3px);
+    left: calc(100% - 0.3rem);
     transform: translateX(-100%);
-}
-
-input[type="checkbox"]:checked + label::after {
     background-color: #48899c;
 }
-
-
-
 
 .slider {
     position: absolute;
@@ -328,6 +331,9 @@ input[type="checkbox"]:checked + label::after {
     display: flex;
     flex-flow: row wrap;
     justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    gap: 0.8rem;
 }
 
 button.light:not(:hover)  {
@@ -379,7 +385,7 @@ button.light:not(:hover)  {
 
 .itemTitle > :nth-child(2) {
     padding: 0.18rem 0.3rem 0.3rem 0.3rem;
-    margin-left: 1rem;
+    margin-left: 0.5rem;
     font-size: 0.8rem;
 }
 

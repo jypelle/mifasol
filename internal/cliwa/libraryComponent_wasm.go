@@ -381,6 +381,14 @@ func (c *LibraryComponent) refreshSongList() {
 				}
 			}
 
+			// Remove non favorite songs if user ask for it
+			if c.onlyFavorites {
+				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
+				if !favorite {
+					continue
+				}
+			}
+
 			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(song))
 		}
 
@@ -391,6 +399,14 @@ func (c *LibraryComponent) refreshSongList() {
 			// Remove explicit songs if user profile ask for it
 			if c.app.HideExplicitSongForConnectedUser() {
 				if c.app.localDb.Songs[songId].ExplicitFg {
+					continue
+				}
+			}
+
+			// Remove non favorite songs if user ask for it
+			if c.onlyFavorites {
+				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][songId]
+				if !favorite {
 					continue
 				}
 			}

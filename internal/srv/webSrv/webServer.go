@@ -68,7 +68,7 @@ func NewWebServer(store *store.Store, router *mux.Router, serverConfig *config.S
 		staticFileHandler.ServeHTTP(w, r)
 	})
 
-	// Clients binary executables files
+	// Clients binary executable files
 	//
 	clientsFileHandler := http.StripPrefix("/clients", statigz.FileServer(
 		&tool.StaticFSWrapper{
