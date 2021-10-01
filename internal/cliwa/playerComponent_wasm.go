@@ -5,21 +5,26 @@ import (
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
 	"html"
+	"strconv"
 )
 
 type PlayerComponent struct {
-	app *App
+	app    *App
+	volume float64
 }
 
 func NewPlayerComponent(app *App) *PlayerComponent {
 	c := &PlayerComponent{
-		app: app,
+		app:    app,
+		volume: 1,
 	}
 
 	return c
 }
 
 func (c *PlayerComponent) Show() {
+	playerAudio := jst.Document.Call("getElementById", "playerAudio")
+	playerAudio.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
 	playerAudio := jst.Document.Call("getElementById", "playerAudio")
 	playerAudio.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
 	playerAudio.Call("addEventListener", "loadedmetadata", c.app.AddEventFunc(func() {
@@ -38,6 +43,15 @@ func (c *PlayerComponent) Show() {
 			c.PauseSongAction()
 		}
 	}))
+	playerNextButton := jst.Document.Call("getElementById", "playerNextButton")
+	playerNextButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
+
+	playerVolumeSlider := jst.Document.Call("getElementById", "playerVolumeSlider")
+	playerVolumeSlider.Call("addEventListener", "change", c.app.AddEventFunc(func() {
+		c.volume, _ = strconv.ParseFloat(playerVolumeSlider.Get("value").String(), 64)
+		playerAudio.Set("volume", c.volume)
+	}))
+
 }
 
 func (c *PlayerComponent) PlaySongAction(songId restApiV1.SongId) {
