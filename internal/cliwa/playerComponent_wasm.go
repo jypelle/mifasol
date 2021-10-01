@@ -20,12 +20,18 @@ func NewPlayerComponent(app *App) *PlayerComponent {
 }
 
 func (c *PlayerComponent) Show() {
-	player := jst.Document.Call("getElementById", "playerAudio")
-	player.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
+	playerAudio := jst.Document.Call("getElementById", "playerAudio")
+	playerAudio.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
+	playerAudio.Call("addEventListener", "loadedmetadata", c.app.AddEventFunc(func() {
+		duration := playerAudio.Get("duration").Int()
+		playerDuration := jst.Document.Call("getElementById", "playerDuration")
+		playerDuration.Set("innerHTML", fmt.Sprintf("%d:%2d", duration/60, duration%60))
+		playerSeekSlider := jst.Document.Call("getElementById", "playerSeekSlider")
+		playerSeekSlider.Set("max", duration)
+	}))
 
 	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
 	playerPlayButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
-		playerAudio := jst.Document.Call("getElementById", "playerAudio")
 		if playerAudio.Get("paused").Bool() {
 			c.ResumeSongAction()
 		} else {
