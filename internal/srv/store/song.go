@@ -200,14 +200,14 @@ func (s *Store) ReadSong(externalTrn *sqlx.Tx, songId restApiV1.SongId) (*restAp
 	return &song, nil
 }
 
-func (s *Store) ReadSongContent(song *restApiV1.Song) ([]byte, error) {
-
-	content, err := ioutil.ReadFile(s.GetSongFileName(song))
+func (s *Store) ReadSongContent(song *restApiV1.Song) (*os.File, error) {
+	file, err := os.Open(s.GetSongFileName(song))
+	//content, err := ioutil.ReadFile(s.GetSongFileName(song))
 	if err != nil {
 		return nil, err
 	}
 
-	return content, nil
+	return file, nil
 }
 
 func (s *Store) GetSongDirName(songId restApiV1.SongId) string {

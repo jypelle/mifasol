@@ -7,7 +7,7 @@ import (
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
 	"net/http"
-	"strconv"
+	"time"
 )
 
 func (s *RestServer) readSongs(w http.ResponseWriter, r *http.Request) {
@@ -72,10 +72,8 @@ func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", song.Format.MimeType())
-	w.Header().Set("Content-Length", strconv.Itoa(len(songContent)))
-	w.Header().Set("Accept-Ranges", "bytes") // Needed for seeking in chrome
-
-	w.Write(songContent)
+	http.ServeContent(w, r, "", time.Unix(0, song.UpdateTs), songContent)
+	songContent.Close()
 }
 
 func (s *RestServer) createSongContent(w http.ResponseWriter, r *http.Request) {

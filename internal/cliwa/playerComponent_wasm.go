@@ -10,15 +10,18 @@ import (
 )
 
 type PlayerComponent struct {
-	app    *App
-	volume float64
-	muted  bool
+	app                   *App
+	volume                float64
+	muted                 bool
+	autoRefreshSeekSlider bool
 }
 
 func NewPlayerComponent(app *App) *PlayerComponent {
 	c := &PlayerComponent{
-		app:    app,
-		volume: 1,
+		app:                   app,
+		volume:                1,
+		muted:                 false,
+		autoRefreshSeekSlider: true,
 	}
 
 	return c
@@ -45,7 +48,9 @@ func (c *PlayerComponent) Show() {
 	playerAudio.Call("addEventListener", "timeupdate", c.app.AddEventFunc(func() {
 		currentTime := playerAudio.Get("currentTime").Int()
 		playerCurrentTime.Set("innerHTML", fmt.Sprintf("%d:%02d", currentTime/60, currentTime%60))
-		playerSeekSlider.Set("value", currentTime)
+		if c.autoRefreshSeekSlider {
+			playerSeekSlider.Set("value", currentTime)
+		}
 	}))
 
 	playerPlayButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
@@ -58,10 +63,14 @@ func (c *PlayerComponent) Show() {
 
 	playerNextButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
 
+	playerSeekSlider.Call("addEventListener", "input", c.app.AddEventFunc(func() {
+		c.autoRefreshSeekSlider = false
+	}))
 	playerSeekSlider.Call("addEventListener", "change", c.app.AddEventFunc(func() {
 		newTime, _ := strconv.ParseInt(playerSeekSlider.Get("value").String(), 10, 64)
 		logrus.Infof("newTime: %d", newTime)
 		playerAudio.Set("currentTime", newTime)
+		c.autoRefreshSeekSlider = true
 	}))
 
 	playerMuteButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
