@@ -122,6 +122,9 @@ func (c *LibraryComponent) Show() {
 	libraryPlaylistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowPlaylistsAction))
 	libraryUsersButton := jst.Document.Call("getElementById", "libraryUsersButton")
 	libraryUsersButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowUsersAction))
+	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
+	libraryAddToPlaylistButton.Call("addEventListener", "click", c.app.AddEventFunc(c.AddToPlaylistAction))
+
 	libraryFavoritesSwitch := jst.Document.Call("getElementById", "libraryFavoritesSwitch")
 	libraryFavoritesSwitch.Call("addEventListener", "click", c.app.AddRichEventFunc(c.FavoritesSwitchAction))
 
@@ -563,6 +566,11 @@ func (c *LibraryComponent) ShowUsersAction() {
 		libraryType: libraryTypeUsers,
 	}
 	c.RefreshView()
+}
+
+func (c *LibraryComponent) AddToPlaylistAction() {
+	// TODO
+	//c.app.HomeComponent.CurrentComponent.AddSongsAction()
 }
 
 func (c *LibraryComponent) OpenAlbumAction(albumId restApiV1.AlbumId) {

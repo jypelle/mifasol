@@ -232,6 +232,13 @@ func (c *CurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
 	c.RefreshView()
 }
 
+func (c *CurrentComponent) AddSongsAction(songIds []restApiV1.SongId) {
+	for _, songId := range songIds {
+		c.tryToAppendSong(songId)
+	}
+	c.RefreshView()
+}
+
 func (c *CurrentComponent) tryToAppendSong(songId restApiV1.SongId) {
 	// Don't append explicit songs if user profile ask for it
 	if c.app.HideExplicitSongForConnectedUser() && c.app.localDb.Songs[songId].ExplicitFg {

@@ -84,6 +84,7 @@ a {
     text-decoration: none;
     color: #ddd;
 }
+
 a:hover {
     color: #f0f0f0;
 }
@@ -157,10 +158,12 @@ select {
     border: 1px solid #cccccc;
     background-color: #ffffff;
 }
+
 select[multiple],
 select[size] {
     height: auto;
 }
+
 select:focus,
 input[type="file"]:focus,
 input[type="radio"]:focus,
@@ -174,7 +177,7 @@ input[type="checkbox"]:focus {
 }
 
 form > div {
-    display:flex;
+    display: flex;
     flex-flow: row wrap;
 }
 
@@ -205,7 +208,7 @@ input[type="checkbox"] {
 input[type="checkbox"] + label {
     width: 2.6rem;
     height: 1.4rem;
-    display:inline-block;
+    display: inline-block;
     background-color: #ffffff;
     border-radius: 0.3rem;
     position: relative;
@@ -325,7 +328,7 @@ input[type="checkbox"]:checked + label:after {
     }
 }
 
-.header {
+.homeHeader {
     background-color: #48899c;
     color: #eeeeee;
     display: flex;
@@ -336,14 +339,23 @@ input[type="checkbox"]:checked + label:after {
     gap: 0.8rem;
 }
 
-button.light:not(:hover)  {
+.homeFooter {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    gap: 0.3rem;
+    padding: 0.3rem;
+    background-color: #222;
+}
+
+button.light:not(:hover) {
     color: #cccccc;
     border-color: #cccccc;
 }
 
 .item {
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: row wrap;
     align-items: stretch;
 }
 
@@ -372,7 +384,7 @@ button.light:not(:hover)  {
 }
 
 .itemTitle {
-    flex: 1;
+    flex: 30 0 6rem;
     display: flex;
     flex-flow: column nowrap;
 }
@@ -390,16 +402,18 @@ button.light:not(:hover)  {
 }
 
 .itemButtons {
-    flex: 0;
+    flex: 1;
     display: flex;
     flex-flow: row nowrap;
     margin: 0 0.1rem 0 0.1rem;
 }
 
 .itemButtons > * {
+    flex: 1;
     display: flex;
     padding: 0.4rem;
     align-items: center;
+    justify-content: center;
 }
 
 .itemButtons > *:not(:hover) {
@@ -429,4 +443,11 @@ button.light:not(:hover)  {
 
 .userLink {
     color: #FFFACD;
+}
+
+
+.duration {
+    white-space: nowrap;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
 }

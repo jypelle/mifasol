@@ -1,4 +1,4 @@
-<header class="header">
+<header class="homeHeader">
     <img src="/static/image/logo64.png" style="width:2rem; filter: drop-shadow(0.08rem 0.08rem 0.1rem #222);">
     <div style="font-weight: bold; flex:1;">Mifasol</div>
     <div style="display:flex; gap: 0.3rem; flex-flow: row nowrap;">
@@ -6,7 +6,7 @@
         <button id="logOutButton" class="light" title="Log out" type="button" ><i class="fas fa-sign-out-alt"></i></button>
     </div>
 </header>
-<main style="display: flex; flex-flow: column nowrap; margin: 0.3rem 0.5rem 0 0.5rem; flex: 1 1 auto; min-height: 0;">
+<main style="display: flex; flex-flow: column nowrap; margin: 0.3rem 0.5rem 0.3rem 0.5rem; flex: 1 1 auto; min-height: 0;">
     <div style="display: flex; flex-flow: row nowrap; flex: 1 1 auto; min-height: 0; gap: 1rem;">
         <div id="libraryComponent" style="display: flex; flex-flow: column nowrap; flex: 1; min-height: 0; gap: 0.3rem;">
             <h2 id="libraryTitle" style="margin: 0;">...</h2>
@@ -16,6 +16,7 @@
                 <button id="librarySongsButton" type="button" title="Songs"><i class="fas fa-music"></i></button>
                 <button id="libraryPlaylistsButton" type="button" title="Playlists"><i class="fas fa-list-alt"></i></button>
                 <button id="libraryUsersButton" type="button" title="Users"><i class="fas fa-user"></i></button>
+                <button id="libraryAddToPlaylistButton" type="button" title="Add songs to playlist"><i class="fas fa-plus"></i></button>
                 <div style="flex:1;"></div>
                 <div>
                     <input type="checkbox" id="libraryFavoritesSwitch"><label for="libraryFavoritesSwitch"></label><i class="fas fa-star"></i>
@@ -35,16 +36,17 @@
         </div>
     </div>
 </main>
-<footer style="display: flex; flex-flow: row wrap; justify-content: space-between; gap: 0.3rem; margin: 0.3rem;">
+<footer class="homeFooter">
     <div style="flex: 1 0 320px;" id="message">...</div>
     <div style="flex: 1 0 320px; display:flex; flex-flow: row nowrap; gap: 0.3rem; align-items:center;">
         <audio id="playerAudio" ></audio>
         <button id="playerPlayButton" type="button" title="Play/Pause"><i class="fas fa-play"></i></button>
         <button id="playerNextButton" type="button" title="Next song"><i class="fas fa-step-forward"></i></button>
-        <input style="flex:3;width: 4rem;padding:0;" type="range" id="playerSeekSlider" max="100" value="0">
-        <div style="white-space: nowrap;">
+        <input style="flex:4;width: 3rem;padding:0;" type="range" id="playerSeekSlider" max="100" value="0">
+        <div class="duration">
             <span id="playerCurrentTime">0:00</span> / <span id="playerDuration">0:00</span>
         </div>
-        <input style="flex:1;width: 4rem;padding:0;" type="range" id="playerVolumeSlider" max="1" value="1" step="any">
+        <button id="playerMuteButton" type="button" title="Mute/Unmute"><i class="fas fa-volume-off"></i></button>
+        <input style="flex:1;width: 3rem;padding:0;" type="range" id="playerVolumeSlider" max="1" value="1" step="any">
     </div>
 </footer>

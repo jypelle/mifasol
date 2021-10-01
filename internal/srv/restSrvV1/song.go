@@ -73,6 +73,7 @@ func (s *RestServer) readSongContent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", song.Format.MimeType())
 	w.Header().Set("Content-Length", strconv.Itoa(len(songContent)))
+	w.Header().Set("Accept-Ranges", "bytes") // Needed for seeking in chrome
 
 	w.Write(songContent)
 }
