@@ -21,12 +21,18 @@ const (
 )
 
 type libraryState struct {
-	libraryType libraryType
-	artistId    *restApiV1.ArtistId
-	albumId     *restApiV1.AlbumId
-	playlistId  *restApiV1.PlaylistId
-	userId      *restApiV1.UserId
-	nameFilter  *string
+	libraryType         libraryType
+	artistId            *restApiV1.ArtistId
+	albumId             *restApiV1.AlbumId
+	playlistId          *restApiV1.PlaylistId
+	userId              *restApiV1.UserId
+	nameFilter          *string
+	onlyFavoritesFilter bool
+	cachedArtists       []*restApiV1.Artist
+	cachedAlbums        []*restApiV1.Album
+	cachedSongs         []*restApiV1.Song
+	cachedPlaylists     []*restApiV1.Playlist
+	cachedUsers         []*restApiV1.User
 }
 
 func (c *LibraryComponent) refreshTitle() {
@@ -85,9 +91,8 @@ func (c *LibraryComponent) refreshTitle() {
 }
 
 type LibraryComponent struct {
-	app           *App
-	libraryState  libraryState
-	onlyFavorites bool
+	app          *App
+	libraryState libraryState
 }
 
 func NewLibraryComponent(app *App) *LibraryComponent {
@@ -102,13 +107,7 @@ func NewLibraryComponent(app *App) *LibraryComponent {
 func (c *LibraryComponent) Reset() {
 	c.libraryState = libraryState{
 		libraryType: libraryTypeArtists,
-		artistId:    nil,
-		albumId:     nil,
-		playlistId:  nil,
-		userId:      nil,
-		nameFilter:  nil,
 	}
-	c.onlyFavorites = false
 }
 
 func (c *LibraryComponent) Show() {
@@ -247,111 +246,173 @@ func (c *LibraryComponent) Show() {
 
 }
 
+func (c *LibraryComponent) computeCache() {
+	// Clear cache
+	c.libraryState.cachedArtists = nil
+	c.libraryState.cachedAlbums = nil
+	c.libraryState.cachedSongs = nil
+	c.libraryState.cachedPlaylists = nil
+	c.libraryState.cachedUsers = nil
+
+	// Compute cache
+	switch c.libraryState.libraryType {
+	case libraryTypeArtists:
+		c.computeArtistList()
+	case libraryTypeAlbums:
+		c.computeAlbumList()
+	case libraryTypePlaylists:
+		c.computePlaylistList()
+	case libraryTypeSongs:
+		c.computeSongList()
+	case libraryTypeUsers:
+		c.computeUserList()
+	}
+}
+
 func (c *LibraryComponent) RefreshView() {
+
+	listDiv := jst.Document.Call("getElementById", "libraryList")
+	listDiv.Set("innerHTML", "Loading...")
+
+	c.computeCache()
+
+	var divContent strings.Builder
+
 	// Refresh library list
 	switch c.libraryState.libraryType {
 	case libraryTypeArtists:
-		c.refreshArtistList()
+
+		for _, artist := range c.libraryState.cachedArtists {
+			var artistItem struct {
+				ArtistId   string
+				ArtistName string
+			}
+
+			if artist == nil {
+				artistItem.ArtistId = string(restApiV1.UnknownArtistId)
+				artistItem.ArtistName = "(Unknown artist)"
+			} else {
+				artistItem.ArtistId = string(artist.Id)
+				artistItem.ArtistName = artist.Name
+			}
+
+			divContent.WriteString(c.app.RenderTemplate(
+				&artistItem, "artistItem.html"),
+			)
+		}
+
 	case libraryTypeAlbums:
-		c.refreshAlbumList()
+
+		for _, album := range c.libraryState.cachedAlbums {
+			var albumItem struct {
+				AlbumId   string
+				AlbumName string
+				Artists   []struct {
+					ArtistId   string
+					ArtistName string
+				}
+			}
+
+			if album == nil {
+				albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
+				albumItem.AlbumName = "(Unknown album)"
+			} else {
+				albumItem.AlbumId = string(album.Id)
+				albumItem.AlbumName = album.Name
+				for _, artistId := range album.ArtistIds {
+					albumItem.Artists = append(albumItem.Artists, struct {
+						ArtistId   string
+						ArtistName string
+					}{
+						ArtistId:   string(artistId),
+						ArtistName: c.app.localDb.Artists[artistId].Name,
+					})
+				}
+			}
+			divContent.WriteString(c.app.RenderTemplate(
+				&albumItem, "albumItem.html"),
+			)
+		}
 	case libraryTypePlaylists:
-		c.refreshPlaylistList()
+		for _, playlist := range c.libraryState.cachedPlaylists {
+			if playlist != nil {
+				_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
+
+				playlistItem := struct {
+					PlaylistId string
+					Favorite   bool
+					Name       string
+					OwnerUsers []struct {
+						UserId   string
+						UserName string
+					}
+				}{
+					PlaylistId: string(playlist.Id),
+					Favorite:   favorite,
+					Name:       playlist.Name,
+				}
+
+				for _, userId := range playlist.OwnerUserIds {
+					playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
+						UserId   string
+						UserName string
+					}{
+						UserId:   string(userId),
+						UserName: c.app.localDb.Users[userId].Name,
+					})
+				}
+
+				divContent.WriteString(c.app.RenderTemplate(
+					&playlistItem, "playlistItem.html"),
+				)
+
+			}
+		}
 	case libraryTypeSongs:
-		c.refreshSongList()
+		for _, song := range c.libraryState.cachedSongs {
+			c.addSongItem(&divContent, song)
+		}
 	case libraryTypeUsers:
-		c.refreshUserList()
+		for _, user := range c.libraryState.cachedUsers {
+			divContent.WriteString(c.app.RenderTemplate(
+				struct {
+					UserId string
+					Name   string
+				}{
+					UserId: string(user.Id),
+					Name:   user.Name,
+				}, "userItem.html"),
+			)
+		}
 	}
+
+	listDiv.Set("innerHTML", divContent.String())
 
 	// Refresh library title
 	c.refreshTitle()
 }
 
-func (c *LibraryComponent) refreshArtistList() {
-	listDiv := jst.Document.Call("getElementById", "libraryList")
-
-	var divContent strings.Builder
-
-	var artists []*restApiV1.Artist
-	if c.onlyFavorites {
-		artists = c.app.localDb.UserOrderedFavoriteArtists[c.app.ConnectedUserId()]
+func (c *LibraryComponent) computeArtistList() {
+	if c.libraryState.onlyFavoritesFilter {
+		c.libraryState.cachedArtists = c.app.localDb.UserOrderedFavoriteArtists[c.app.ConnectedUserId()]
 	} else {
-		artists = c.app.localDb.OrderedArtists
+		c.libraryState.cachedArtists = c.app.localDb.OrderedArtists
 	}
-
-	for _, artist := range artists {
-		var artistItem struct {
-			ArtistId   string
-			ArtistName string
-		}
-
-		if artist == nil {
-			artistItem.ArtistId = string(restApiV1.UnknownArtistId)
-			artistItem.ArtistName = "(Unknown artist)"
-		} else {
-			artistItem.ArtistId = string(artist.Id)
-			artistItem.ArtistName = artist.Name
-		}
-
-		divContent.WriteString(c.app.RenderTemplate(
-			&artistItem, "artistItem.html"),
-		)
-	}
-	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) refreshAlbumList() {
-	listDiv := jst.Document.Call("getElementById", "libraryList")
-
-	var divContent strings.Builder
-
-	var albums []*restApiV1.Album
-	if c.onlyFavorites {
-		albums = c.app.localDb.UserOrderedFavoriteAlbums[c.app.ConnectedUserId()]
+func (c *LibraryComponent) computeAlbumList() {
+	if c.libraryState.onlyFavoritesFilter {
+		c.libraryState.cachedAlbums = c.app.localDb.UserOrderedFavoriteAlbums[c.app.ConnectedUserId()]
 	} else {
-		albums = c.app.localDb.OrderedAlbums
+		c.libraryState.cachedAlbums = c.app.localDb.OrderedAlbums
 	}
-
-	for _, album := range albums {
-		var albumItem struct {
-			AlbumId   string
-			AlbumName string
-			Artists   []struct {
-				ArtistId   string
-				ArtistName string
-			}
-		}
-
-		if album == nil {
-			albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
-			albumItem.AlbumName = "(Unknown album)"
-		} else {
-			albumItem.AlbumId = string(album.Id)
-			albumItem.AlbumName = album.Name
-			for _, artistId := range album.ArtistIds {
-				albumItem.Artists = append(albumItem.Artists, struct {
-					ArtistId   string
-					ArtistName string
-				}{
-					ArtistId:   string(artistId),
-					ArtistName: c.app.localDb.Artists[artistId].Name,
-				})
-			}
-		}
-
-		divContent.WriteString(c.app.RenderTemplate(
-			&albumItem, "albumItem.html"),
-		)
-	}
-	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) refreshSongList() {
-
-	listDiv := jst.Document.Call("getElementById", "libraryList")
-
-	listDiv.Set("innerHTML", "Loading...")
+func (c *LibraryComponent) computeSongList() {
 
 	var songList []*restApiV1.Song
+
+	c.libraryState.cachedSongs = nil
 
 	if c.libraryState.playlistId == nil {
 		if c.libraryState.artistId != nil {
@@ -367,14 +428,13 @@ func (c *LibraryComponent) refreshSongList() {
 				songList = c.app.localDb.AlbumOrderedSongs[*c.libraryState.albumId]
 			}
 		} else {
-			if c.onlyFavorites {
+			if c.libraryState.onlyFavoritesFilter {
 				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.ConnectedUserId()]
 			} else {
 				songList = c.app.localDb.OrderedSongs
 			}
 		}
 
-		listDiv.Set("innerHTML", "")
 		for _, song := range songList {
 
 			// Remove explicit songs if user profile ask for it
@@ -385,18 +445,18 @@ func (c *LibraryComponent) refreshSongList() {
 			}
 
 			// Remove non favorite songs if user ask for it
-			if c.onlyFavorites {
+			if c.libraryState.onlyFavoritesFilter {
 				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
 				if !favorite {
 					continue
 				}
 			}
 
-			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(song))
+			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, song)
 		}
 
 	} else {
-		listDiv.Set("innerHTML", "")
+
 		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
 
 			// Remove explicit songs if user profile ask for it
@@ -407,20 +467,19 @@ func (c *LibraryComponent) refreshSongList() {
 			}
 
 			// Remove non favorite songs if user ask for it
-			if c.onlyFavorites {
+			if c.libraryState.onlyFavoritesFilter {
 				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][songId]
 				if !favorite {
 					continue
 				}
 			}
+			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, c.app.localDb.Songs[songId])
 
-			listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(c.app.localDb.Songs[songId]))
 		}
 	}
 }
 
-func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
-	var divContent strings.Builder
+func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restApiV1.Song) {
 
 	_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
 
@@ -460,79 +519,20 @@ func (c *LibraryComponent) addSongItem(song *restApiV1.Song) string {
 	divContent.WriteString(c.app.RenderTemplate(
 		&songItem, "songItem.html"),
 	)
-
-	return divContent.String()
 }
 
-func (c *LibraryComponent) refreshPlaylistList() {
-	listDiv := jst.Document.Call("getElementById", "libraryList")
-
-	var divContent strings.Builder
-
-	var playlists []*restApiV1.Playlist
-	if c.onlyFavorites {
-		playlists = c.app.localDb.UserOrderedFavoritePlaylists[c.app.ConnectedUserId()]
+func (c *LibraryComponent) computePlaylistList() {
+	if c.libraryState.onlyFavoritesFilter {
+		c.libraryState.cachedPlaylists = c.app.localDb.UserOrderedFavoritePlaylists[c.app.ConnectedUserId()]
 	} else {
-		playlists = c.app.localDb.OrderedPlaylists
+		c.libraryState.cachedPlaylists = c.app.localDb.OrderedPlaylists
 	}
-
-	for _, playlist := range playlists {
-		if playlist != nil {
-			_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
-
-			playlistItem := struct {
-				PlaylistId string
-				Favorite   bool
-				Name       string
-				OwnerUsers []struct {
-					UserId   string
-					UserName string
-				}
-			}{
-				PlaylistId: string(playlist.Id),
-				Favorite:   favorite,
-				Name:       playlist.Name,
-			}
-
-			for _, userId := range playlist.OwnerUserIds {
-				playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
-					UserId   string
-					UserName string
-				}{
-					UserId:   string(userId),
-					UserName: c.app.localDb.Users[userId].Name,
-				})
-			}
-
-			divContent.WriteString(c.app.RenderTemplate(
-				&playlistItem, "playlistItem.html"),
-			)
-
-		}
-	}
-	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *LibraryComponent) refreshUserList() {
-	listDiv := jst.Document.Call("getElementById", "libraryList")
-
-	var divContent strings.Builder
-
-	for _, user := range c.app.localDb.OrderedUsers {
-		if user != nil {
-			divContent.WriteString(c.app.RenderTemplate(
-				struct {
-					UserId string
-					Name   string
-				}{
-					UserId: string(user.Id),
-					Name:   user.Name,
-				}, "userItem.html"),
-			)
-		}
-	}
-	listDiv.Set("innerHTML", divContent.String())
+func (c *LibraryComponent) computeUserList() {
+	c.libraryState.cachedUsers = c.app.localDb.OrderedUsers
 }
+
 func (c *LibraryComponent) ShowArtistsAction() {
 	c.libraryState = libraryState{
 		libraryType: libraryTypeArtists,
@@ -569,8 +569,9 @@ func (c *LibraryComponent) ShowUsersAction() {
 }
 
 func (c *LibraryComponent) AddToPlaylistAction() {
-	// TODO
-	//c.app.HomeComponent.CurrentComponent.AddSongsAction()
+	if len(c.libraryState.cachedSongs) > 0 {
+		c.app.HomeComponent.CurrentComponent.AddSongsAction(c.libraryState.cachedSongs)
+	}
 }
 
 func (c *LibraryComponent) OpenAlbumAction(albumId restApiV1.AlbumId) {
@@ -598,6 +599,6 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 }
 
 func (c *LibraryComponent) FavoritesSwitchAction(this js.Value, args []js.Value) {
-	c.onlyFavorites = this.Get("checked").Bool()
+	c.libraryState.onlyFavoritesFilter = this.Get("checked").Bool()
 	c.RefreshView()
 }

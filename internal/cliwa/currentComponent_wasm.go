@@ -186,11 +186,11 @@ func (c *CurrentComponent) AddSongAction(songId restApiV1.SongId) {
 func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 	if albumId != restApiV1.UnknownAlbumId {
 		for _, song := range c.app.localDb.AlbumOrderedSongs[albumId] {
-			c.tryToAppendSong(song.Id)
+			c.tryToAppendSong(song)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownAlbumSongs {
-			c.tryToAppendSong(song.Id)
+			c.tryToAppendSong(song)
 		}
 	}
 	c.RefreshView()
@@ -199,11 +199,11 @@ func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
-			c.tryToAppendSong(song.Id)
+			c.tryToAppendSong(song)
 		}
 	} else {
 		for _, song := range c.app.localDb.UnknownArtistSongs {
-			c.tryToAppendSong(song.Id)
+			c.tryToAppendSong(song)
 		}
 	}
 	c.RefreshView()
@@ -211,7 +211,7 @@ func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId)
 
 func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.tryToAppendSong(songId)
+		c.tryToAppendSong(c.app.localDb.Songs[songId])
 	}
 	c.RefreshView()
 }
@@ -220,7 +220,7 @@ func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.Play
 	c.songIds = nil
 	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
-		c.tryToAppendSong(songId)
+		c.tryToAppendSong(c.app.localDb.Songs[songId])
 	}
 	c.modified = false
 	c.RefreshView()
@@ -232,18 +232,18 @@ func (c *CurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) AddSongsAction(songIds []restApiV1.SongId) {
-	for _, songId := range songIds {
-		c.tryToAppendSong(songId)
+func (c *CurrentComponent) AddSongsAction(songs []*restApiV1.Song) {
+	for _, song := range songs {
+		c.tryToAppendSong(song)
 	}
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) tryToAppendSong(songId restApiV1.SongId) {
+func (c *CurrentComponent) tryToAppendSong(song *restApiV1.Song) {
 	// Don't append explicit songs if user profile ask for it
-	if c.app.HideExplicitSongForConnectedUser() && c.app.localDb.Songs[songId].ExplicitFg {
+	if c.app.HideExplicitSongForConnectedUser() && song.ExplicitFg {
 		return
 	}
 	c.modified = true
-	c.songIds = append(c.songIds, songId)
+	c.songIds = append(c.songIds, song.Id)
 }
