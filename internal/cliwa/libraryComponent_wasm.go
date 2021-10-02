@@ -124,8 +124,8 @@ func (c *LibraryComponent) Show() {
 	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
 	libraryAddToPlaylistButton.Call("addEventListener", "click", c.app.AddEventFunc(c.AddToPlaylistAction))
 
-	libraryFavoritesSwitch := jst.Document.Call("getElementById", "libraryFavoritesSwitch")
-	libraryFavoritesSwitch.Call("addEventListener", "click", c.app.AddRichEventFunc(c.FavoritesSwitchAction))
+	libraryOnlyFavoritesButton := jst.Document.Call("getElementById", "libraryOnlyFavoritesButton")
+	libraryOnlyFavoritesButton.Call("addEventListener", "click", c.app.AddEventFunc(c.FavoritesSwitchAction))
 
 	listDiv := jst.Document.Call("getElementById", "libraryList")
 	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
@@ -390,6 +390,21 @@ func (c *LibraryComponent) RefreshView() {
 
 	// Refresh library title
 	c.refreshTitle()
+
+	// Refresh buttons
+	libraryOnlyFavoritesButton := jst.Document.Call("getElementById", "libraryOnlyFavoritesButton")
+	if c.libraryState.onlyFavoritesFilter {
+		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star-half-alt"></i>`)
+	} else {
+		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star"></i>`)
+	}
+
+	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
+	if len(c.libraryState.cachedSongs) > 0 {
+		libraryAddToPlaylistButton.Set("disabled", false)
+	} else {
+		libraryAddToPlaylistButton.Set("disabled", true)
+	}
 }
 
 func (c *LibraryComponent) computeArtistList() {
@@ -598,7 +613,7 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 	c.RefreshView()
 }
 
-func (c *LibraryComponent) FavoritesSwitchAction(this js.Value, args []js.Value) {
-	c.libraryState.onlyFavoritesFilter = this.Get("checked").Bool()
+func (c *LibraryComponent) FavoritesSwitchAction() {
+	c.libraryState.onlyFavoritesFilter = !c.libraryState.onlyFavoritesFilter
 	c.RefreshView()
 }

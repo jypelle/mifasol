@@ -16,11 +16,12 @@
                 <button id="librarySongsButton" type="button" title="Songs"><i class="fas fa-music"></i></button>
                 <button id="libraryPlaylistsButton" type="button" title="Playlists"><i class="fas fa-list-alt"></i></button>
                 <button id="libraryUsersButton" type="button" title="Users"><i class="fas fa-user"></i></button>
-                <button id="libraryAddToPlaylistButton" type="button" title="Add songs to playlist"><i class="fas fa-plus"></i></button>
-                <div style="flex:1;"></div>
-                <div>
-                    <input type="checkbox" id="libraryFavoritesSwitch"><label for="libraryFavoritesSwitch"></label><i class="fas fa-star"></i>
+                <button id="libraryUploadSongsButton" type="button" title="Upload new songs" disabled><i class="fas fa-file-upload"></i></button>
+                <div style="flex:1;">
+                    <input type="text" id="librarySearchInput" style="width: 100%; min-width:4rem;">
                 </div>
+                <button id="libraryOnlyFavoritesButton" type="button" title="Only favorites on/off"><i class="fas fa-star"></i></button>
+                <button id="libraryAddToPlaylistButton" type="button" title="Add songs to playlist" disabled><i class="fas fa-plus"></i></button>
             </div>
             <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>
@@ -30,7 +31,7 @@
                 <button id="currentCleanButton" type="button" title="Clean"><i class="fas fa-broom"></i></button>
                 <button id="currentShuffleButton" type="button" title="Shuffle"><i class="fas fa-random"></i></button>
                 <button id="currentSaveButton" type="button" title="Save"><i class="fas fa-file"></i></button>
-                <button id="currentSaveAsButton" type="button" title="Save as"><i class="fas fa-file-signature"></i></button>
+                <button id="currentSaveAsButton" type="button" title="Save as" disabled><i class="fas fa-file-signature"></i></button>
             </div>
             <div id="currentList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
         </div>

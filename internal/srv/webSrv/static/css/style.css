@@ -98,8 +98,8 @@ button {
     color: #48899c;
     border: 0.1rem solid #48899c;
     border-radius: 0.3rem;
-    padding: 0.3rem 0.3rem;
-    min-width: 1.9rem;
+    padding: 0.4rem 0.4rem;
+    min-width: 2.2rem;
 }
 
 button:hover {
@@ -107,6 +107,10 @@ button:hover {
     border-color: #f0f0f0;
 }
 
+button:disabled {
+    color: #333;
+    border-color: #333;
+}
 
 /* form */
 select,
@@ -346,6 +350,7 @@ input[type="checkbox"]:checked + label:after {
     gap: 0.3rem;
     padding: 0.3rem;
     background-color: #222;
+    align-items: center;
 }
 
 button.light:not(:hover) {
