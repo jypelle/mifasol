@@ -20,7 +20,7 @@ const (
 	LibraryTypeUsers
 )
 
-const LibraryPageSize = 30
+const LibraryPageSize = 50
 
 type libraryState struct {
 	libraryType         libraryType
