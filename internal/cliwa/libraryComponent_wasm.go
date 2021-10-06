@@ -98,15 +98,15 @@ func (c *LibraryComponent) Show() {
 		scrollTop := libraryList.Get("scrollTop").Int()
 		clientHeight := libraryList.Get("clientHeight").Int()
 		if scrollTop+clientHeight >= scrollHeight {
-			logrus.Infof("scroll: Down %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
 			if LibraryPageSize*(c.libraryState.displayedPage+2) <= c.libraryState.cachedSize() {
 				c.libraryState.displayedPage++
+				logrus.Infof("scroll: Down %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
 				c.updateLibraryList(1)
 			}
 		} else if scrollTop == 0 {
-			logrus.Infof("scroll: Up %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
 			if c.libraryState.displayedPage > 0 {
 				c.libraryState.displayedPage--
+				logrus.Infof("scroll: Up %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
 				c.updateLibraryList(-1)
 			}
 		}
@@ -528,12 +528,15 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		maxIdx = c.libraryState.cachedSize()
 	}
 
+	step1Idx := LibraryPageSize*c.libraryState.displayedPage - minIdx
+	step2Idx := LibraryPageSize*(c.libraryState.displayedPage+1) - minIdx
+
 	switch c.libraryState.libraryType {
 	case LibraryTypeArtists:
 		for idx, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
-			if idx < LibraryPageSize*c.libraryState.displayedPage {
+			if idx < step1Idx {
 				c.addArtistItem(&divContentPreviousPage, artist)
-			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+			} else if idx < step2Idx {
 				c.addArtistItem(&divContentCurrentPage, artist)
 			} else {
 				c.addArtistItem(&divContentNextPage, artist)
@@ -541,9 +544,9 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		}
 	case LibraryTypeAlbums:
 		for idx, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
-			if idx < LibraryPageSize*c.libraryState.displayedPage {
+			if idx < step1Idx {
 				c.addAlbumItem(&divContentPreviousPage, album)
-			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+			} else if idx < step2Idx {
 				c.addAlbumItem(&divContentCurrentPage, album)
 			} else {
 				c.addAlbumItem(&divContentNextPage, album)
@@ -551,9 +554,9 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		}
 	case LibraryTypePlaylists:
 		for idx, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
-			if idx < LibraryPageSize*c.libraryState.displayedPage {
+			if idx < step1Idx {
 				c.addPlaylistItem(&divContentPreviousPage, playlist)
-			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+			} else if idx < step2Idx {
 				c.addPlaylistItem(&divContentCurrentPage, playlist)
 			} else {
 				c.addPlaylistItem(&divContentNextPage, playlist)
@@ -561,9 +564,9 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		}
 	case LibraryTypeSongs:
 		for idx, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
-			if idx < LibraryPageSize*c.libraryState.displayedPage {
+			if idx < step1Idx {
 				c.addSongItem(&divContentPreviousPage, song)
-			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+			} else if idx < step2Idx {
 				c.addSongItem(&divContentCurrentPage, song)
 			} else {
 				c.addSongItem(&divContentNextPage, song)
@@ -571,9 +574,9 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		}
 	case LibraryTypeUsers:
 		for idx, user := range c.libraryState.cachedUsers {
-			if idx < LibraryPageSize*c.libraryState.displayedPage {
+			if idx < step1Idx {
 				c.addUserItem(&divContentPreviousPage, user)
-			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+			} else if idx < step2Idx {
 				c.addUserItem(&divContentCurrentPage, user)
 			} else {
 				c.addUserItem(&divContentNextPage, user)
@@ -583,16 +586,17 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 	var newScrollTop int
 	libraryList.Set("innerHTML", divContentPreviousPage.String())
 	if direction == -1 {
-		newScrollTop = libraryList.Get("scrollHeight").Int() + 1
+		newScrollTop = libraryList.Get("scrollHeight").Int()
 	}
 	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentCurrentPage.String())
 	if direction == 1 {
-		newScrollTop = libraryList.Get("scrollHeight").Int() - libraryList.Get("clientHeight").Int() - 1
+		newScrollTop = libraryList.Get("scrollHeight").Int() - libraryList.Get("clientHeight").Int()
 	}
 	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentNextPage.String())
 
 	if direction != 0 {
 		libraryList.Set("scrollTop", newScrollTop)
+		//		logrus.Infof("Set scroll bottom: %d vs currentScrollHeight: %d", newScrollTop + libraryList.Get("clientHeight").Int(), libraryList.Get("scrollHeight").Int())
 	}
 }
 
