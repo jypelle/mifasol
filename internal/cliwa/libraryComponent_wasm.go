@@ -97,16 +97,17 @@ func (c *LibraryComponent) Show() {
 		scrollHeight := libraryList.Get("scrollHeight").Int()
 		scrollTop := libraryList.Get("scrollTop").Int()
 		clientHeight := libraryList.Get("clientHeight").Int()
-		logrus.Infof("scroll: %d / %d / %d", scrollHeight, scrollTop, clientHeight)
-		if scrollTop > (scrollHeight - clientHeight - 5) {
-			if (LibraryPageSize*c.libraryState.displayedPage)+2 <= c.libraryState.cachedSize() {
+		if scrollTop+clientHeight >= scrollHeight {
+			logrus.Infof("scroll: Down %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
+			if LibraryPageSize*(c.libraryState.displayedPage+2) <= c.libraryState.cachedSize() {
 				c.libraryState.displayedPage++
-				c.DisplayLibraryList()
+				c.updateLibraryList(1)
 			}
 		} else if scrollTop == 0 {
+			logrus.Infof("scroll: Up %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
 			if c.libraryState.displayedPage > 0 {
-				/*				c.libraryState.displayedPage--
-								c.DisplayLibraryList()*/
+				c.libraryState.displayedPage--
+				c.updateLibraryList(-1)
 			}
 		}
 	}))
@@ -255,21 +256,19 @@ func (c *LibraryComponent) RefreshView() {
 	libraryList := jst.Document.Call("getElementById", "libraryList")
 	libraryList.Set("innerHTML", "Loading...")
 	c.libraryState.displayedPage = 0
-	libraryList.Set("scrollTop", 0)
 
 	c.computeCache()
 
-	// Refresh library title
-	c.refreshTitle()
+	// Update library title
+	c.updateTitle()
 
-	// Refresh buttons
+	// Update buttons
 	libraryOnlyFavoritesButton := jst.Document.Call("getElementById", "libraryOnlyFavoritesButton")
 	if c.libraryState.onlyFavoritesFilter {
 		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star-half-alt"></i>`)
 	} else {
 		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star"></i>`)
 	}
-
 	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
 	if len(c.libraryState.cachedSongs) > 0 {
 		libraryAddToPlaylistButton.Set("disabled", false)
@@ -277,10 +276,184 @@ func (c *LibraryComponent) RefreshView() {
 		libraryAddToPlaylistButton.Set("disabled", true)
 	}
 
-	c.DisplayLibraryList()
+	// Update list
+	c.updateLibraryList(0)
 }
 
-func (c *LibraryComponent) refreshTitle() {
+func (c *LibraryComponent) computeArtistList() {
+	var artistList []*restApiV1.Artist
+
+	if c.libraryState.onlyFavoritesFilter {
+		artistList = c.app.localDb.UserOrderedFavoriteArtists[c.app.ConnectedUserId()]
+	} else {
+		artistList = c.app.localDb.OrderedArtists
+	}
+
+	if c.libraryState.nameFilter != nil {
+		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
+		for _, artist := range artistList {
+			if artist != nil && !strings.Contains(strings.ToLower(artist.Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedArtists = append(c.libraryState.cachedArtists, artist)
+		}
+	} else {
+		c.libraryState.cachedArtists = artistList
+	}
+}
+
+func (c *LibraryComponent) computeAlbumList() {
+	var albumList []*restApiV1.Album
+
+	if c.libraryState.onlyFavoritesFilter {
+		albumList = c.app.localDb.UserOrderedFavoriteAlbums[c.app.ConnectedUserId()]
+	} else {
+		albumList = c.app.localDb.OrderedAlbums
+	}
+
+	if c.libraryState.nameFilter != nil {
+		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
+		for _, album := range albumList {
+			if album != nil && !strings.Contains(strings.ToLower(album.Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedAlbums = append(c.libraryState.cachedAlbums, album)
+		}
+	} else {
+		c.libraryState.cachedAlbums = albumList
+	}
+}
+
+func (c *LibraryComponent) computeSongList() {
+
+	var songList []*restApiV1.Song
+
+	var lowerNameFilter string
+	if c.libraryState.nameFilter != nil {
+		lowerNameFilter = strings.ToLower(*c.libraryState.nameFilter)
+	}
+
+	if c.libraryState.playlistId == nil {
+		if c.libraryState.artistId != nil {
+			if *c.libraryState.artistId == restApiV1.UnknownArtistId {
+				songList = c.app.localDb.UnknownArtistSongs
+			} else {
+				songList = c.app.localDb.ArtistOrderedSongs[*c.libraryState.artistId]
+			}
+		} else if c.libraryState.albumId != nil {
+			if *c.libraryState.albumId == restApiV1.UnknownAlbumId {
+				songList = c.app.localDb.UnknownAlbumSongs
+			} else {
+				songList = c.app.localDb.AlbumOrderedSongs[*c.libraryState.albumId]
+			}
+		} else {
+			if c.libraryState.onlyFavoritesFilter {
+				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.ConnectedUserId()]
+			} else {
+				songList = c.app.localDb.OrderedSongs
+			}
+		}
+
+		for _, song := range songList {
+
+			// Remove explicit songs if user profile ask for it
+			if c.app.HideExplicitSongForConnectedUser() {
+				if song.ExplicitFg {
+					continue
+				}
+			}
+
+			// Remove non favorite songs if user ask for it
+			if c.libraryState.onlyFavoritesFilter {
+				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
+				if !favorite {
+					continue
+				}
+			}
+
+			// Remove non matching song name
+			if lowerNameFilter != "" && !strings.Contains(strings.ToLower(song.Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, song)
+		}
+
+	} else {
+
+		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
+
+			// Remove explicit songs if user profile ask for it
+			if c.app.HideExplicitSongForConnectedUser() {
+				if c.app.localDb.Songs[songId].ExplicitFg {
+					continue
+				}
+			}
+
+			// Remove non favorite songs if user ask for it
+			if c.libraryState.onlyFavoritesFilter {
+				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][songId]
+				if !favorite {
+					continue
+				}
+			}
+
+			// Remove non matching song name
+			if lowerNameFilter != "" && !strings.Contains(strings.ToLower(c.app.localDb.Songs[songId].Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, c.app.localDb.Songs[songId])
+
+		}
+	}
+}
+
+func (c *LibraryComponent) computePlaylistList() {
+	var playlistList []*restApiV1.Playlist
+
+	if c.libraryState.onlyFavoritesFilter {
+		playlistList = c.app.localDb.UserOrderedFavoritePlaylists[c.app.ConnectedUserId()]
+	} else {
+		playlistList = c.app.localDb.OrderedPlaylists
+	}
+
+	if c.libraryState.nameFilter != nil {
+		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
+		for _, playlist := range playlistList {
+			if !strings.Contains(strings.ToLower(playlist.Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedPlaylists = append(c.libraryState.cachedPlaylists, playlist)
+		}
+	} else {
+		c.libraryState.cachedPlaylists = playlistList
+	}
+}
+
+func (c *LibraryComponent) computeUserList() {
+	var userList []*restApiV1.User
+
+	userList = c.app.localDb.OrderedUsers
+
+	if c.libraryState.nameFilter != nil {
+		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
+		for _, user := range userList {
+			if !strings.Contains(strings.ToLower(user.Name), lowerNameFilter) {
+				continue
+			}
+
+			c.libraryState.cachedUsers = append(c.libraryState.cachedUsers, user)
+		}
+	} else {
+		c.libraryState.cachedUsers = userList
+	}
+}
+
+func (c *LibraryComponent) updateTitle() {
 
 	var title string
 
@@ -335,17 +508,21 @@ func (c *LibraryComponent) refreshTitle() {
 	titleSpan.Set("innerHTML", title)
 }
 
-func (c *LibraryComponent) DisplayLibraryList() {
+func (c *LibraryComponent) updateLibraryList(direction int) {
 	libraryList := jst.Document.Call("getElementById", "libraryList")
+	if direction == 0 {
+		libraryList.Set("scrollTop", 0)
+	}
 
-	var divContent strings.Builder
+	var divContentPreviousPage strings.Builder
+	var divContentCurrentPage strings.Builder
+	var divContentNextPage strings.Builder
 
 	// Refresh library list
-	/*		minIdx := 20*(c.libraryState.displayedPage-1)
-			if minIdx<0 {
-				minIdx = 0
-			}*/
-	minIdx := 0
+	minIdx := LibraryPageSize * (c.libraryState.displayedPage - 1)
+	if minIdx < 0 {
+		minIdx = 0
+	}
 	maxIdx := LibraryPageSize * (c.libraryState.displayedPage + 2)
 	if maxIdx > c.libraryState.cachedSize() {
 		maxIdx = c.libraryState.cachedSize()
@@ -353,237 +530,121 @@ func (c *LibraryComponent) DisplayLibraryList() {
 
 	switch c.libraryState.libraryType {
 	case LibraryTypeArtists:
-
-		for _, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
-			var artistItem struct {
-				ArtistId   string
-				ArtistName string
-			}
-
-			if artist == nil {
-				artistItem.ArtistId = string(restApiV1.UnknownArtistId)
-				artistItem.ArtistName = "(Unknown artist)"
+		for idx, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
+			if idx < LibraryPageSize*c.libraryState.displayedPage {
+				c.addArtistItem(&divContentPreviousPage, artist)
+			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+				c.addArtistItem(&divContentCurrentPage, artist)
 			} else {
-				artistItem.ArtistId = string(artist.Id)
-				artistItem.ArtistName = artist.Name
+				c.addArtistItem(&divContentNextPage, artist)
 			}
-
-			divContent.WriteString(c.app.RenderTemplate(
-				&artistItem, "artistItem.html"),
-			)
 		}
-
 	case LibraryTypeAlbums:
-
-		for _, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
-			var albumItem struct {
-				AlbumId   string
-				AlbumName string
-				Artists   []struct {
-					ArtistId   string
-					ArtistName string
-				}
-			}
-
-			if album == nil {
-				albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
-				albumItem.AlbumName = "(Unknown album)"
+		for idx, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
+			if idx < LibraryPageSize*c.libraryState.displayedPage {
+				c.addAlbumItem(&divContentPreviousPage, album)
+			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+				c.addAlbumItem(&divContentCurrentPage, album)
 			} else {
-				albumItem.AlbumId = string(album.Id)
-				albumItem.AlbumName = album.Name
-				for _, artistId := range album.ArtistIds {
-					albumItem.Artists = append(albumItem.Artists, struct {
-						ArtistId   string
-						ArtistName string
-					}{
-						ArtistId:   string(artistId),
-						ArtistName: c.app.localDb.Artists[artistId].Name,
-					})
-				}
+				c.addAlbumItem(&divContentNextPage, album)
 			}
-			divContent.WriteString(c.app.RenderTemplate(
-				&albumItem, "albumItem.html"),
-			)
 		}
 	case LibraryTypePlaylists:
-		for _, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
-			if playlist != nil {
-				_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
-
-				playlistItem := struct {
-					PlaylistId string
-					Favorite   bool
-					Name       string
-					OwnerUsers []struct {
-						UserId   string
-						UserName string
-					}
-				}{
-					PlaylistId: string(playlist.Id),
-					Favorite:   favorite,
-					Name:       playlist.Name,
-				}
-
-				for _, userId := range playlist.OwnerUserIds {
-					playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
-						UserId   string
-						UserName string
-					}{
-						UserId:   string(userId),
-						UserName: c.app.localDb.Users[userId].Name,
-					})
-				}
-
-				divContent.WriteString(c.app.RenderTemplate(
-					&playlistItem, "playlistItem.html"),
-				)
-
+		for idx, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
+			if idx < LibraryPageSize*c.libraryState.displayedPage {
+				c.addPlaylistItem(&divContentPreviousPage, playlist)
+			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+				c.addPlaylistItem(&divContentCurrentPage, playlist)
+			} else {
+				c.addPlaylistItem(&divContentNextPage, playlist)
 			}
 		}
 	case LibraryTypeSongs:
-		for _, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
-			c.addSongItem(&divContent, song)
+		for idx, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
+			if idx < LibraryPageSize*c.libraryState.displayedPage {
+				c.addSongItem(&divContentPreviousPage, song)
+			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+				c.addSongItem(&divContentCurrentPage, song)
+			} else {
+				c.addSongItem(&divContentNextPage, song)
+			}
 		}
 	case LibraryTypeUsers:
-		for _, user := range c.libraryState.cachedUsers {
-			divContent.WriteString(c.app.RenderTemplate(
-				struct {
-					UserId string
-					Name   string
-				}{
-					UserId: string(user.Id),
-					Name:   user.Name,
-				}, "userItem.html"),
-			)
-		}
-	}
-
-	libraryList.Set("innerHTML", divContent.String())
-}
-
-func (c *LibraryComponent) computeArtistList() {
-	var artistList []*restApiV1.Artist
-
-	if c.libraryState.onlyFavoritesFilter {
-		artistList = c.app.localDb.UserOrderedFavoriteArtists[c.app.ConnectedUserId()]
-	} else {
-		artistList = c.app.localDb.OrderedArtists
-	}
-
-	if c.libraryState.nameFilter != nil {
-		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
-		for _, artist := range artistList {
-			if artist != nil && !strings.Contains(strings.ToLower(artist.Name), lowerNameFilter) {
-				continue
+		for idx, user := range c.libraryState.cachedUsers {
+			if idx < LibraryPageSize*c.libraryState.displayedPage {
+				c.addUserItem(&divContentPreviousPage, user)
+			} else if idx < LibraryPageSize*(c.libraryState.displayedPage+1) {
+				c.addUserItem(&divContentCurrentPage, user)
+			} else {
+				c.addUserItem(&divContentNextPage, user)
 			}
-
-			c.libraryState.cachedArtists = append(c.libraryState.cachedArtists, artist)
 		}
-	} else {
-		c.libraryState.cachedArtists = artistList
+	}
+	var newScrollTop int
+	libraryList.Set("innerHTML", divContentPreviousPage.String())
+	if direction == -1 {
+		newScrollTop = libraryList.Get("scrollHeight").Int() + 1
+	}
+	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentCurrentPage.String())
+	if direction == 1 {
+		newScrollTop = libraryList.Get("scrollHeight").Int() - libraryList.Get("clientHeight").Int() - 1
+	}
+	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentNextPage.String())
+
+	if direction != 0 {
+		libraryList.Set("scrollTop", newScrollTop)
 	}
 }
 
-func (c *LibraryComponent) computeAlbumList() {
-	var albumList []*restApiV1.Album
-
-	if c.libraryState.onlyFavoritesFilter {
-		albumList = c.app.localDb.UserOrderedFavoriteAlbums[c.app.ConnectedUserId()]
-	} else {
-		albumList = c.app.localDb.OrderedAlbums
+func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *restApiV1.Artist) {
+	var artistItem struct {
+		ArtistId   string
+		ArtistName string
 	}
 
-	if c.libraryState.nameFilter != nil {
-		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
-		for _, album := range albumList {
-			if album != nil && !strings.Contains(strings.ToLower(album.Name), lowerNameFilter) {
-				continue
-			}
-
-			c.libraryState.cachedAlbums = append(c.libraryState.cachedAlbums, album)
-		}
+	if artist == nil {
+		artistItem.ArtistId = string(restApiV1.UnknownArtistId)
+		artistItem.ArtistName = "(Unknown artist)"
 	} else {
-		c.libraryState.cachedAlbums = albumList
+		artistItem.ArtistId = string(artist.Id)
+		artistItem.ArtistName = artist.Name
 	}
+
+	divContent.WriteString(c.app.RenderTemplate(
+		&artistItem, "artistItem.html"),
+	)
 }
 
-func (c *LibraryComponent) computeSongList() {
-
-	var songList []*restApiV1.Song
-
-	if c.libraryState.playlistId == nil {
-		if c.libraryState.artistId != nil {
-			if *c.libraryState.artistId == restApiV1.UnknownArtistId {
-				songList = c.app.localDb.UnknownArtistSongs
-			} else {
-				songList = c.app.localDb.ArtistOrderedSongs[*c.libraryState.artistId]
-			}
-		} else if c.libraryState.albumId != nil {
-			if *c.libraryState.albumId == restApiV1.UnknownAlbumId {
-				songList = c.app.localDb.UnknownAlbumSongs
-			} else {
-				songList = c.app.localDb.AlbumOrderedSongs[*c.libraryState.albumId]
-			}
-		} else {
-			if c.libraryState.onlyFavoritesFilter {
-				songList = c.app.localDb.UserOrderedFavoriteSongs[c.app.ConnectedUserId()]
-			} else {
-				songList = c.app.localDb.OrderedSongs
-			}
-		}
-
-		var lowerNameFilter string
-		if c.libraryState.nameFilter != nil {
-			lowerNameFilter = strings.ToLower(*c.libraryState.nameFilter)
-		}
-
-		for _, song := range songList {
-
-			// Remove explicit songs if user profile ask for it
-			if c.app.HideExplicitSongForConnectedUser() {
-				if song.ExplicitFg {
-					continue
-				}
-			}
-
-			// Remove non favorite songs if user ask for it
-			if c.libraryState.onlyFavoritesFilter {
-				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
-				if !favorite {
-					continue
-				}
-			}
-
-			// Remove non matching song name
-			if lowerNameFilter != "" && !strings.Contains(strings.ToLower(song.Name), lowerNameFilter) {
-				continue
-			}
-
-			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, song)
-		}
-
-	} else {
-
-		for _, songId := range c.app.localDb.Playlists[*c.libraryState.playlistId].SongIds {
-
-			// Remove explicit songs if user profile ask for it
-			if c.app.HideExplicitSongForConnectedUser() {
-				if c.app.localDb.Songs[songId].ExplicitFg {
-					continue
-				}
-			}
-
-			// Remove non favorite songs if user ask for it
-			if c.libraryState.onlyFavoritesFilter {
-				_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][songId]
-				if !favorite {
-					continue
-				}
-			}
-			c.libraryState.cachedSongs = append(c.libraryState.cachedSongs, c.app.localDb.Songs[songId])
-
+func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *restApiV1.Album) {
+	var albumItem struct {
+		AlbumId   string
+		AlbumName string
+		Artists   []struct {
+			ArtistId   string
+			ArtistName string
 		}
 	}
+
+	if album == nil {
+		albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
+		albumItem.AlbumName = "(Unknown album)"
+	} else {
+		albumItem.AlbumId = string(album.Id)
+		albumItem.AlbumName = album.Name
+		for _, artistId := range album.ArtistIds {
+			albumItem.Artists = append(albumItem.Artists, struct {
+				ArtistId   string
+				ArtistName string
+			}{
+				ArtistId:   string(artistId),
+				ArtistName: c.app.localDb.Artists[artistId].Name,
+			})
+		}
+	}
+	divContent.WriteString(c.app.RenderTemplate(
+		&albumItem, "albumItem.html"),
+	)
+
 }
 
 func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restApiV1.Song) {
@@ -628,52 +689,55 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 	)
 }
 
-func (c *LibraryComponent) computePlaylistList() {
-	var playlistList []*restApiV1.Playlist
+func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist *restApiV1.Playlist) {
+	_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
 
-	if c.libraryState.onlyFavoritesFilter {
-		playlistList = c.app.localDb.UserOrderedFavoritePlaylists[c.app.ConnectedUserId()]
-	} else {
-		playlistList = c.app.localDb.OrderedPlaylists
-	}
-
-	if c.libraryState.nameFilter != nil {
-		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
-		for _, playlist := range playlistList {
-			if !strings.Contains(strings.ToLower(playlist.Name), lowerNameFilter) {
-				continue
-			}
-
-			c.libraryState.cachedPlaylists = append(c.libraryState.cachedPlaylists, playlist)
+	playlistItem := struct {
+		PlaylistId string
+		Favorite   bool
+		Name       string
+		OwnerUsers []struct {
+			UserId   string
+			UserName string
 		}
-	} else {
-		c.libraryState.cachedPlaylists = playlistList
+	}{
+		PlaylistId: string(playlist.Id),
+		Favorite:   favorite,
+		Name:       playlist.Name,
 	}
+
+	for _, userId := range playlist.OwnerUserIds {
+		playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
+			UserId   string
+			UserName string
+		}{
+			UserId:   string(userId),
+			UserName: c.app.localDb.Users[userId].Name,
+		})
+	}
+
+	divContent.WriteString(c.app.RenderTemplate(
+		&playlistItem, "playlistItem.html"),
+	)
 }
 
-func (c *LibraryComponent) computeUserList() {
-	var userList []*restApiV1.User
-
-	userList = c.app.localDb.OrderedUsers
-
-	if c.libraryState.nameFilter != nil {
-		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
-		for _, user := range userList {
-			if !strings.Contains(strings.ToLower(user.Name), lowerNameFilter) {
-				continue
-			}
-
-			c.libraryState.cachedUsers = append(c.libraryState.cachedUsers, user)
-		}
-	} else {
-		c.libraryState.cachedUsers = userList
-	}
+func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restApiV1.User) {
+	divContent.WriteString(c.app.RenderTemplate(
+		struct {
+			UserId string
+			Name   string
+		}{
+			UserId: string(user.Id),
+			Name:   user.Name,
+		}, "userItem.html"),
+	)
 }
 
 func (c *LibraryComponent) ShowArtistsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeArtists,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -681,6 +745,7 @@ func (c *LibraryComponent) ShowAlbumsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeAlbums,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -688,6 +753,7 @@ func (c *LibraryComponent) ShowSongsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeSongs,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -695,6 +761,7 @@ func (c *LibraryComponent) ShowPlaylistsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypePlaylists,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -716,6 +783,7 @@ func (c *LibraryComponent) OpenAlbumAction(albumId restApiV1.AlbumId) {
 		libraryType: LibraryTypeSongs,
 		albumId:     &albumId,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -724,6 +792,7 @@ func (c *LibraryComponent) OpenArtistAction(artistId restApiV1.ArtistId) {
 		libraryType: LibraryTypeSongs,
 		artistId:    &artistId,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -732,6 +801,7 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 		libraryType: LibraryTypeSongs,
 		playlistId:  &playlistId,
 	}
+	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 

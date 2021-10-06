@@ -114,14 +114,7 @@ func (c *CurrentComponent) PlayNextSongAction() {
 }
 
 func (c *CurrentComponent) RefreshView() {
-	listDiv := jst.Document.Call("getElementById", "currentList")
-
-	listDiv.Set("innerHTML", "")
-	for songIdx, songId := range c.songIds {
-		listDiv.Call("insertAdjacentHTML", "beforeEnd", c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
-	}
-
-	// Refresh current playlist title
+	// Update current playlist title
 	titleSpan := jst.Document.Call("getElementById", "currentTitle")
 	var title string
 	if c.srcPlaylistId == nil {
@@ -134,6 +127,13 @@ func (c *CurrentComponent) RefreshView() {
 	}
 	titleSpan.Set("innerHTML", title)
 
+	// Update list
+	var divContent strings.Builder
+	for songIdx, songId := range c.songIds {
+		divContent.WriteString(c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
+	}
+	listDiv := jst.Document.Call("getElementById", "currentList")
+	listDiv.Set("innerHTML", divContent.String())
 }
 
 func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
