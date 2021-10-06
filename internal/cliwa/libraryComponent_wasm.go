@@ -97,7 +97,7 @@ func (c *LibraryComponent) Show() {
 		scrollHeight := libraryList.Get("scrollHeight").Int()
 		scrollTop := libraryList.Get("scrollTop").Int()
 		clientHeight := libraryList.Get("clientHeight").Int()
-		if scrollTop+clientHeight >= scrollHeight {
+		if scrollTop+clientHeight >= scrollHeight-5 {
 			if LibraryPageSize*(c.libraryState.displayedPage+2) <= c.libraryState.cachedSize() {
 				c.libraryState.displayedPage++
 				logrus.Infof("scroll: Down %d / %d / %d / %d", c.libraryState.displayedPage, scrollHeight, scrollTop+clientHeight, clientHeight)
