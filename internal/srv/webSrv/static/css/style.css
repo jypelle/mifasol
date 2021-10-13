@@ -57,6 +57,7 @@ html {
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     height: 100%;
+    overscroll-behavior-y: contain;
 }
 
 body {

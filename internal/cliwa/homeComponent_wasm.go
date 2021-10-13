@@ -8,10 +8,11 @@ import (
 type HomeComponent struct {
 	app *App
 
-	MessageComponent *MessageComponent
-	LibraryComponent *LibraryComponent
-	CurrentComponent *CurrentComponent
-	PlayerComponent  *PlayerComponent
+	HomeHeaderButtonsComponent *HomeHeaderButtonsComponent
+	MessageComponent           *MessageComponent
+	LibraryComponent           *LibraryComponent
+	CurrentComponent           *CurrentComponent
+	PlayerComponent            *PlayerComponent
 }
 
 func NewHomeComponent(app *App) *HomeComponent {
@@ -19,6 +20,7 @@ func NewHomeComponent(app *App) *HomeComponent {
 		app: app,
 	}
 
+	c.HomeHeaderButtonsComponent = NewHomeHeaderButtonsComponent(c.app)
 	c.MessageComponent = NewMessageComponent(c.app)
 	c.LibraryComponent = NewLibraryComponent(c.app)
 	c.CurrentComponent = NewCurrentComponent(c.app)
@@ -31,18 +33,16 @@ func (c *HomeComponent) Show() {
 	body := jst.Document.Get("body")
 	body.Set("innerHTML", c.app.RenderTemplate(nil, "home.html"))
 
-	// Set buttons
-	logOutButton := jst.Document.Call("getElementById", "logOutButton")
-	logOutButton.Call("addEventListener", "click", c.app.AddEventFunc(c.logOutAction))
-	refreshButton := jst.Document.Call("getElementById", "refreshButton")
-	refreshButton.Call("addEventListener", "click", c.app.AddEventFunc(c.refreshAction))
-
+	c.HomeHeaderButtonsComponent.Show()
 	c.LibraryComponent.Show()
 	c.CurrentComponent.Show()
 	c.PlayerComponent.Show()
 
 	c.Reload()
 
+}
+
+func (c *HomeComponent) uploadSongsAction() {
 }
 
 func (c *HomeComponent) logOutAction() {
@@ -67,6 +67,7 @@ func (c *HomeComponent) Reload() {
 		return
 	}
 
+	c.HomeHeaderButtonsComponent.RefreshView()
 	c.LibraryComponent.RefreshView()
 	c.CurrentComponent.RefreshView()
 

@@ -9,6 +9,11 @@
         </div>
     </div>
     <div class="itemButtons">
+        {{if .IsAdmin}}
+        <a class="albumEditLink" href="#" data-albumid="{{.AlbumId}}">
+            <i class="fas fa-edit"></i>
+        </a>
+        {{end}}
         <a class="albumAddToPlaylistLink" href="#" data-albumid="{{.AlbumId}}">
             <i class="fas fa-plus"></i>
         </a>

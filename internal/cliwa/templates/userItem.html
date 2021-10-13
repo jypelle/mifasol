@@ -3,4 +3,11 @@
         <p class="userLink" href="#" data-userid="{{.UserId}}">{{.Name}}</p>
         <div></div>
     </div>
+    <div class="itemButtons">
+        {{if .IsAdmin}}
+        <a class="userEditLink" href="#" data-userid="{{.UserId}}">
+            <i class="fas fa-edit"></i>
+        </a>
+        {{end}}
+    </div>
 </div>

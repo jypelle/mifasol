@@ -74,6 +74,11 @@ func NewLibraryComponent(app *App) *LibraryComponent {
 }
 
 func (c *LibraryComponent) Show() {
+	div := jst.Document.Call("getElementById", "libraryComponent")
+	div.Set("innerHTML", c.app.RenderTemplate(
+		nil, "library.html"),
+	)
+
 	libraryArtistsButton := jst.Document.Call("getElementById", "libraryArtistsButton")
 	libraryArtistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowArtistsAction))
 	libraryAlbumsButton := jst.Document.Call("getElementById", "libraryAlbumsButton")
@@ -112,7 +117,7 @@ func (c *LibraryComponent) Show() {
 		}
 	}))
 	libraryList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("target").Call("closest", ".artistLink, .artistAddToPlaylistLink, .albumLink, .albumAddToPlaylistLink, .playlistLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .playlistLoadToPlaylistLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .artistEditLink, .artistAddToPlaylistLink, .albumLink, .albumEditLink, .albumAddToPlaylistLink, .playlistLink, .playlistEditLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .playlistLoadToPlaylistLink, .songEditLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink, .userEditLink")
 		if !link.Truthy() {
 			return
 		}
@@ -122,18 +127,24 @@ func (c *LibraryComponent) Show() {
 		case "artistLink":
 			artistId := dataset.Get("artistid").String()
 			c.OpenArtistAction(restApiV1.ArtistId(artistId))
+		case "artistEditLink":
+			//artistId := dataset.Get("artistid").String()
 		case "artistAddToPlaylistLink":
 			artistId := dataset.Get("artistid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
 		case "albumLink":
 			albumId := dataset.Get("albumid").String()
 			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
+		case "albumEditLink":
+			//albumId := dataset.Get("albumid").String()
 		case "albumAddToPlaylistLink":
 			albumId := dataset.Get("albumid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
 		case "playlistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
+		case "playlistEditLink":
+			//playlistId := dataset.Get("playlistid").String()
 		case "playlistFavoriteLink":
 			playlistId := dataset.Get("playlistid").String()
 			favoritePlaylistId := restApiV1.FavoritePlaylistId{
@@ -170,6 +181,8 @@ func (c *LibraryComponent) Show() {
 		case "playlistLoadToPlaylistLink":
 			playlistId := dataset.Get("playlistid").String()
 			c.app.HomeComponent.CurrentComponent.LoadSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
+		case "songEditLink":
+			//songId := dataset.Get("songid").String()
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
@@ -224,6 +237,8 @@ func (c *LibraryComponent) Show() {
 		case "songAddToPlaylistLink":
 			songId := dataset.Get("songid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongAction(restApiV1.SongId(songId))
+		case "userEditLink":
+			//userId := dataset.Get("userid").String()
 		}
 	}))
 
@@ -604,7 +619,9 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 	var artistItem struct {
 		ArtistId   string
 		ArtistName string
+		IsAdmin    bool
 	}
+	artistItem.IsAdmin = c.app.IsConnectedUserAdmin()
 
 	if artist == nil {
 		artistItem.ArtistId = string(restApiV1.UnknownArtistId)
@@ -627,7 +644,9 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 			ArtistId   string
 			ArtistName string
 		}
+		IsAdmin bool
 	}
+	albumItem.IsAdmin = c.app.IsConnectedUserAdmin()
 
 	if album == nil {
 		albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
@@ -665,10 +684,12 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 			ArtistId   string
 			ArtistName string
 		}
+		IsAdmin bool
 	}{
 		SongId:   string(song.Id),
 		Favorite: favorite,
 		SongName: song.Name,
+		IsAdmin:  c.app.IsConnectedUserAdmin(),
 	}
 
 	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
@@ -704,10 +725,12 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 			UserId   string
 			UserName string
 		}
+		IsAdmin bool
 	}{
 		PlaylistId: string(playlist.Id),
 		Favorite:   favorite,
 		Name:       playlist.Name,
+		IsAdmin:    c.app.IsConnectedUserAdmin(),
 	}
 
 	for _, userId := range playlist.OwnerUserIds {
@@ -728,11 +751,13 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restApiV1.User) {
 	divContent.WriteString(c.app.RenderTemplate(
 		struct {
-			UserId string
-			Name   string
+			UserId  string
+			Name    string
+			IsAdmin bool
 		}{
-			UserId: string(user.Id),
-			Name:   user.Name,
+			UserId:  string(user.Id),
+			Name:    user.Name,
+			IsAdmin: c.app.IsConnectedUserAdmin(),
 		}, "userItem.html"),
 	)
 }

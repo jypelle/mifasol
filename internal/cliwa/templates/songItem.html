@@ -22,6 +22,11 @@
         </div>
     </div>
     <div class="itemButtons">
+        {{if .IsAdmin}}
+        <a class="songEditLink" href="#" data-songid="{{.SongId}}">
+            <i class="fas fa-edit"></i>
+        </a>
+        {{end}}
         <a class="songDownloadLink" href="#" data-songid="{{.SongId}}">
             <i class="fas fa-file-download"></i>
         </a>
