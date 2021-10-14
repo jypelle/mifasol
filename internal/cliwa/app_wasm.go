@@ -3,6 +3,7 @@ package cliwa
 import (
 	"bytes"
 	"github.com/jypelle/mifasol/internal/cliwa/config"
+	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/internal/cliwa/templates"
 	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/internal/version"
@@ -48,7 +49,7 @@ func NewApp(debugMode bool) *App {
 
 func (a *App) Start() {
 	a.retrieveServerCredentials()
-
+	a.HideLoader()
 	a.StartComponent.Show()
 
 	// Keep wasm app alive with event func loop
@@ -149,4 +150,17 @@ func (a *App) HideExplicitSongForConnectedUser() bool {
 		return user.HideExplicitFg
 	}
 	return false
+}
+
+func (c *App) ShowDefaultLoader(message string) {
+	c.ShowLoader("Loading")
+}
+
+func (c *App) ShowLoader(message string) {
+	jst.Document.Call("getElementById", "modalLoaderMessage").Set("innerHTML", message)
+	jst.Document.Get("body").Get("classList").Call("add", "loading")
+}
+
+func (c *App) HideLoader() {
+	jst.Document.Get("body").Get("classList").Call("remove", "loading")
 }

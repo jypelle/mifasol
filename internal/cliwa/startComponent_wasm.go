@@ -50,8 +50,8 @@ func (c *StartComponent) Show() {
 	}
 
 	// No autolog or autolog failed
-	body := jst.Document.Get("body")
-	body.Set("innerHTML", c.app.RenderTemplate(nil, "start.html"))
+	mainComponent := jst.Document.Call("getElementById", "mainComponent")
+	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "start.html"))
 
 	// Set focus
 	jst.Document.Call("getElementById", "mifasolUsername").Call("focus")

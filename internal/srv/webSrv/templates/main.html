@@ -35,11 +35,12 @@
         });
     </script>
 </head>
-<body>
-<main style="flex: 1 1 auto; min-height: 0; display: flex; flex-flow: column nowrap; justify-content: center; align-items:center;">
-    <div style="flex: 1 1 auto; overflow-y: auto;"></div>
-    <div style="margin: 2rem; text-align: center;">
-        Loading<br>
+<body class="loading">
+<div id="mainComponent" style="flex: 1 1 auto; min-height: 0; display: flex; flex-flow: column nowrap;">
+</div>
+<div class="modalLoader" style="flex: 1 1 auto; flex-flow: column nowrap; justify-content: center; align-items:center;">
+    <div style="margin: 1rem; text-align: center;">
+        <span id="modalLoaderMessage">Loading</span><br>
         <div class="lds-ellipsis">
             <div></div>
             <div></div>
@@ -47,7 +48,6 @@
             <div></div>
         </div>
     </div>
-    <div style="flex: 1 1 auto; overflow-y: auto;"></div>
-</main>
+</div>
 </body>
 </html>

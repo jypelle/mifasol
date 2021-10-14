@@ -30,8 +30,8 @@ func NewHomeComponent(app *App) *HomeComponent {
 }
 
 func (c *HomeComponent) Show() {
-	body := jst.Document.Get("body")
-	body.Set("innerHTML", c.app.RenderTemplate(nil, "home.html"))
+	mainComponent := jst.Document.Call("getElementById", "mainComponent")
+	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "home.html"))
 
 	c.HomeHeaderButtonsComponent.Show()
 	c.LibraryComponent.Show()
@@ -72,4 +72,23 @@ func (c *HomeComponent) Reload() {
 	c.CurrentComponent.RefreshView()
 
 	c.MessageComponent.Message(strconv.Itoa(len(c.app.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.app.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.app.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.app.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.app.localDb.Users)) + " users.")
+}
+
+func (c *HomeComponent) CloseModal() {
+	homeMainMaster := jst.Document.Call("getElementById", "homeMainMaster")
+	homeMainMaster.Get("style").Set("display", "flex")
+	homeMainModal := jst.Document.Call("getElementById", "homeMainModal")
+	homeMainModal.Set("innerHTML", "")
+	homeMainModal.Get("style").Set("display", "none")
+	homeHeaderButtonsComponent := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
+	homeHeaderButtonsComponent.Get("style").Set("display", "flex")
+}
+
+func (c *HomeComponent) OpenModal() {
+	homeMainMaster := jst.Document.Call("getElementById", "homeMainMaster")
+	homeMainMaster.Get("style").Set("display", "none")
+	homeMainModal := jst.Document.Call("getElementById", "homeMainModal")
+	homeMainModal.Get("style").Set("display", "flex")
+	homeHeaderButtonsComponent := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
+	homeHeaderButtonsComponent.Get("style").Set("display", "none")
 }

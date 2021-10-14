@@ -137,13 +137,9 @@ func (c *LibraryComponent) Show() {
 			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
 		case "albumEditLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
-			component := NewHomeAlbumEditComponent(c.app, albumId, &c.app.localDb.Albums[albumId].AlbumMeta)
+			component := NewHomeAlbumEditComponent(c.app, albumId, c.app.localDb.Albums[albumId].AlbumMeta)
 
-			homeMainMaster := jst.Document.Call("getElementById", "homeMainMaster")
-			homeMainMaster.Get("style").Set("display", "none")
-			homeMainModal := jst.Document.Call("getElementById", "homeMainModal")
-			homeMainModal.Get("style").Set("display", "flex")
-
+			c.app.HomeComponent.OpenModal()
 			component.Show()
 		case "albumAddToPlaylistLink":
 			albumId := dataset.Get("albumid").String()
