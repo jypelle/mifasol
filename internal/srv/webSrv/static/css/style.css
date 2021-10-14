@@ -196,12 +196,12 @@ form > div > div {
     flex: 2 2 18rem;
     margin: 0 0rem 1.2rem 0;
 }
-
+/*
 form > div > div > select,
 form > div > div > textarea,
 form > div > div > input {
     width: 100%;
-}
+}*/
 
 /* Switch */
 
