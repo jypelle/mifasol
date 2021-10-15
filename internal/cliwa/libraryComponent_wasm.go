@@ -128,7 +128,10 @@ func (c *LibraryComponent) Show() {
 			artistId := dataset.Get("artistid").String()
 			c.OpenArtistAction(restApiV1.ArtistId(artistId))
 		case "artistEditLink":
-			//artistId := dataset.Get("artistid").String()
+			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
+			if artistId != restApiV1.UnknownArtistId {
+
+			}
 		case "artistAddToPlaylistLink":
 			artistId := dataset.Get("artistid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
@@ -137,10 +140,12 @@ func (c *LibraryComponent) Show() {
 			c.OpenAlbumAction(restApiV1.AlbumId(albumId))
 		case "albumEditLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
-			component := NewHomeAlbumEditComponent(c.app, albumId, c.app.localDb.Albums[albumId].AlbumMeta)
+			if albumId != restApiV1.UnknownAlbumId {
+				component := NewHomeAlbumEditComponent(c.app, albumId, c.app.localDb.Albums[albumId].AlbumMeta)
 
-			c.app.HomeComponent.OpenModal()
-			component.Show()
+				c.app.HomeComponent.OpenModal()
+				component.Show()
+			}
 		case "albumAddToPlaylistLink":
 			albumId := dataset.Get("albumid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
@@ -623,16 +628,17 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 	var artistItem struct {
 		ArtistId   string
 		ArtistName string
-		IsAdmin    bool
+		IsEditable bool
 	}
-	artistItem.IsAdmin = c.app.IsConnectedUserAdmin()
 
 	if artist == nil {
 		artistItem.ArtistId = string(restApiV1.UnknownArtistId)
 		artistItem.ArtistName = "(Unknown artist)"
+		artistItem.IsEditable = false
 	} else {
 		artistItem.ArtistId = string(artist.Id)
 		artistItem.ArtistName = artist.Name
+		artistItem.IsEditable = c.app.IsConnectedUserAdmin()
 	}
 
 	divContent.WriteString(c.app.RenderTemplate(
@@ -648,13 +654,13 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 			ArtistId   string
 			ArtistName string
 		}
-		IsAdmin bool
+		IsEditable bool
 	}
-	albumItem.IsAdmin = c.app.IsConnectedUserAdmin()
 
 	if album == nil {
 		albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
 		albumItem.AlbumName = "(Unknown album)"
+		albumItem.IsEditable = false
 	} else {
 		albumItem.AlbumId = string(album.Id)
 		albumItem.AlbumName = album.Name
@@ -667,6 +673,7 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 				ArtistName: c.app.localDb.Artists[artistId].Name,
 			})
 		}
+		albumItem.IsEditable = c.app.IsConnectedUserAdmin()
 	}
 	divContent.WriteString(c.app.RenderTemplate(
 		&albumItem, "albumItem.html"),
@@ -688,12 +695,12 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 			ArtistId   string
 			ArtistName string
 		}
-		IsAdmin bool
+		IsEditable bool
 	}{
-		SongId:   string(song.Id),
-		Favorite: favorite,
-		SongName: song.Name,
-		IsAdmin:  c.app.IsConnectedUserAdmin(),
+		SongId:     string(song.Id),
+		Favorite:   favorite,
+		SongName:   song.Name,
+		IsEditable: c.app.IsConnectedUserAdmin(),
 	}
 
 	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
@@ -729,12 +736,12 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 			UserId   string
 			UserName string
 		}
-		IsAdmin bool
+		IsEditable bool
 	}{
 		PlaylistId: string(playlist.Id),
 		Favorite:   favorite,
 		Name:       playlist.Name,
-		IsAdmin:    c.app.IsConnectedUserAdmin(),
+		IsEditable: c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
 	}
 
 	for _, userId := range playlist.OwnerUserIds {
@@ -755,13 +762,13 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restApiV1.User) {
 	divContent.WriteString(c.app.RenderTemplate(
 		struct {
-			UserId  string
-			Name    string
-			IsAdmin bool
+			UserId     string
+			Name       string
+			IsEditable bool
 		}{
-			UserId:  string(user.Id),
-			Name:    user.Name,
-			IsAdmin: c.app.IsConnectedUserAdmin(),
+			UserId:     string(user.Id),
+			Name:       user.Name,
+			IsEditable: c.app.IsConnectedUserAdmin(),
 		}, "userItem.html"),
 	)
 }
