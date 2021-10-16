@@ -9,15 +9,15 @@ import (
 	"strconv"
 )
 
-type PlayerComponent struct {
+type HomePlayerComponent struct {
 	app                   *App
 	volume                float64
 	muted                 bool
 	autoRefreshSeekSlider bool
 }
 
-func NewPlayerComponent(app *App) *PlayerComponent {
-	c := &PlayerComponent{
+func NewHomePlayerComponent(app *App) *HomePlayerComponent {
+	c := &HomePlayerComponent{
 		app:                   app,
 		volume:                1,
 		muted:                 false,
@@ -27,7 +27,7 @@ func NewPlayerComponent(app *App) *PlayerComponent {
 	return c
 }
 
-func (c *PlayerComponent) Show() {
+func (c *HomePlayerComponent) Show() {
 	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
 	playerNextButton := jst.Document.Call("getElementById", "playerNextButton")
 	playerAudio := jst.Document.Call("getElementById", "playerAudio")
@@ -98,7 +98,7 @@ func (c *PlayerComponent) Show() {
 
 }
 
-func (c *PlayerComponent) PlaySongAction(songId restApiV1.SongId) {
+func (c *HomePlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 	token, cliErr := c.app.restClient.GetToken()
 
 	if cliErr != nil {
@@ -117,14 +117,14 @@ func (c *PlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 	return
 }
 
-func (c *PlayerComponent) PauseSongAction() {
+func (c *HomePlayerComponent) PauseSongAction() {
 	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
 	playerPlayButton.Set("innerHTML", `<i class="fas fa-play"></i>`)
 	player := jst.Document.Call("getElementById", "playerAudio")
 	player.Call("pause")
 }
 
-func (c *PlayerComponent) ResumeSongAction() {
+func (c *HomePlayerComponent) ResumeSongAction() {
 	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
 	playerPlayButton.Set("innerHTML", `<i class="fas fa-pause"></i>`)
 	player := jst.Document.Call("getElementById", "playerAudio")

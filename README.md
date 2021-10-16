@@ -7,18 +7,18 @@ Mifasol is a self-hosted *opinionated* music server.
 ## Key features
 
 1. Songs and playlists management on a self-hosted server for multiple users.
-2. Keeping favorite song and playlist files synced with server content on different clients.
-3. Differentiation of homonym artists and albums.
-4. Song can be linked to more than one artist.
-5. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
-6. No requirements about music player used to listen your music (thanks to the files sync).
-7. Server is easy to
-    1. Install (one executable file to copy and you are done)
+2. One server, Two clients (web & console), and a REST API for those who want to develop their own client.
+3. Keeping local favorite song and playlist files synced with server content.
+4. No requirements about music player used to listen your music (thanks to file sync).
+5. Differentiation of homonym artists and albums.
+6. Management of multi-artist songs.
+7. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
+8. Server is easy to
+    1. Install (one executable file to copy, and you are done)
     2. Backup (all data in one folder)
-    3. Secure (https by default, no certificate authentication required)
-8. Blazing fast navigation with console user interface
-9. Multiplatform (different OS or Architecture: Windows/Mac/Linux/Raspbian/Synology)
-10. REST API for those who want to develop their own client.
+    3. Secure (https by default)
+9. Blazing fast navigation with console & web clients.
+10. Multiplatform.
 
 Mifasol is a free and open source project distributed under the permissive Apache 2.0 License. 
 
@@ -29,7 +29,8 @@ Mifasol is a free and open source project distributed under the permissive Apach
   - [Usage](#usage)
   - [Where is my data stored ?](#where-is-my-data-stored-)
   - [Auto start and stop mifasol server with systemd on linux](#auto-start-and-stop-mifasol-server-with-systemd-on-linux)
-- [Mifasol client](#mifasol-client)
+- [Mifasol web client](#mifasol-web-client)
+- [Mifasol console client](#mifasol-console-client)
   - [Installation](#installation-1)
   - [Usage](#usage-1)
 
@@ -39,10 +40,9 @@ This software doesn’t try to satisfy the needs of everyone.
 
 - The number of features is voluntarily limited to facilitate its maintenance.
 - Only **flac** and **mp3** formats are supported (**ogg** may come later).
-- When you import some music on mifasol server, **song filenames are ignored**, only tags are used to link your song to an artist, an album or to know the song name.
+- When you import some music on mifasol server, **song filenames are ignored**, only song tags are used to link your song to an artist, an album or to know the song name.
 - Once your music is imported, **song tags are partially managed by mifasol server** and are used to generate song filename on mifasol clients.
-- **Only one-way sync is supported**:  song files and playlists are copied from mifasol server to mifasol clients.
-- Even though mifasol client is able to play music, his development is more focused on music library management and its synchronization than on music streaming.
+- **Only one-way sync is supported**:  song files and playlists are copied from mifasol server to client device.
 
 ## Mifasol server
 
@@ -152,14 +152,18 @@ Configuration file, embedded database, song and cover files are all saved into *
     sudo systemctl enable mifasolsrv.service
     sudo systemctl start mifasolsrv.service
     ```
-    
-## Mifasol client
+
+## Mifasol web client
+
+Connect to your mifasol server: https://localhost:6620 to manage and listen server content.
+
+## Mifasol console client
 
 ### Installation
 
 #### From prebuild binaries
 
-Mifasol server embeds clients, so you just have to download the dedicated `mifasolcli` binary from mifasol server: https://localhost:6620
+Mifasol server embeds clients, so you just have to download the dedicated `mifasolcli` binary from your mifasol server: https://localhost:6620
 
 #### From sources
 
@@ -219,7 +223,7 @@ Press `h` to display available shortcuts to navigate through the interface.
 
 ##### Tips:
 
-- **After a fresh server installation, use the console user interface to change the default username/password**.
+- **After a fresh server installation, use the console user interface or web client to change the default username/password**.
 - Windows users should use new *Windows Terminal* to correctly display unicode emojis.  
 
 #### More options

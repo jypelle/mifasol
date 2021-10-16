@@ -70,7 +70,7 @@ func (a *App) RenderTemplate(content interface{}, filenames ...string) string {
 
 	for _, filename := range filenames {
 
-		html, err := templates.Fs.ReadFile(filename)
+		html, err := templates.Fs.ReadFile(filename + ".html")
 		if err != nil {
 			logrus.Panicf("Unable to read template file %s: %v\n", filename, err)
 		}

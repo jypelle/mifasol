@@ -62,7 +62,7 @@ type LibraryComponent struct {
 	libraryState libraryState
 }
 
-func NewLibraryComponent(app *App) *LibraryComponent {
+func NewHomeLibraryComponent(app *App) *LibraryComponent {
 	c := &LibraryComponent{
 		app: app,
 		libraryState: libraryState{
@@ -76,7 +76,7 @@ func NewLibraryComponent(app *App) *LibraryComponent {
 func (c *LibraryComponent) Show() {
 	div := jst.Document.Call("getElementById", "libraryComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
-		nil, "library.html"),
+		nil, "home/library/index"),
 	)
 
 	libraryArtistsButton := jst.Document.Call("getElementById", "libraryArtistsButton")
@@ -117,7 +117,12 @@ func (c *LibraryComponent) Show() {
 		}
 	}))
 	libraryList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("target").Call("closest", ".artistLink, .artistEditLink, .artistAddToPlaylistLink, .albumLink, .albumEditLink, .albumAddToPlaylistLink, .playlistLink, .playlistEditLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .playlistLoadToPlaylistLink, .songEditLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink, .userEditLink")
+		link := i[0].Get("target").Call("closest",
+			".artistLink, .artistEditLink, .artistDeleteLink, .artistAddToPlaylistLink, "+
+				".albumLink, .albumEditLink, .albumDeleteLink, .albumAddToPlaylistLink, "+
+				".playlistLink, .playlistEditLink, .playlistDeleteLink, .playlistFavoriteLink, .playlistAddToPlaylistLink, .playlistLoadToPlaylistLink, "+
+				".songEditLink, .songDeleteLink, .songFavoriteLink, .songAddToPlaylistLink, .songPlayNowLink, .songDownloadLink, "+
+				".userEditLink, .userDeleteLink")
 		if !link.Truthy() {
 			return
 		}
@@ -132,6 +137,13 @@ func (c *LibraryComponent) Show() {
 			if artistId != restApiV1.UnknownArtistId {
 
 			}
+		case "artistDeleteLink":
+			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
+			component := NewHomeConfirmDeleteComponent(c.app, artistId)
+
+			c.app.HomeComponent.OpenModal()
+			component.Show()
+
 		case "artistAddToPlaylistLink":
 			artistId := dataset.Get("artistid").String()
 			c.app.HomeComponent.CurrentComponent.AddSongsFromArtistAction(restApiV1.ArtistId(artistId))
@@ -146,14 +158,27 @@ func (c *LibraryComponent) Show() {
 				c.app.HomeComponent.OpenModal()
 				component.Show()
 			}
+		case "albumDeleteLink":
+			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
+			component := NewHomeConfirmDeleteComponent(c.app, albumId)
+
+			c.app.HomeComponent.OpenModal()
+			component.Show()
+
 		case "albumAddToPlaylistLink":
-			albumId := dataset.Get("albumid").String()
-			c.app.HomeComponent.CurrentComponent.AddSongsFromAlbumAction(restApiV1.AlbumId(albumId))
+			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
+			c.app.HomeComponent.CurrentComponent.AddSongsFromAlbumAction(albumId)
 		case "playlistLink":
-			playlistId := dataset.Get("playlistid").String()
-			c.OpenPlaylistAction(restApiV1.PlaylistId(playlistId))
+			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
+			c.OpenPlaylistAction(playlistId)
 		case "playlistEditLink":
 			//playlistId := dataset.Get("playlistid").String()
+		case "playlistDeleteLink":
+			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
+			component := NewHomeConfirmDeleteComponent(c.app, playlistId)
+
+			c.app.HomeComponent.OpenModal()
+			component.Show()
 		case "playlistFavoriteLink":
 			playlistId := dataset.Get("playlistid").String()
 			favoritePlaylistId := restApiV1.FavoritePlaylistId{
@@ -192,6 +217,12 @@ func (c *LibraryComponent) Show() {
 			c.app.HomeComponent.CurrentComponent.LoadSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
 		case "songEditLink":
 			//songId := dataset.Get("songid").String()
+		case "songDeleteLink":
+			songId := restApiV1.SongId(dataset.Get("songid").String())
+			component := NewHomeConfirmDeleteComponent(c.app, songId)
+
+			c.app.HomeComponent.OpenModal()
+			component.Show()
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
@@ -248,6 +279,12 @@ func (c *LibraryComponent) Show() {
 			c.app.HomeComponent.CurrentComponent.AddSongAction(restApiV1.SongId(songId))
 		case "userEditLink":
 			//userId := dataset.Get("userid").String()
+		case "userDeleteLink":
+			userId := restApiV1.UserId(dataset.Get("userid").String())
+			component := NewHomeConfirmDeleteComponent(c.app, userId)
+
+			c.app.HomeComponent.OpenModal()
+			component.Show()
 		}
 	}))
 
@@ -642,7 +679,7 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 	}
 
 	divContent.WriteString(c.app.RenderTemplate(
-		&artistItem, "artistItem.html"),
+		&artistItem, "home/library/artistItem"),
 	)
 }
 
@@ -675,9 +712,7 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 		}
 		albumItem.IsEditable = c.app.IsConnectedUserAdmin()
 	}
-	divContent.WriteString(c.app.RenderTemplate(
-		&albumItem, "albumItem.html"),
-	)
+	divContent.WriteString(c.app.RenderTemplate(&albumItem, "home/library/albumItem"))
 
 }
 
@@ -721,7 +756,7 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 	}
 
 	divContent.WriteString(c.app.RenderTemplate(
-		&songItem, "songItem.html"),
+		&songItem, "home/library/songItem"),
 	)
 }
 
@@ -755,7 +790,7 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 	}
 
 	divContent.WriteString(c.app.RenderTemplate(
-		&playlistItem, "playlistItem.html"),
+		&playlistItem, "home/library/playlistItem"),
 	)
 }
 
@@ -769,7 +804,7 @@ func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restAp
 			UserId:     string(user.Id),
 			Name:       user.Name,
 			IsEditable: c.app.IsConnectedUserAdmin(),
-		}, "userItem.html"),
+		}, "home/library/userItem"),
 	)
 }
 

@@ -25,7 +25,7 @@ func NewHomeAlbumEditComponent(app *App, albumId restApiV1.AlbumId, albumMeta re
 func (c *HomeAlbumEditComponent) Show() {
 	div := jst.Document.Call("getElementById", "homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
-		c.albumMeta, "homeAlbumEditComponent.html"),
+		c.albumMeta, "home/albumEdit/index"),
 	)
 
 	form := jst.Document.Call("getElementById", "albumEditForm")

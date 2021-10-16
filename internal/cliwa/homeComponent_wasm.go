@@ -8,11 +8,11 @@ import (
 type HomeComponent struct {
 	app *App
 
-	HomeHeaderButtonsComponent *HomeHeaderButtonsComponent
-	MessageComponent           *MessageComponent
-	LibraryComponent           *LibraryComponent
-	CurrentComponent           *CurrentComponent
-	PlayerComponent            *PlayerComponent
+	HeaderButtonsComponent *HomeHeaderButtonsComponent
+	MessageComponent       *HomeMessageComponent
+	LibraryComponent       *LibraryComponent
+	CurrentComponent       *HomeCurrentComponent
+	PlayerComponent        *HomePlayerComponent
 }
 
 func NewHomeComponent(app *App) *HomeComponent {
@@ -20,20 +20,20 @@ func NewHomeComponent(app *App) *HomeComponent {
 		app: app,
 	}
 
-	c.HomeHeaderButtonsComponent = NewHomeHeaderButtonsComponent(c.app)
-	c.MessageComponent = NewMessageComponent(c.app)
-	c.LibraryComponent = NewLibraryComponent(c.app)
-	c.CurrentComponent = NewCurrentComponent(c.app)
-	c.PlayerComponent = NewPlayerComponent(c.app)
+	c.HeaderButtonsComponent = NewHomeHeaderButtonsComponent(c.app)
+	c.MessageComponent = NewHomeMessageComponent(c.app)
+	c.LibraryComponent = NewHomeLibraryComponent(c.app)
+	c.CurrentComponent = NewHomeCurrentComponent(c.app)
+	c.PlayerComponent = NewHomePlayerComponent(c.app)
 
 	return c
 }
 
 func (c *HomeComponent) Show() {
 	mainComponent := jst.Document.Call("getElementById", "mainComponent")
-	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "home.html"))
+	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "home/index"))
 
-	c.HomeHeaderButtonsComponent.Show()
+	c.HeaderButtonsComponent.Show()
 	c.LibraryComponent.Show()
 	c.CurrentComponent.Show()
 	c.PlayerComponent.Show()
@@ -67,7 +67,7 @@ func (c *HomeComponent) Reload() {
 		return
 	}
 
-	c.HomeHeaderButtonsComponent.RefreshView()
+	c.HeaderButtonsComponent.RefreshView()
 	c.LibraryComponent.RefreshView()
 	c.CurrentComponent.RefreshView()
 

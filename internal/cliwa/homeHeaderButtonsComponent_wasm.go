@@ -19,7 +19,7 @@ func NewHomeHeaderButtonsComponent(app *App) *HomeHeaderButtonsComponent {
 func (c *HomeHeaderButtonsComponent) Show() {
 	div := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
-		nil, "homeHeaderButtons.html"),
+		nil, "home/headerButtons/index"),
 	)
 
 	// Set buttons

@@ -11,7 +11,7 @@ import (
 	"syscall/js"
 )
 
-type CurrentComponent struct {
+type HomeCurrentComponent struct {
 	app *App
 
 	songIds        []restApiV1.SongId
@@ -20,8 +20,8 @@ type CurrentComponent struct {
 	modified       bool
 }
 
-func NewCurrentComponent(app *App) *CurrentComponent {
-	c := &CurrentComponent{
+func NewHomeCurrentComponent(app *App) *HomeCurrentComponent {
+	c := &HomeCurrentComponent{
 		app:      app,
 		modified: true,
 	}
@@ -29,7 +29,12 @@ func NewCurrentComponent(app *App) *CurrentComponent {
 	return c
 }
 
-func (c *CurrentComponent) Show() {
+func (c *HomeCurrentComponent) Show() {
+	div := jst.Document.Call("getElementById", "currentComponent")
+	div.Set("innerHTML", c.app.RenderTemplate(
+		nil, "home/current/index"),
+	)
+
 	currentCleanButton := jst.Document.Call("getElementById", "currentCleanButton")
 	currentCleanButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
@@ -106,14 +111,14 @@ func (c *CurrentComponent) Show() {
 
 }
 
-func (c *CurrentComponent) PlayNextSongAction() {
+func (c *HomeCurrentComponent) PlayNextSongAction() {
 	if c.currentSongIdx < len(c.songIds)-1 {
 		c.currentSongIdx++
 		c.app.HomeComponent.PlayerComponent.PlaySongAction(c.songIds[c.currentSongIdx])
 	}
 }
 
-func (c *CurrentComponent) RefreshView() {
+func (c *HomeCurrentComponent) RefreshView() {
 	// Update current playlist title
 	titleSpan := jst.Document.Call("getElementById", "currentTitle")
 	var title string
@@ -136,7 +141,7 @@ func (c *CurrentComponent) RefreshView() {
 	listDiv.Set("innerHTML", divContent.String())
 }
 
-func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
+func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
 	var divContent strings.Builder
 
 	songItem := struct {
@@ -170,20 +175,18 @@ func (c *CurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string
 		})
 	}
 
-	divContent.WriteString(c.app.RenderTemplate(
-		&songItem, "currentSongItem.html"),
-	)
+	divContent.WriteString(c.app.RenderTemplate(&songItem, "home/current/songItem"))
 
 	return divContent.String()
 }
 
-func (c *CurrentComponent) AddSongAction(songId restApiV1.SongId) {
+func (c *HomeCurrentComponent) AddSongAction(songId restApiV1.SongId) {
 	c.modified = true
 	c.songIds = append(c.songIds, songId)
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
+func (c *HomeCurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 	if albumId != restApiV1.UnknownAlbumId {
 		for _, song := range c.app.localDb.AlbumOrderedSongs[albumId] {
 			c.tryToAppendSong(song)
@@ -196,7 +199,7 @@ func (c *CurrentComponent) AddSongsFromAlbumAction(albumId restApiV1.AlbumId) {
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
+func (c *HomeCurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId) {
 	if artistId != restApiV1.UnknownArtistId {
 		for _, song := range c.app.localDb.ArtistOrderedSongs[artistId] {
 			c.tryToAppendSong(song)
@@ -209,14 +212,14 @@ func (c *CurrentComponent) AddSongsFromArtistAction(artistId restApiV1.ArtistId)
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
+func (c *HomeCurrentComponent) AddSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
 		c.tryToAppendSong(c.app.localDb.Songs[songId])
 	}
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
+func (c *HomeCurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.PlaylistId) {
 	c.songIds = nil
 	c.srcPlaylistId = &playlistId
 	for _, songId := range c.app.localDb.Playlists[playlistId].SongIds {
@@ -226,20 +229,20 @@ func (c *CurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.Play
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
+func (c *HomeCurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
 	c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
 	c.modified = true
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) AddSongsAction(songs []*restApiV1.Song) {
+func (c *HomeCurrentComponent) AddSongsAction(songs []*restApiV1.Song) {
 	for _, song := range songs {
 		c.tryToAppendSong(song)
 	}
 	c.RefreshView()
 }
 
-func (c *CurrentComponent) tryToAppendSong(song *restApiV1.Song) {
+func (c *HomeCurrentComponent) tryToAppendSong(song *restApiV1.Song) {
 	// Don't append explicit songs if user profile ask for it
 	if c.app.HideExplicitSongForConnectedUser() && song.ExplicitFg {
 		return
