@@ -135,12 +135,14 @@ func (c *LibraryComponent) Show() {
 		case "artistEditLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 			if artistId != restApiV1.UnknownArtistId {
+				component := NewHomeArtistEditComponent(c.app, artistId, c.app.localDb.Artists[artistId].ArtistMeta)
 
+				c.app.HomeComponent.OpenModal()
+				component.Show()
 			}
 		case "artistDeleteLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, artistId)
-
 			c.app.HomeComponent.OpenModal()
 			component.Show()
 
@@ -771,12 +773,14 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 			UserId   string
 			UserName string
 		}
-		IsEditable bool
+		IsEditable  bool
+		IsDeletable bool
 	}{
-		PlaylistId: string(playlist.Id),
-		Favorite:   favorite,
-		Name:       playlist.Name,
-		IsEditable: c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
+		PlaylistId:  string(playlist.Id),
+		Favorite:    favorite,
+		Name:        playlist.Name,
+		IsEditable:  c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
+		IsDeletable: playlist.Id != restApiV1.IncomingPlaylistId && (c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId())),
 	}
 
 	for _, userId := range playlist.OwnerUserIds {

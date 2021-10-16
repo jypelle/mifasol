@@ -1,14 +1,17 @@
 package cliwa
 
 import (
+	"fmt"
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
+	"html"
+	"html/template"
 )
 
 type HomeConfirmDeleteComponent struct {
 	app    *App
 	id     interface{}
-	name   string
+	name   template.HTML
 	closed bool
 }
 
@@ -23,15 +26,51 @@ func NewHomeConfirmDeleteComponent(
 
 	switch v := id.(type) {
 	case restApiV1.ArtistId:
-		c.name = app.localDb.Artists[v].Name
+		if len(app.localDb.ArtistOrderedSongs[v]) == 1 {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"artistLink\">%s</span> and its song ?",
+				html.EscapeString(app.localDb.Artists[v].Name),
+			))
+		} else if len(app.localDb.ArtistOrderedSongs[v]) > 1 {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"artistLink\">%s</span> and its %d songs ?",
+				html.EscapeString(app.localDb.Artists[v].Name),
+				len(app.localDb.ArtistOrderedSongs[v]),
+			))
+		} else {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"artistLink\">%s</span> ?", html.EscapeString(app.localDb.Artists[v].Name),
+			))
+		}
 	case restApiV1.AlbumId:
-		c.name = app.localDb.Albums[v].Name
+		if len(app.localDb.AlbumOrderedSongs[v]) == 1 {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"albumLink\">%s</span> ant its songs ?",
+				html.EscapeString(app.localDb.Albums[v].Name),
+			))
+		} else if len(app.localDb.AlbumOrderedSongs[v]) > 1 {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"albumLink\">%s</span> ant its %d songs ?",
+				html.EscapeString(app.localDb.Albums[v].Name),
+				len(app.localDb.AlbumOrderedSongs[v]),
+			))
+		} else {
+			c.name = template.HTML(fmt.Sprintf(
+				"Do you want to delete <span class=\"albumLink\">%s</span> ?", html.EscapeString(app.localDb.Albums[v].Name),
+			))
+		}
 	case restApiV1.SongId:
-		c.name = app.localDb.Songs[v].Name
+		c.name = template.HTML(fmt.Sprintf(
+			"Do you want to delete <span class=\"songLink\">%s</span> ?", html.EscapeString(app.localDb.Songs[v].Name),
+		))
 	case restApiV1.PlaylistId:
-		c.name = app.localDb.Playlists[v].Name
+		c.name = template.HTML(fmt.Sprintf(
+			"Do you want to delete <span class=\"playlistLink\">%s</span> ?", html.EscapeString(app.localDb.Playlists[v].Name),
+		))
 	case restApiV1.UserId:
-		c.name = app.localDb.Users[v].Name
+		c.name = template.HTML(fmt.Sprintf(
+			"Do you want to delete <span class=\"userLink\">%s</span> ?", html.EscapeString(app.localDb.Users[v].Name),
+		))
 	default:
 		return nil
 	}
@@ -56,43 +95,70 @@ func (c *HomeConfirmDeleteComponent) deleteAction() {
 	if c.closed {
 		return
 	}
+	c.close()
+
+	defer c.app.HideLoader()
 
 	switch v := c.id.(type) {
 	case restApiV1.ArtistId:
-		c.app.ShowLoader("Deleting the artist")
+		artist := c.app.localDb.Artists[v]
+		for _, song := range c.app.localDb.ArtistOrderedSongs[v] {
+			c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"songLink\">%s</span> from <span class=\"artistLink\">%s</span>", html.EscapeString(song.Name), html.EscapeString(artist.Name)))
+			_, cliErr := c.app.restClient.DeleteSong(song.Id)
+			if cliErr != nil {
+				c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"songLink\">%s</span>", html.EscapeString(song.Name)), cliErr)
+				return
+			}
+		}
+		c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"artistLink\">%s</span>", html.EscapeString(artist.Name)))
 		_, cliErr := c.app.restClient.DeleteArtist(v)
 		if cliErr != nil {
-			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to delete the artist", cliErr)
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"artistLink\">%s</span>", html.EscapeString(artist.Name)), cliErr)
+			return
 		}
 	case restApiV1.AlbumId:
-		c.app.ShowLoader("Deleting the album")
+		album := c.app.localDb.Albums[v]
+		for _, song := range c.app.localDb.AlbumOrderedSongs[v] {
+			c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"songLink\">%s</span> from: <span class=\"albumLink\">%s</span>", html.EscapeString(song.Name), html.EscapeString(album.Name)))
+			_, cliErr := c.app.restClient.DeleteSong(song.Id)
+			if cliErr != nil {
+				c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"songLink\">%s</span>", html.EscapeString(song.Name)), cliErr)
+				return
+			}
+		}
+		c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"albumLink\">%s</span>", html.EscapeString(album.Name)))
 		_, cliErr := c.app.restClient.DeleteAlbum(v)
 		if cliErr != nil {
-			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to delete the album", cliErr)
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"albumLink\">%s</span>", html.EscapeString(album.Name)), cliErr)
+			return
 		}
 	case restApiV1.SongId:
-		c.app.ShowLoader("Deleting the song")
+		song := c.app.localDb.Songs[v]
+		c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"songLink\">%s</span>", html.EscapeString(song.Name)))
 		_, cliErr := c.app.restClient.DeleteSong(v)
 		if cliErr != nil {
-			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to delete the song", cliErr)
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"songLink\">%s</span>", html.EscapeString(song.Name)), cliErr)
+			return
 		}
 	case restApiV1.PlaylistId:
-		c.app.ShowLoader("Deleting the playlist")
+		playlist := c.app.localDb.Playlists[v]
+		c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"playlistLink\">%s</span>", html.EscapeString(playlist.Name)))
 		_, cliErr := c.app.restClient.DeletePlaylist(v)
 		if cliErr != nil {
-			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to delete the playlist", cliErr)
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"playlistLink\">%s</span>", html.EscapeString(playlist.Name)), cliErr)
+			return
 		}
 	case restApiV1.UserId:
-		c.app.ShowLoader("Deleting the user")
+		user := c.app.localDb.Users[v]
+		c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"userLink\">%s</span>", html.EscapeString(user.Name)))
 		_, cliErr := c.app.restClient.DeleteUser(v)
 		if cliErr != nil {
-			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to delete the user", cliErr)
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"userLink\">%s</span>", html.EscapeString(user.Name)), cliErr)
+			return
 		}
 	}
 
-	c.close()
 	c.app.HomeComponent.Reload()
-	c.app.HideLoader()
 }
 
 func (c *HomeConfirmDeleteComponent) cancelAction() {

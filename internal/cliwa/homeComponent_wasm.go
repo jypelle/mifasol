@@ -59,7 +59,8 @@ func (c *HomeComponent) Reload() {
 	if c.app.localDb == nil {
 		return
 	}
-	c.MessageComponent.Message("Syncing...")
+	c.app.ShowLoader("Syncing...")
+	defer c.app.HideLoader()
 	// Refresh In memory Db
 	err := c.app.localDb.Refresh()
 	if err != nil {

@@ -20,6 +20,8 @@
         <a class="playlistEditLink" href="#" data-playlistid="{{.PlaylistId}}">
             <i class="fas fa-edit"></i>
         </a>
+        {{end}}
+        {{if .IsDeletable}}
         <a class="playlistDeleteLink" href="#" data-playlistid="{{.PlaylistId}}">
             <i class="fas fa-trash"></i>
         </a>

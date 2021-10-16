@@ -112,13 +112,40 @@ func (c *HomeCurrentComponent) Show() {
 }
 
 func (c *HomeCurrentComponent) PlayNextSongAction() {
-	if c.currentSongIdx < len(c.songIds)-1 {
+	if c.currentSongIdx != -1 && c.currentSongIdx < len(c.songIds)-1 {
 		c.currentSongIdx++
 		c.app.HomeComponent.PlayerComponent.PlaySongAction(c.songIds[c.currentSongIdx])
+	} else {
+		c.currentSongIdx = -1
 	}
 }
 
 func (c *HomeCurrentComponent) RefreshView() {
+	oldSongIds := c.songIds
+
+	c.songIds = []restApiV1.SongId{}
+	c.srcPlaylistId = nil
+
+	// Remove deleted songId
+	for _, songId := range oldSongIds {
+		if _, ok := c.app.localDb.Songs[songId]; ok {
+			c.songIds = append(c.songIds, songId)
+		} else {
+			if len(c.songIds) < c.currentSongIdx {
+				c.currentSongIdx--
+			} else if len(c.songIds) == c.currentSongIdx {
+				c.currentSongIdx = -1
+			}
+		}
+	}
+
+	if c.srcPlaylistId != nil {
+		if _, ok := c.app.localDb.Playlists[*c.srcPlaylistId]; !ok {
+			// If src playlist has been deleted, current playlist is a new playlist
+			c.modified = true
+		}
+	}
+
 	// Update current playlist title
 	titleSpan := jst.Document.Call("getElementById", "currentTitle")
 	var title string
@@ -230,6 +257,12 @@ func (c *HomeCurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.
 }
 
 func (c *HomeCurrentComponent) RemoveSongFromPlaylistAction(songIdx int) {
+	if songIdx < c.currentSongIdx {
+		c.currentSongIdx--
+	} else if songIdx == c.currentSongIdx {
+		c.currentSongIdx = -1
+	}
+
 	c.songIds = append(c.songIds[0:songIdx], c.songIds[songIdx+1:]...)
 	c.modified = true
 	c.RefreshView()
