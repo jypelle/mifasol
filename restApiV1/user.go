@@ -20,6 +20,11 @@ type UserMeta struct {
 	HideExplicitFg bool   `json:"hideExplicitFg"`
 }
 
+func (u *UserMeta) Copy() *UserMeta {
+	var newUserMeta = *u
+	return &newUserMeta
+}
+
 type UserMetaComplete struct {
 	UserMeta
 	Password string `json:"password"`

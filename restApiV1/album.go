@@ -16,3 +16,8 @@ type Album struct {
 type AlbumMeta struct {
 	Name string `json:"name"`
 }
+
+func (a *AlbumMeta) Copy() *AlbumMeta {
+	var newAlbumMeta = *a
+	return &newAlbumMeta
+}

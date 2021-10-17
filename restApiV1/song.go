@@ -92,6 +92,21 @@ type SongMeta struct {
 	ExplicitFg      bool         `json:"explicitFg"`
 }
 
+func (s *SongMeta) Copy() *SongMeta {
+	var newSongMeta = *s
+	if s.PublicationYear != nil {
+		newPublicationYear := *s.PublicationYear
+		newSongMeta.PublicationYear = &newPublicationYear
+	}
+	if s.TrackNumber != nil {
+		newTrackNumber := *s.TrackNumber
+		newSongMeta.TrackNumber = &newTrackNumber
+	}
+	newSongMeta.ArtistIds = make([]ArtistId, len(s.ArtistIds))
+	copy(newSongMeta.ArtistIds, s.ArtistIds)
+	return &newSongMeta
+}
+
 type SongNew struct {
 	SongMeta
 	Content []byte `json:"content"`

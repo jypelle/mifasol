@@ -174,7 +174,11 @@ func (c *LibraryComponent) Show() {
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
 			c.OpenPlaylistAction(playlistId)
 		case "playlistEditLink":
-			//playlistId := dataset.Get("playlistid").String()
+			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
+			component := NewHomePlaylistEditComponent(c.app, playlistId, c.app.localDb.Playlists[playlistId].PlaylistMeta)
+			c.app.HomeComponent.OpenModal()
+			component.Show()
+
 		case "playlistDeleteLink":
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, playlistId)
@@ -218,7 +222,10 @@ func (c *LibraryComponent) Show() {
 			playlistId := dataset.Get("playlistid").String()
 			c.app.HomeComponent.CurrentComponent.LoadSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
 		case "songEditLink":
-			//songId := dataset.Get("songid").String()
+			songId := restApiV1.SongId(dataset.Get("songid").String())
+			component := NewHomeSongEditComponent(c.app, songId, c.app.localDb.Songs[songId].SongMeta)
+			c.app.HomeComponent.OpenModal()
+			component.Show()
 		case "songDeleteLink":
 			songId := restApiV1.SongId(dataset.Get("songid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, songId)
