@@ -12,11 +12,11 @@ type HomeAlbumEditComponent struct {
 	closed    bool
 }
 
-func NewHomeAlbumEditComponent(app *App, albumId restApiV1.AlbumId, albumMeta restApiV1.AlbumMeta) *HomeAlbumEditComponent {
+func NewHomeAlbumEditComponent(app *App, albumId restApiV1.AlbumId, albumMeta *restApiV1.AlbumMeta) *HomeAlbumEditComponent {
 	c := &HomeAlbumEditComponent{
 		app:       app,
 		albumId:   albumId,
-		albumMeta: &albumMeta,
+		albumMeta: albumMeta.Copy(),
 	}
 
 	return c

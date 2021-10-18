@@ -135,7 +135,7 @@ func (c *LibraryComponent) Show() {
 		case "artistEditLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 			if artistId != restApiV1.UnknownArtistId {
-				component := NewHomeArtistEditComponent(c.app, artistId, c.app.localDb.Artists[artistId].ArtistMeta)
+				component := NewHomeArtistEditComponent(c.app, artistId, &c.app.localDb.Artists[artistId].ArtistMeta)
 
 				c.app.HomeComponent.OpenModal()
 				component.Show()
@@ -155,7 +155,7 @@ func (c *LibraryComponent) Show() {
 		case "albumEditLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
 			if albumId != restApiV1.UnknownAlbumId {
-				component := NewHomeAlbumEditComponent(c.app, albumId, c.app.localDb.Albums[albumId].AlbumMeta)
+				component := NewHomeAlbumEditComponent(c.app, albumId, &c.app.localDb.Albums[albumId].AlbumMeta)
 
 				c.app.HomeComponent.OpenModal()
 				component.Show()
@@ -175,7 +175,7 @@ func (c *LibraryComponent) Show() {
 			c.OpenPlaylistAction(playlistId)
 		case "playlistEditLink":
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
-			component := NewHomePlaylistEditComponent(c.app, playlistId, c.app.localDb.Playlists[playlistId].PlaylistMeta)
+			component := NewHomePlaylistEditComponent(c.app, playlistId, &c.app.localDb.Playlists[playlistId].PlaylistMeta)
 			c.app.HomeComponent.OpenModal()
 			component.Show()
 
@@ -216,14 +216,14 @@ func (c *LibraryComponent) Show() {
 			}
 
 		case "playlistAddToPlaylistLink":
-			playlistId := dataset.Get("playlistid").String()
-			c.app.HomeComponent.CurrentComponent.AddSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
+			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
+			c.app.HomeComponent.CurrentComponent.AddSongsFromPlaylistAction(playlistId)
 		case "playlistLoadToPlaylistLink":
-			playlistId := dataset.Get("playlistid").String()
-			c.app.HomeComponent.CurrentComponent.LoadSongsFromPlaylistAction(restApiV1.PlaylistId(playlistId))
+			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
+			c.app.HomeComponent.CurrentComponent.LoadSongsFromPlaylistAction(playlistId)
 		case "songEditLink":
 			songId := restApiV1.SongId(dataset.Get("songid").String())
-			component := NewHomeSongEditComponent(c.app, songId, c.app.localDb.Songs[songId].SongMeta)
+			component := NewHomeSongEditComponent(c.app, songId, &c.app.localDb.Songs[songId].SongMeta)
 			c.app.HomeComponent.OpenModal()
 			component.Show()
 		case "songDeleteLink":
@@ -265,11 +265,11 @@ func (c *LibraryComponent) Show() {
 				logrus.Info("Activate")
 			}
 		case "songPlayNowLink":
-			songId := dataset.Get("songid").String()
-			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
+			songId := restApiV1.SongId(dataset.Get("songid").String())
+			c.app.HomeComponent.PlayerComponent.PlaySongAction(songId)
 		case "songDownloadLink":
-			songId := dataset.Get("songid").String()
-			song := c.app.localDb.Songs[restApiV1.SongId(songId)]
+			songId := restApiV1.SongId(dataset.Get("songid").String())
+			song := c.app.localDb.Songs[songId]
 
 			token, cliErr := c.app.restClient.GetToken()
 			if cliErr != nil {
@@ -284,10 +284,14 @@ func (c *LibraryComponent) Show() {
 			jst.Document.Get("body").Call("removeChild", anchor)
 
 		case "songAddToPlaylistLink":
-			songId := dataset.Get("songid").String()
-			c.app.HomeComponent.CurrentComponent.AddSongAction(restApiV1.SongId(songId))
+			songId := restApiV1.SongId(dataset.Get("songid").String())
+			c.app.HomeComponent.CurrentComponent.AddSongAction(songId)
 		case "userEditLink":
-			//userId := dataset.Get("userid").String()
+			userId := restApiV1.UserId(dataset.Get("userid").String())
+			component := NewHomeUserEditComponent(c.app, userId, &c.app.localDb.Users[userId].UserMeta)
+			c.app.HomeComponent.OpenModal()
+			component.Show()
+
 		case "userDeleteLink":
 			userId := restApiV1.UserId(dataset.Get("userid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, userId)
