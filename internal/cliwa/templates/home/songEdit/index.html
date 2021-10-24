@@ -8,6 +8,25 @@
                 </div>
             </div>
             <div>
+                <label for="songEditPublicationYear">Publication year</label>
+                <div>
+                    <input id="songEditPublicationYear" type="text" value="{{if .PublicationYear}}{{.PublicationYear}}{{end}}">
+                </div>
+            </div>
+            <div>
+                <label for="songEditTrackNumber">Track number</label>
+                <div>
+                    <input id="songEditTrackNumber" type="text" value="{{if .TrackNumber}}{{.TrackNumber}}{{end}}">
+                </div>
+            </div>
+            <div>
+                <label></label>
+                <div>
+                    <input id="songEditExplicitFg" value="true" type="checkbox" {{if .ExplicitFg}}checked{{end}}><label for="songEditExplicitFg"></label>
+                    Explicit
+                </div>
+            </div>
+            <div>
                 <label></label>
                 <div>
                     <button class="light" type="submit">Save</button>
