@@ -124,7 +124,6 @@ func (c *HomeCurrentComponent) RefreshView() {
 	oldSongIds := c.songIds
 
 	c.songIds = []restApiV1.SongId{}
-	c.srcPlaylistId = nil
 
 	// Remove deleted songId
 	for _, songId := range oldSongIds {
@@ -143,6 +142,7 @@ func (c *HomeCurrentComponent) RefreshView() {
 		if _, ok := c.app.localDb.Playlists[*c.srcPlaylistId]; !ok {
 			// If src playlist has been deleted, current playlist is a new playlist
 			c.modified = true
+			c.srcPlaylistId = nil
 		}
 	}
 

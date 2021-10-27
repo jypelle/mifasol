@@ -26,10 +26,6 @@
     box-sizing: border-box;
 }
 
-html {
-    overflow-wrap: anywhere;
-}
-
 /* Scrollbar */
 /* Works on Firefox */
 * {
@@ -57,6 +53,7 @@ html {
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     height: 100%;
+    overflow-wrap: anywhere;
     overscroll-behavior-y: contain;
 }
 
