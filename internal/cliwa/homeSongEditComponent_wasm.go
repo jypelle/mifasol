@@ -4,6 +4,7 @@ import (
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
 	"strconv"
+	"strings"
 )
 
 type HomeSongEditComponent struct {
@@ -24,9 +25,22 @@ func NewHomeSongEditComponent(app *App, songId restApiV1.SongId, songMeta *restA
 }
 
 func (c *HomeSongEditComponent) Show() {
+	songItem := struct {
+		SongMeta  *restApiV1.SongMeta
+		AlbumName string
+		Albums    []*restApiV1.Album
+	}{
+		SongMeta: c.songMeta,
+		Albums:   c.app.localDb.OrderedAlbums,
+	}
+
+	if c.songMeta.AlbumId != restApiV1.UnknownAlbumId {
+		songItem.AlbumName = c.app.localDb.Albums[c.songMeta.AlbumId].Name
+	}
+
 	div := jst.Document.Call("getElementById", "homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
-		c.songMeta, "home/songEdit/index"),
+		&songItem, "home/songEdit/index"),
 	)
 
 	form := jst.Document.Call("getElementById", "songEditForm")
@@ -34,6 +48,13 @@ func (c *HomeSongEditComponent) Show() {
 	cancelButton := jst.Document.Call("getElementById", "songEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
+	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
+	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
+
+	albumBlock := jst.Document.Call("getElementById", "songEditAlbumBlock")
+	albumBlock.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		albumSearchInput.Set("disabled", false)
+	}))
 }
 
 func (c *HomeSongEditComponent) saveAction() {
@@ -43,6 +64,7 @@ func (c *HomeSongEditComponent) saveAction() {
 
 	c.app.ShowLoader("Updating song")
 
+	// Song name
 	songName := jst.Document.Call("getElementById", "songEditSongName")
 	c.songMeta.Name = songName.Get("value").String()
 
@@ -97,4 +119,23 @@ func (c *HomeSongEditComponent) cancelAction() {
 func (c *HomeSongEditComponent) close() {
 	c.closed = true
 	c.app.HomeComponent.CloseModal()
+}
+
+func (c *HomeSongEditComponent) albumSearchAction() {
+	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
+	nameFilter := albumSearchInput.Get("value").String()
+
+	var resultAlbumList []*restApiV1.Album
+
+	if nameFilter != "" {
+		lowerNameFilter := strings.ToLower(nameFilter)
+		for _, album := range c.app.localDb.OrderedAlbums {
+			if album != nil && !strings.Contains(strings.ToLower(album.Name), lowerNameFilter) {
+				continue
+			}
+
+			resultAlbumList = append(resultAlbumList, album)
+		}
+	}
+
 }

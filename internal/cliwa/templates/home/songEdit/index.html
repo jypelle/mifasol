@@ -4,25 +4,42 @@
             <div>
                 <label for="songEditSongName">Name</label>
                 <div>
-                    <input id="songEditSongName" type="text" value="{{.Name}}">
+                    <input id="songEditSongName" type="text" value="{{.SongMeta.Name}}">
                 </div>
             </div>
             <div>
                 <label for="songEditPublicationYear">Publication year</label>
                 <div>
-                    <input id="songEditPublicationYear" type="text" value="{{if .PublicationYear}}{{.PublicationYear}}{{end}}">
+                    <input id="songEditPublicationYear" type="text" value="{{if .SongMeta.PublicationYear}}{{.SongMeta.PublicationYear}}{{end}}">
                 </div>
             </div>
             <div>
                 <label for="songEditTrackNumber">Track number</label>
                 <div>
-                    <input id="songEditTrackNumber" type="text" value="{{if .TrackNumber}}{{.TrackNumber}}{{end}}">
+                    <input id="songEditTrackNumber" type="text" value="{{if .SongMeta.TrackNumber}}{{.SongMeta.TrackNumber}}{{end}}">
+                </div>
+            </div>
+            <div>
+                <label for="songEditAlbumSearchInput">Album</label>
+                <div id="songEditAlbumBlock">
+                    <input id="songEditAlbumSearchInput" type="text" value="{{.AlbumName}}" disabled>
+                    <div id="songEditAlbumList">
+                        <div style="display:none;">
+                            {{range $index, $album := .Albums}}
+                                {{if . }}
+                                    <div><a class="albumLink" href="#" data-albumid="{{.Id}}">{{.Name}}</a></div>
+                                {{else}}
+                                    <div><a class="albumLink" href="#" data-albumid="">(Unknown Album)</a></div>
+                                {{end}}
+                            {{end}}
+                        </div>
+                    </div>
                 </div>
             </div>
             <div>
                 <label></label>
                 <div>
-                    <input id="songEditExplicitFg" value="true" type="checkbox" {{if .ExplicitFg}}checked{{end}}><label for="songEditExplicitFg"></label>
+                    <input id="songEditExplicitFg" value="true" type="checkbox" {{if .SongMeta.ExplicitFg}}checked{{end}}><label for="songEditExplicitFg"></label>
                     Explicit
                 </div>
             </div>
