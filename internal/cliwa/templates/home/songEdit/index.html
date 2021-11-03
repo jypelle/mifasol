@@ -22,17 +22,10 @@
             <div>
                 <label for="songEditAlbumSearchInput">Album</label>
                 <div id="songEditAlbumBlock">
-                    <input id="songEditAlbumSearchInput" type="text" value="{{.AlbumName}}" disabled>
-                    <div id="songEditAlbumList">
-                        <div style="display:none;">
-                            {{range $index, $album := .Albums}}
-                                {{if . }}
-                                    <div><a class="albumLink" href="#" data-albumid="{{.Id}}">{{.Name}}</a></div>
-                                {{else}}
-                                    <div><a class="albumLink" href="#" data-albumid="">(Unknown Album)</a></div>
-                                {{end}}
-                            {{end}}
-                        </div>
+                    <input id="songEditAlbumInput" type="text" value="{{.AlbumName}}">
+                    <div id="songEditAlbumSearchBlock" style="display:none;">
+                        <i class="fa fa-search fa-lg" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input id="songEditAlbumSearchInput" type="text" style="padding-left: 2rem;">
+                        <div id="songEditAlbumList"></div>
                     </div>
                 </div>
             </div>
@@ -46,8 +39,8 @@
             <div>
                 <label></label>
                 <div>
-                    <button class="light" type="submit">Save</button>
-                    <button id="songEditCancelButton" class="light">Cancel</button>
+                    <button type="submit">Save</button>
+                    <button id="songEditCancelButton" >Cancel</button>
                 </div>
             </div>
         </form>
