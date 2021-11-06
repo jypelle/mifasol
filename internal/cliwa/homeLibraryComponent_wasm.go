@@ -676,9 +676,10 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 
 func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *restApiV1.Artist) {
 	var artistItem struct {
-		ArtistId   string
-		ArtistName string
-		IsEditable bool
+		ArtistId        string
+		ArtistName      string
+		ArtistSongCount int
+		IsEditable      bool
 	}
 
 	if artist == nil {
@@ -688,6 +689,7 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 	} else {
 		artistItem.ArtistId = string(artist.Id)
 		artistItem.ArtistName = artist.Name
+		artistItem.ArtistSongCount = len(c.app.localDb.ArtistOrderedSongs[artist.Id])
 		artistItem.IsEditable = c.app.IsConnectedUserAdmin()
 	}
 
@@ -698,9 +700,10 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 
 func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *restApiV1.Album) {
 	var albumItem struct {
-		AlbumId   string
-		AlbumName string
-		Artists   []struct {
+		AlbumId        string
+		AlbumName      string
+		AlbumSongCount int
+		Artists        []struct {
 			ArtistId   string
 			ArtistName string
 		}
@@ -714,6 +717,7 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 	} else {
 		albumItem.AlbumId = string(album.Id)
 		albumItem.AlbumName = album.Name
+		albumItem.AlbumSongCount = len(c.app.localDb.AlbumOrderedSongs[album.Id])
 		for _, artistId := range album.ArtistIds {
 			albumItem.Artists = append(albumItem.Artists, struct {
 				ArtistId   string
@@ -777,21 +781,23 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 	_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
 
 	playlistItem := struct {
-		PlaylistId string
-		Favorite   bool
-		Name       string
-		OwnerUsers []struct {
+		PlaylistId        string
+		Favorite          bool
+		Name              string
+		PlaylistSongCount int
+		OwnerUsers        []struct {
 			UserId   string
 			UserName string
 		}
 		IsEditable  bool
 		IsDeletable bool
 	}{
-		PlaylistId:  string(playlist.Id),
-		Favorite:    favorite,
-		Name:        playlist.Name,
-		IsEditable:  c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
-		IsDeletable: playlist.Id != restApiV1.IncomingPlaylistId && (c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId())),
+		PlaylistId:        string(playlist.Id),
+		Favorite:          favorite,
+		Name:              playlist.Name,
+		PlaylistSongCount: len(playlist.SongIds),
+		IsEditable:        c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
+		IsDeletable:       playlist.Id != restApiV1.IncomingPlaylistId && (c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId())),
 	}
 
 	for _, userId := range playlist.OwnerUserIds {

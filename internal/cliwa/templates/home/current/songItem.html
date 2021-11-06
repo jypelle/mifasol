@@ -1,6 +1,8 @@
 <div class="item currentSongItem" draggable="true">
     <div class="itemTitle">
-        <p class="songLink">{{.SongName}}</p>
+        <div>
+            <span class="songLink">{{.SongName}}</span>
+        </div>
         <div>
             {{$separator := ""}}
             {{if .AlbumId}}

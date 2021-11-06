@@ -7,7 +7,9 @@
         {{end}}
     </a></div>
     <div class="itemTitle">
-        <a class="playlistLink" href="#" data-playlistid="{{.PlaylistId}}">{{.Name}}</a>
+        <div>
+            <a class="playlistLink" href="#" data-playlistid="{{.PlaylistId}}">{{.Name}}</a> <span class="songCount">{{.PlaylistSongCount}}</span>
+        </div>
         <div>
             {{range $index, $user := .OwnerUsers}}
             {{if ne $index 0 }} / {{end}}

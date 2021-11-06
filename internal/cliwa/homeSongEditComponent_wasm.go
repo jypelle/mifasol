@@ -48,21 +48,34 @@ func (c *HomeSongEditComponent) Show() {
 	cancelButton := jst.Document.Call("getElementById", "songEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
-	albumInput := jst.Document.Call("getElementById", "songEditAlbumInput")
+	albumCurrentBlock := jst.Document.Call("getElementById", "songEditAlbumCurrentBlock")
+	albumCurrentInput := jst.Document.Call("getElementById", "songEditAlbumCurrentInput")
+	albumCurrentDelete := jst.Document.Call("getElementById", "songEditAlbumCurrentDelete")
 	albumSearchBlock := jst.Document.Call("getElementById", "songEditAlbumSearchBlock")
 	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
 	albumList := jst.Document.Call("getElementById", "songEditAlbumList")
+	albumSearchClose := jst.Document.Call("getElementById", "songEditAlbumSearchClose")
 
-	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
-	//	albumSearchInput.Call("addEventListener", "focusout", c.app.AddEventFunc(func() {
-	//	}))
-
-	albumInput.Call("addEventListener", "focus", c.app.AddEventFunc(func() {
+	albumCurrentInput.Call("addEventListener", "focus", c.app.AddEventFunc(func() {
 		albumSearchInput.Set("value", "")
 		c.albumSearchAction()
-		albumInput.Get("style").Set("display", "none")
+		albumCurrentBlock.Get("style").Set("display", "none")
 		albumSearchBlock.Get("style").Set("display", "block")
 		albumSearchInput.Call("focus")
+	}))
+
+	albumCurrentDelete.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		c.songMeta.AlbumId = restApiV1.UnknownAlbumId
+		albumCurrentInput.Set("value", "")
+		albumCurrentDelete.Get("style").Set("display", "none")
+	}))
+
+	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
+
+	albumSearchClose.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		// Remove searchInput
+		albumSearchBlock.Get("style").Set("display", "none")
+		albumCurrentBlock.Get("style").Set("display", "flex")
 	}))
 
 	albumList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
@@ -76,11 +89,12 @@ func (c *HomeSongEditComponent) Show() {
 		case "albumLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
 			c.songMeta.AlbumId = albumId
-			albumInput.Set("value", c.app.localDb.Albums[albumId].Name)
+			albumCurrentInput.Set("value", c.app.localDb.Albums[albumId].Name)
 
 			// Remove searchInput
 			albumSearchBlock.Get("style").Set("display", "none")
-			albumInput.Get("style").Set("display", "block")
+			albumCurrentBlock.Get("style").Set("display", "flex")
+			albumCurrentDelete.Get("style").Set("display", "block")
 		}
 	}))
 }
@@ -106,9 +120,6 @@ func (c *HomeSongEditComponent) saveAction() {
 			c.songMeta.PublicationYear = &publicationYear
 		}
 	}
-
-	// Album
-	// TODO
 
 	// TrackNumber
 	c.songMeta.TrackNumber = nil
@@ -153,7 +164,17 @@ func (c *HomeSongEditComponent) albumSearchAction() {
 	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
 	nameFilter := albumSearchInput.Get("value").String()
 
-	var resultAlbumList []*restApiV1.Album
+	type AlbumSearchItem struct {
+		AlbumId        restApiV1.AlbumId
+		AlbumName      string
+		AlbumSongCount int
+		Artists        []struct {
+			ArtistId   string
+			ArtistName string
+		}
+	}
+
+	var resultAlbumList []*AlbumSearchItem
 
 	if nameFilter != "" {
 		lowerNameFilter := strings.ToLower(nameFilter)
@@ -162,11 +183,32 @@ func (c *HomeSongEditComponent) albumSearchAction() {
 				continue
 			}
 
-			resultAlbumList = append(resultAlbumList, album)
+			albumSearchItem := &AlbumSearchItem{
+				AlbumId:        album.Id,
+				AlbumName:      album.Name,
+				AlbumSongCount: len(c.app.localDb.AlbumOrderedSongs[album.Id]),
+			}
+			for _, artistId := range album.ArtistIds {
+				albumSearchItem.Artists = append(albumSearchItem.Artists, struct {
+					ArtistId   string
+					ArtistName string
+				}{
+					ArtistId:   string(artistId),
+					ArtistName: c.app.localDb.Artists[artistId].Name,
+				})
+			}
+
+			resultAlbumList = append(resultAlbumList, albumSearchItem)
 		}
 	}
 
-	sort.SliceStable(resultAlbumList, func(i, j int) bool { return len(resultAlbumList[i].Name) < len(resultAlbumList[j].Name) })
+	sort.SliceStable(resultAlbumList, func(i, j int) bool {
+		return len(resultAlbumList[i].AlbumName) < len(resultAlbumList[j].AlbumName)
+	})
+
+	if len(resultAlbumList) > 100 {
+		resultAlbumList = resultAlbumList[0:100]
+	}
 
 	albumList := jst.Document.Call("getElementById", "songEditAlbumList")
 	albumList.Set("innerHTML", c.app.RenderTemplate(

@@ -22,9 +22,13 @@
         <div>
             <label for="songEditAlbumSearchInput">Album</label>
             <div id="songEditAlbumBlock">
-                <input id="songEditAlbumInput" type="text" value="{{.AlbumName}}">
+                <div id="songEditAlbumCurrentBlock" style="display:flex; flex-flow: row nowrap; align-items:center;">
+                    <input id="songEditAlbumCurrentInput" type="text" style="padding-right: 1.6rem;" value="{{.AlbumName}}"><a id="songEditAlbumCurrentDelete" href="#" style="{{if not .AlbumName}}display: none;{{end}} position: relative; width: 0; right: 1.2rem; z-index: 1; color: var(--bg-color-alt);"><i class="fa fa-trash"></i></a>
+                </div>
                 <div id="songEditAlbumSearchBlock" style="display:none;">
-                    <i class="fa fa-search fa-lg" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input id="songEditAlbumSearchInput" type="text" autocomplete="off" style="padding-left: 2rem;">
+                    <div style="display:flex; flex-flow: row nowrap; align-items:center;">
+                        <i class="fa fa-search" style="position: relative; width: 0; left: 0.4rem; z-index: 1; color: gray;"></i><input id="songEditAlbumSearchInput" type="text" autocomplete="off" style="padding-left: 1.6rem; padding-right: 1.6rem;"><a id="songEditAlbumSearchClose" href="#" style="position: relative; width: 0; right: 1.2rem; z-index: 1; color: var(--bg-color-alt);"><i class="fa fa-times"></i></a>
+                    </div>
                     <div id="songEditAlbumList" class="searchResultList">
                         <div style="padding: 0.4rem;">...</div>
                     </div>

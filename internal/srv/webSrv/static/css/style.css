@@ -22,6 +22,24 @@
     src: url('../font/Inter-ExtraBold.woff2?v=3.12') format('woff2');
 }
 
+:root{
+    --main-color: #48899c;
+    --bg-color: #111;
+    --bg-color-alt: #222222;
+    --fg-color: #bababa;
+    --fg-color-alt: #f0f0f0;
+    --input-color: #222222;
+    --input-placeholder-color: #858585;
+    --button-alt-color: #cccccc;
+    --hover-color: #602020;
+    --superhover-color: #802121;
+    --artist-color: #A0A9CC;
+    --album-color: #5ADFDF;
+    --song-color: #FFFFE5;
+    --playlist-color: #FFB500;
+    --user-color: #FFFACD;
+}
+
 *, ::before, ::after {
     box-sizing: border-box;
 }
@@ -30,7 +48,7 @@
 /* Works on Firefox */
 * {
     scrollbar-width: auto;
-    scrollbar-color: #48899c #222222;
+    scrollbar-color: var(--main-color) var(--bg-color-alt);
 }
 
 /* Works on Chrome, Edge, and Safari */
@@ -43,9 +61,9 @@
 }
 
 *::-webkit-scrollbar-thumb {
-    background-color: #48899c;
+    background-color: var(--main-color);
     border-radius: 0.25rem;
-    border: 1px solid #222222;
+    border: 1px solid var(--bg-color-alt);
 }
 
 html {
@@ -62,12 +80,13 @@ body {
     height: 100%;
     display: flex;
     flex-flow: column nowrap;
-    color: #eee;
-    background-color: #111;
+    color: var(--fg-color);
+    background-color:  var(--bg-color);
 }
 
 h1, h2, h3 {
     font-weight: 500;
+    color: var(--fg-color-alt);
 }
 
 h1 {
@@ -80,11 +99,11 @@ h2 {
 
 a {
     text-decoration: none;
-    color: #ddd;
+    color: var(--button-alt-color);
 }
 
 a:hover {
-    color: #f0f0f0;
+    color: var(--fg-color-alt);
 }
 
 li {
@@ -93,16 +112,16 @@ li {
 
 button {
     background-color: transparent;
-    color: #48899c;
-    border: 0.1rem solid #48899c;
+    color: var(--main-color);
+    border: 0.1rem solid var(--main-color);
     border-radius: 0.3rem;
     padding: 0.4rem 0.4rem;
     min-width: 2.2rem;
 }
 
 button:hover {
-    color: #f0f0f0;
-    border-color: #f0f0f0;
+    color: var(--fg-color-alt);
+    border-color: var(--fg-color-alt);
 }
 
 button:disabled {
@@ -110,12 +129,17 @@ button:disabled {
     border-color: #333;
 }
 
+button.light:not(:hover) {
+    color: var(--button-alt-color);
+    border-color: var(--button-alt-color);
+}
+
 /* form */
 select,
 textarea,
 input {
     display: inline-block;
-    color: #555555;
+    color: var(--input-color);
     border-radius: 0.3rem;
     padding: 0.4rem;
     vertical-align: middle;
@@ -128,7 +152,7 @@ textarea {
 
 textarea,
 input {
-    background-color: #ffffff;
+    background-color: var(--fg-color-alt);
     border-width: 0px;
     transition: border linear .2s, box-shadow linear .2s;
 }
@@ -156,11 +180,6 @@ input[type="checkbox"] {
     width: auto;
 }
 
-select {
-    border: 1px solid #cccccc;
-    background-color: #ffffff;
-}
-
 select[multiple],
 select[size] {
     height: auto;
@@ -170,12 +189,12 @@ select:focus,
 input[type="file"]:focus,
 input[type="radio"]:focus,
 input[type="checkbox"]:focus {
-    outline: thin dotted #333;
+    outline: thin dotted var(--bg-color-alt);
     outline-offset: -2px;
 }
 
 ::placeholder {
-    color: #999999;
+    color: var(--input-placeholder-color);
 }
 
 form > div {
@@ -204,8 +223,6 @@ form > div > div > input {
 
 input[type="checkbox"] {
     opacity: 0;
-    /*position: absolute;
-    top: 0px;*/
     display:none;
 }
 
@@ -213,7 +230,7 @@ input[type="checkbox"] + label {
     width: 2.6rem;
     height: 1.4rem;
     display: inline-block;
-    background-color: #ffffff;
+    background-color: var(--fg-color-alt);
     border-radius: 0.3rem;
     position: relative;
     cursor: pointer;
@@ -241,30 +258,7 @@ input[type="checkbox"] + label:after {
 input[type="checkbox"]:checked + label:after {
     left: calc(100% - 0.3rem);
     transform: translateX(-100%);
-    background-color: #48899c;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ffffff;
-    transition: .1s;
-    border-radius: 19px;
-    border: 3px solid #ffffff;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 13px;
-    width: 13px;
-    background-color: #333;
-    transition: .1s;
-    border-radius: 50%;
+    background-color: var(--main-color);
 }
 
 /* Loader */
@@ -281,7 +275,7 @@ input[type="checkbox"]:checked + label:after {
     width: 13px;
     height: 13px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--fg-color-alt);
     animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
 
@@ -348,7 +342,7 @@ body.loading .modalLoader {
 }
 
 .homeHeader {
-    background-color: #48899c;
+    background-color: var(--main-color);
     color: #eeeeee;
     display: flex;
     flex-flow: row wrap;
@@ -364,13 +358,8 @@ body.loading .modalLoader {
     justify-content: space-between;
     gap: 0.3rem;
     padding: 0.3rem;
-    background-color: #222;
+    background-color: var(--bg-color-alt);
     align-items: center;
-}
-
-button.light:not(:hover) {
-    color: #cccccc;
-    border-color: #cccccc;
 }
 
 .item {
@@ -380,7 +369,7 @@ button.light:not(:hover) {
 }
 
 .item:hover {
-    background-color: #602020;
+    background-color: var(--hover-color);
 }
 
 .itemFavorite {
@@ -400,7 +389,7 @@ button.light:not(:hover) {
 }
 
 .itemFavorite > *:hover {
-    background-color: #802121;
+    background-color: var(--superhover-color);
 }
 
 .itemTitle {
@@ -441,30 +430,39 @@ button.light:not(:hover) {
 }
 
 .itemButtons > *:hover {
-    background-color: #802121;
+    background-color: var(--superhover-color);
 }
 
 
 .albumLink {
-    color: #5ADFDF;
+    color: var(--album-color);
 }
 
 .artistLink {
-    color: #A0A9CC;
+    color: var(--artist-color);
 }
 
 .songLink {
-    color: #FFFFE5;
+    color: var(--song-color);
 }
 
 .playlistLink {
-    color: #FFB500;
+    color: var(--playlist-color);
 }
 
 .userLink {
-    color: #FFFACD;
+    color: var(--user-color);
 }
 
+.songCount {
+    color: var(--bg-color);
+    background-color: var(--song-color);
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.08rem 0.12rem;
+    margin-left: 0.5rem;
+    border-radius: 0.2rem;
+}
 
 .duration {
     white-space: nowrap;
@@ -473,12 +471,12 @@ button.light:not(:hover) {
 }
 
 .searchResultList {
-    color: #eee;
+    color: var(--fg-color-alt);
     border-radius: 0.3rem;
     padding: 0.4rem;
     vertical-align: middle;
     width: 20rem;
-    background-color: #333;
+    background-color: var(--bg-color-alt);
     max-height: 14rem;
     overflow-y: auto;
 }
