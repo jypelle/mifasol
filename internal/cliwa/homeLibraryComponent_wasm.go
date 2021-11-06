@@ -685,6 +685,7 @@ func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *re
 	if artist == nil {
 		artistItem.ArtistId = string(restApiV1.UnknownArtistId)
 		artistItem.ArtistName = "(Unknown artist)"
+		artistItem.ArtistSongCount = len(c.app.localDb.UnknownArtistSongs)
 		artistItem.IsEditable = false
 	} else {
 		artistItem.ArtistId = string(artist.Id)
@@ -713,6 +714,7 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 	if album == nil {
 		albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
 		albumItem.AlbumName = "(Unknown album)"
+		albumItem.AlbumSongCount = len(c.app.localDb.UnknownAlbumSongs)
 		albumItem.IsEditable = false
 	} else {
 		albumItem.AlbumId = string(album.Id)

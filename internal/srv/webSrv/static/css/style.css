@@ -36,6 +36,7 @@
     --artist-color: #A0A9CC;
     --album-color: #5ADFDF;
     --song-color: #FFFFE5;
+    --song-tag-color: #8F8F88;
     --playlist-color: #FFB500;
     --user-color: #FFFACD;
 }
@@ -456,11 +457,11 @@ body.loading .modalLoader {
 
 .songCount {
     color: var(--bg-color);
-    background-color: var(--song-color);
+    background-color: var(--song-tag-color);
     font-size: 0.7rem;
     font-weight: bold;
     padding: 0.08rem 0.12rem;
-    margin-left: 0.5rem;
+    margin-left: 0.2rem;
     border-radius: 0.2rem;
 }
 
