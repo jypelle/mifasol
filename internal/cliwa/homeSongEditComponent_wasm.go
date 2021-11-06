@@ -58,8 +58,8 @@ func (c *HomeSongEditComponent) Show() {
 	//	}))
 
 	albumInput.Call("addEventListener", "focus", c.app.AddEventFunc(func() {
-		albumList.Set("innerHTML", "")
 		albumSearchInput.Set("value", "")
+		c.albumSearchAction()
 		albumInput.Get("style").Set("display", "none")
 		albumSearchBlock.Get("style").Set("display", "block")
 		albumSearchInput.Call("focus")

@@ -1,3 +1,9 @@
+{{if not .}}
+<div style="padding: 0.4rem;">...</div>
+{{else}}
 {{range $index, $album := .}}
-<div style="padding: 0.4rem;"><a class="albumLink" href="#" data-albumid="{{.Id}}">{{.Name}}</a></div>
+<div style="padding: 0.4rem;">
+    <a class="albumLink" href="#" data-albumid="{{.Id}}">{{.Name}}</a>
+</div>
+{{end}}
 {{end}}

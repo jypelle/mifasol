@@ -204,7 +204,9 @@ form > div > div > input {
 
 input[type="checkbox"] {
     opacity: 0;
-    position: absolute;
+    /*position: absolute;
+    top: 0px;*/
+    display:none;
 }
 
 input[type="checkbox"] + label {
@@ -468,4 +470,15 @@ button.light:not(:hover) {
     white-space: nowrap;
     font-size: 0.9rem;
     font-family: 'Courier New', monospace;
+}
+
+.searchResultList {
+    color: #eee;
+    border-radius: 0.3rem;
+    padding: 0.4rem;
+    vertical-align: middle;
+    width: 20rem;
+    background-color: #333;
+    max-height: 14rem;
+    overflow-y: auto;
 }

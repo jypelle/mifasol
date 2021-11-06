@@ -1,47 +1,49 @@
-    <div style="flex: 0 1 22rem;">
-        <h2>Edit song</h2>
-        <form id="songEditForm">
+<div style="flex: 0 1 auto;">
+    <h2>Edit song</h2>
+    <form id="songEditForm">
+        <div>
+            <label for="songEditSongName">Name</label>
             <div>
-                <label for="songEditSongName">Name</label>
-                <div>
-                    <input id="songEditSongName" type="text" value="{{.SongMeta.Name}}">
-                </div>
+                <input id="songEditSongName" type="text" value="{{.SongMeta.Name}}">
             </div>
+        </div>
+        <div>
+            <label for="songEditPublicationYear">Publication year</label>
             <div>
-                <label for="songEditPublicationYear">Publication year</label>
-                <div>
-                    <input id="songEditPublicationYear" type="text" value="{{if .SongMeta.PublicationYear}}{{.SongMeta.PublicationYear}}{{end}}">
-                </div>
+                <input id="songEditPublicationYear" type="text" value="{{if .SongMeta.PublicationYear}}{{.SongMeta.PublicationYear}}{{end}}">
             </div>
+        </div>
+        <div>
+            <label for="songEditTrackNumber">Track number</label>
             <div>
-                <label for="songEditTrackNumber">Track number</label>
-                <div>
-                    <input id="songEditTrackNumber" type="text" value="{{if .SongMeta.TrackNumber}}{{.SongMeta.TrackNumber}}{{end}}">
-                </div>
+                <input id="songEditTrackNumber" type="text" value="{{if .SongMeta.TrackNumber}}{{.SongMeta.TrackNumber}}{{end}}">
             </div>
-            <div>
-                <label for="songEditAlbumSearchInput">Album</label>
-                <div id="songEditAlbumBlock">
-                    <input id="songEditAlbumInput" type="text" value="{{.AlbumName}}">
-                    <div id="songEditAlbumSearchBlock" style="display:none;">
-                        <i class="fa fa-search fa-lg" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input id="songEditAlbumSearchInput" type="text" style="padding-left: 2rem;">
-                        <div id="songEditAlbumList"></div>
+        </div>
+        <div>
+            <label for="songEditAlbumSearchInput">Album</label>
+            <div id="songEditAlbumBlock">
+                <input id="songEditAlbumInput" type="text" value="{{.AlbumName}}">
+                <div id="songEditAlbumSearchBlock" style="display:none;">
+                    <i class="fa fa-search fa-lg" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input id="songEditAlbumSearchInput" type="text" autocomplete="off" style="padding-left: 2rem;">
+                    <div id="songEditAlbumList" class="searchResultList">
+                        <div style="padding: 0.4rem;">...</div>
                     </div>
                 </div>
             </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <input id="songEditExplicitFg" value="true" type="checkbox" {{if .SongMeta.ExplicitFg}}checked{{end}}><label for="songEditExplicitFg"></label>
-                    Explicit
-                </div>
+                <input id="songEditExplicitFg" value="true" type="checkbox" {{if .SongMeta.ExplicitFg}}checked{{end}}><label for="songEditExplicitFg"></label>
+                Explicit
             </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="submit">Save</button>
-                    <button id="songEditCancelButton" >Cancel</button>
-                </div>
+                <button type="submit">Save</button>
+                <button id="songEditCancelButton" >Cancel</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>
