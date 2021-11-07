@@ -28,14 +28,14 @@ func NewHomePlayerComponent(app *App) *HomePlayerComponent {
 }
 
 func (c *HomePlayerComponent) Show() {
-	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
-	playerNextButton := jst.Document.Call("getElementById", "playerNextButton")
-	playerAudio := jst.Document.Call("getElementById", "playerAudio")
-	playerSeekSlider := jst.Document.Call("getElementById", "playerSeekSlider")
-	playerCurrentTime := jst.Document.Call("getElementById", "playerCurrentTime")
-	playerDuration := jst.Document.Call("getElementById", "playerDuration")
-	playerMuteButton := jst.Document.Call("getElementById", "playerMuteButton")
-	playerVolumeSlider := jst.Document.Call("getElementById", "playerVolumeSlider")
+	playerPlayButton := jst.Id("playerPlayButton")
+	playerNextButton := jst.Id("playerNextButton")
+	playerAudio := jst.Id("playerAudio")
+	playerSeekSlider := jst.Id("playerSeekSlider")
+	playerCurrentTime := jst.Id("playerCurrentTime")
+	playerDuration := jst.Id("playerDuration")
+	playerMuteButton := jst.Id("playerMuteButton")
+	playerVolumeSlider := jst.Id("playerVolumeSlider")
 
 	playerAudio.Call("addEventListener", "ended", c.app.AddEventFunc(c.app.HomeComponent.CurrentComponent.PlayNextSongAction))
 	playerAudio.Call("addEventListener", "loadedmetadata", c.app.AddEventFunc(func() {
@@ -105,10 +105,10 @@ func (c *HomePlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 		return
 	}
 
-	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
+	playerPlayButton := jst.Id("playerPlayButton")
 	playerPlayButton.Set("innerHTML", `<i class="fas fa-pause"></i>`)
 
-	player := jst.Document.Call("getElementById", "playerAudio")
+	player := jst.Id("playerAudio")
 	player.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
 	player.Call("play")
 
@@ -118,15 +118,15 @@ func (c *HomePlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 }
 
 func (c *HomePlayerComponent) PauseSongAction() {
-	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
+	playerPlayButton := jst.Id("playerPlayButton")
 	playerPlayButton.Set("innerHTML", `<i class="fas fa-play"></i>`)
-	player := jst.Document.Call("getElementById", "playerAudio")
+	player := jst.Id("playerAudio")
 	player.Call("pause")
 }
 
 func (c *HomePlayerComponent) ResumeSongAction() {
-	playerPlayButton := jst.Document.Call("getElementById", "playerPlayButton")
+	playerPlayButton := jst.Id("playerPlayButton")
 	playerPlayButton.Set("innerHTML", `<i class="fas fa-pause"></i>`)
-	player := jst.Document.Call("getElementById", "playerAudio")
+	player := jst.Id("playerAudio")
 	player.Call("play")
 }

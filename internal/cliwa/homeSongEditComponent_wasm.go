@@ -39,25 +39,25 @@ func (c *HomeSongEditComponent) Show() {
 		songItem.AlbumName = c.app.localDb.Albums[c.songMeta.AlbumId].Name
 	}
 
-	div := jst.Document.Call("getElementById", "homeMainModal")
+	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		&songItem, "home/songEdit/index"),
 	)
 
-	form := jst.Document.Call("getElementById", "songEditForm")
+	form := jst.Id("songEditForm")
 	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.saveAction))
-	cancelButton := jst.Document.Call("getElementById", "songEditCancelButton")
+	cancelButton := jst.Id("songEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 	// Album
 
-	albumCurrentBlock := jst.Document.Call("getElementById", "songEditAlbumCurrentBlock")
-	albumCurrentName := jst.Document.Call("getElementById", "songEditAlbumCurrentName")
-	albumCurrentDelete := jst.Document.Call("getElementById", "songEditAlbumCurrentDelete")
-	albumSearchBlock := jst.Document.Call("getElementById", "songEditAlbumSearchBlock")
-	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
-	albumSearchClean := jst.Document.Call("getElementById", "songEditAlbumSearchClean")
-	albumSearchList := jst.Document.Call("getElementById", "songEditAlbumSearchList")
+	albumCurrentBlock := jst.Id("songEditAlbumCurrentBlock")
+	albumCurrentName := jst.Id("songEditAlbumCurrentName")
+	albumCurrentDelete := jst.Id("songEditAlbumCurrentDelete")
+	albumSearchBlock := jst.Id("songEditAlbumSearchBlock")
+	albumSearchInput := jst.Id("songEditAlbumSearchInput")
+	albumSearchClean := jst.Id("songEditAlbumSearchClean")
+	albumSearchList := jst.Id("songEditAlbumSearchList")
 
 	albumCurrentDelete.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songMeta.AlbumId = restApiV1.UnknownAlbumId
@@ -97,10 +97,10 @@ func (c *HomeSongEditComponent) Show() {
 	}))
 
 	// Artists
-	artistCurrentList := jst.Document.Call("getElementById", "songEditArtistCurrentList")
-	artistSearchInput := jst.Document.Call("getElementById", "songEditArtistSearchInput")
-	artistSearchClean := jst.Document.Call("getElementById", "songEditArtistSearchClean")
-	artistSearchList := jst.Document.Call("getElementById", "songEditArtistSearchList")
+	artistCurrentList := jst.Id("songEditArtistCurrentList")
+	artistSearchInput := jst.Id("songEditArtistSearchInput")
+	artistSearchClean := jst.Id("songEditArtistSearchClean")
+	artistSearchList := jst.Id("songEditArtistSearchList")
 
 	// Remove artist
 	artistCurrentList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
@@ -173,12 +173,12 @@ func (c *HomeSongEditComponent) saveAction() {
 	c.app.ShowLoader("Updating song")
 
 	// Song name
-	songName := jst.Document.Call("getElementById", "songEditSongName")
+	songName := jst.Id("songEditSongName")
 	c.songMeta.Name = songName.Get("value").String()
 
 	// Publication year
 	c.songMeta.PublicationYear = nil
-	publicationYearStr := jst.Document.Call("getElementById", "songEditPublicationYear").Get("value").String()
+	publicationYearStr := jst.Id("songEditPublicationYear").Get("value").String()
 	if publicationYearStr != "" {
 
 		publicationYear, err := strconv.ParseInt(publicationYearStr, 10, 64)
@@ -189,7 +189,7 @@ func (c *HomeSongEditComponent) saveAction() {
 
 	// TrackNumber
 	c.songMeta.TrackNumber = nil
-	trackNumberStr := jst.Document.Call("getElementById", "songEditTrackNumber").Get("value").String()
+	trackNumberStr := jst.Id("songEditTrackNumber").Get("value").String()
 	if trackNumberStr != "" {
 
 		trackNumber, err := strconv.ParseInt(trackNumberStr, 10, 64)
@@ -199,7 +199,7 @@ func (c *HomeSongEditComponent) saveAction() {
 	}
 
 	// Explicit flag
-	c.songMeta.ExplicitFg = jst.Document.Call("getElementById", "songEditExplicitFg").Get("checked").Bool()
+	c.songMeta.ExplicitFg = jst.Id("songEditExplicitFg").Get("checked").Bool()
 
 	_, cliErr := c.app.restClient.UpdateSong(c.songId, c.songMeta)
 	if cliErr != nil {
@@ -224,8 +224,8 @@ func (c *HomeSongEditComponent) close() {
 }
 
 func (c *HomeSongEditComponent) albumSearchAction() {
-	albumSearchInput := jst.Document.Call("getElementById", "songEditAlbumSearchInput")
-	albumSearchList := jst.Document.Call("getElementById", "songEditAlbumSearchList")
+	albumSearchInput := jst.Id("songEditAlbumSearchInput")
+	albumSearchList := jst.Id("songEditAlbumSearchList")
 	nameFilter := albumSearchInput.Get("value").String()
 
 	type AlbumSearchItem struct {
@@ -301,15 +301,15 @@ func (c *HomeSongEditComponent) refreshCurrentArtistAction() {
 		resultArtistList = append(resultArtistList, artistCurrentItem)
 	}
 
-	artistCurrentList := jst.Document.Call("getElementById", "songEditArtistCurrentList")
+	artistCurrentList := jst.Id("songEditArtistCurrentList")
 	artistCurrentList.Set("innerHTML", c.app.RenderTemplate(
 		resultArtistList, "home/songEdit/artistCurrentList"),
 	)
 }
 
 func (c *HomeSongEditComponent) artistSearchAction() {
-	artistSearchInput := jst.Document.Call("getElementById", "songEditArtistSearchInput")
-	artistSearchList := jst.Document.Call("getElementById", "songEditArtistSearchList")
+	artistSearchInput := jst.Id("songEditArtistSearchInput")
+	artistSearchList := jst.Id("songEditArtistSearchList")
 
 	nameFilter := artistSearchInput.Get("value").String()
 

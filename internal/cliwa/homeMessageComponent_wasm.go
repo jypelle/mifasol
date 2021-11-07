@@ -18,7 +18,7 @@ func NewHomeMessageComponent(app *App) *HomeMessageComponent {
 }
 
 func (c *HomeMessageComponent) Message(msg string) {
-	message := jst.Document.Call("getElementById", "message")
+	message := jst.Id("message")
 	message.Set("innerHTML", msg)
 }
 

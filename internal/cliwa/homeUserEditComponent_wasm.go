@@ -23,14 +23,14 @@ func NewHomeUserEditComponent(app *App, userId restApiV1.UserId, userMeta *restA
 }
 
 func (c *HomeUserEditComponent) Show() {
-	div := jst.Document.Call("getElementById", "homeMainModal")
+	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.userMetaComplete, "home/userEdit/index"),
 	)
 
-	form := jst.Document.Call("getElementById", "userEditForm")
+	form := jst.Id("userEditForm")
 	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.saveAction))
-	cancelButton := jst.Document.Call("getElementById", "userEditCancelButton")
+	cancelButton := jst.Id("userEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 }
@@ -42,7 +42,7 @@ func (c *HomeUserEditComponent) saveAction() {
 
 	c.app.ShowLoader("Updating all songs of the user")
 
-	userName := jst.Document.Call("getElementById", "userEditUserName")
+	userName := jst.Id("userEditUserName")
 	c.userMetaComplete.Name = userName.Get("value").String()
 
 	if c.userId != "" {

@@ -157,7 +157,7 @@ func (c *App) ShowDefaultLoader(message string) {
 }
 
 func (c *App) ShowLoader(message string) {
-	jst.Document.Call("getElementById", "modalLoaderMessage").Set("innerHTML", message)
+	jst.Id("modalLoaderMessage").Set("innerHTML", message)
 	jst.Document.Get("body").Get("classList").Call("add", "loading")
 }
 

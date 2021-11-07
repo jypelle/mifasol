@@ -23,14 +23,14 @@ func NewHomeArtistEditComponent(app *App, artistId restApiV1.ArtistId, artistMet
 }
 
 func (c *HomeArtistEditComponent) Show() {
-	div := jst.Document.Call("getElementById", "homeMainModal")
+	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.artistMeta, "home/artistEdit/index"),
 	)
 
-	form := jst.Document.Call("getElementById", "artistEditForm")
+	form := jst.Id("artistEditForm")
 	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.saveAction))
-	cancelButton := jst.Document.Call("getElementById", "artistEditCancelButton")
+	cancelButton := jst.Id("artistEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 }
@@ -42,7 +42,7 @@ func (c *HomeArtistEditComponent) saveAction() {
 
 	c.app.ShowLoader("Updating all songs of the artist")
 
-	artistName := jst.Document.Call("getElementById", "artistEditArtistName")
+	artistName := jst.Id("artistEditArtistName")
 	c.artistMeta.Name = artistName.Get("value").String()
 
 	if c.artistId != "" {

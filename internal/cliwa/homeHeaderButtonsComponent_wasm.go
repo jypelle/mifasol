@@ -17,22 +17,22 @@ func NewHomeHeaderButtonsComponent(app *App) *HomeHeaderButtonsComponent {
 }
 
 func (c *HomeHeaderButtonsComponent) Show() {
-	div := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
+	div := jst.Id("homeHeaderButtonsComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/headerButtons/index"),
 	)
 
 	// Set buttons
-	uploadSongsButton := jst.Document.Call("getElementById", "uploadSongsButton")
+	uploadSongsButton := jst.Id("uploadSongsButton")
 	uploadSongsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.uploadSongsAction))
-	logOutButton := jst.Document.Call("getElementById", "logOutButton")
+	logOutButton := jst.Id("logOutButton")
 	logOutButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.logOutAction))
-	refreshButton := jst.Document.Call("getElementById", "refreshButton")
+	refreshButton := jst.Id("refreshButton")
 	refreshButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.refreshAction))
 }
 
 func (c *HomeHeaderButtonsComponent) RefreshView() {
-	uploadSongsButton := jst.Document.Call("getElementById", "uploadSongsButton")
+	uploadSongsButton := jst.Id("uploadSongsButton")
 	if c.app.IsConnectedUserAdmin() {
 		uploadSongsButton.Set("style", "display:block;")
 	} else {

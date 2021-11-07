@@ -50,22 +50,22 @@ func (c *StartComponent) Show() {
 	}
 
 	// No autolog or autolog failed
-	mainComponent := jst.Document.Call("getElementById", "mainComponent")
+	mainComponent := jst.Id("mainComponent")
 	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "start/index"))
 
 	// Set focus
-	jst.Document.Call("getElementById", "mifasolUsername").Call("focus")
+	jst.Id("mifasolUsername").Call("focus")
 
 	// Set button
 	//js.Global().Set("logInAction", c.app.AddEventFunc(c.logInAction))
-	startForm := jst.Document.Call("getElementById", "startForm")
+	startForm := jst.Id("startForm")
 	startForm.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.logInAction))
 
 }
 
 func (c *StartComponent) logInAction() {
-	serverUsername := jst.Document.Call("getElementById", "mifasolUsername")
-	serverPassword := jst.Document.Call("getElementById", "mifasolPassword")
+	serverUsername := jst.Id("mifasolUsername")
+	serverPassword := jst.Id("mifasolPassword")
 	c.app.config.Username = serverUsername.Get("value").String()
 	c.app.config.Password = serverPassword.Get("value").String()
 
@@ -73,20 +73,20 @@ func (c *StartComponent) logInAction() {
 	var err error
 	c.app.restClient, err = restClientV1.NewRestClient(&c.app.config, true)
 	if err != nil {
-		message := jst.Document.Call("getElementById", "message")
+		message := jst.Id("message")
 		message.Set("innerHTML", "Unable to connect to server")
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
 	if c.app.ConnectedUserId() == restApiV1.UndefinedUserId {
-		message := jst.Document.Call("getElementById", "message")
+		message := jst.Id("message")
 		message.Set("innerHTML", "Wrong credentials")
 		jst.LocalStorage.Set("mifasolUsername", "")
 		jst.LocalStorage.Set("mifasolPassword", "")
 		return
 	}
 
-	rememberMe := jst.Document.Call("getElementById", "rememberMe").Get("checked").Bool()
+	rememberMe := jst.Id("rememberMe").Get("checked").Bool()
 
 	if rememberMe {
 		// Store user & password in localStorage

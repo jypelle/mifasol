@@ -79,14 +79,14 @@ func NewHomeConfirmDeleteComponent(
 }
 
 func (c *HomeConfirmDeleteComponent) Show() {
-	div := jst.Document.Call("getElementById", "homeMainModal")
+	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.name, "home/confirmDelete/index"),
 	)
 
-	form := jst.Document.Call("getElementById", "confirmDeleteForm")
+	form := jst.Id("confirmDeleteForm")
 	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.deleteAction))
-	cancelButton := jst.Document.Call("getElementById", "confirmDeleteCancelButton")
+	cancelButton := jst.Id("confirmDeleteCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 }

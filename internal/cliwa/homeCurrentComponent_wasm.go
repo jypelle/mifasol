@@ -30,25 +30,25 @@ func NewHomeCurrentComponent(app *App) *HomeCurrentComponent {
 }
 
 func (c *HomeCurrentComponent) Show() {
-	div := jst.Document.Call("getElementById", "currentComponent")
+	div := jst.Id("currentComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/current/index"),
 	)
 
-	currentCleanButton := jst.Document.Call("getElementById", "currentCleanButton")
+	currentCleanButton := jst.Id("currentCleanButton")
 	currentCleanButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songIds = nil
 		c.srcPlaylistId = nil
 		c.modified = true
 		c.RefreshView()
 	}))
-	currentShuffleButton := jst.Document.Call("getElementById", "currentShuffleButton")
+	currentShuffleButton := jst.Id("currentShuffleButton")
 	currentShuffleButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		rand.Shuffle(len(c.songIds), func(i, j int) { c.songIds[i], c.songIds[j] = c.songIds[j], c.songIds[i] })
 		c.modified = true
 		c.RefreshView()
 	}))
-	currentSaveButton := jst.Document.Call("getElementById", "currentSaveButton")
+	currentSaveButton := jst.Id("currentSaveButton")
 	currentSaveButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		if c.modified {
 			if c.srcPlaylistId == nil {
@@ -78,13 +78,13 @@ func (c *HomeCurrentComponent) Show() {
 			}
 		}
 	}))
-	currentSaveAsButton := jst.Document.Call("getElementById", "currentSaveAsButton")
+	currentSaveAsButton := jst.Id("currentSaveAsButton")
 	currentSaveAsButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Save as
 		// OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
 	}))
 
-	listDiv := jst.Document.Call("getElementById", "currentList")
+	listDiv := jst.Id("currentList")
 	listDiv.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
 		link := i[0].Get("target").Call("closest", ".artistLink, .albumLink, .currentPlaySongNowLink, .currentRemoveSongFromPlaylistLink")
 		if !link.Truthy() {
@@ -147,7 +147,7 @@ func (c *HomeCurrentComponent) RefreshView() {
 	}
 
 	// Update current playlist title
-	titleSpan := jst.Document.Call("getElementById", "currentTitle")
+	titleSpan := jst.Id("currentTitle")
 	var title string
 	if c.srcPlaylistId == nil {
 		title = "New playlist"
@@ -164,7 +164,7 @@ func (c *HomeCurrentComponent) RefreshView() {
 	for songIdx, songId := range c.songIds {
 		divContent.WriteString(c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
 	}
-	listDiv := jst.Document.Call("getElementById", "currentList")
+	listDiv := jst.Id("currentList")
 	listDiv.Set("innerHTML", divContent.String())
 }
 

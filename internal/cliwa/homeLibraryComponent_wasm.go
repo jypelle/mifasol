@@ -74,30 +74,30 @@ func NewHomeLibraryComponent(app *App) *LibraryComponent {
 }
 
 func (c *LibraryComponent) Show() {
-	div := jst.Document.Call("getElementById", "libraryComponent")
+	div := jst.Id("libraryComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/library/index"),
 	)
 
-	libraryArtistsButton := jst.Document.Call("getElementById", "libraryArtistsButton")
+	libraryArtistsButton := jst.Id("libraryArtistsButton")
 	libraryArtistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowArtistsAction))
-	libraryAlbumsButton := jst.Document.Call("getElementById", "libraryAlbumsButton")
+	libraryAlbumsButton := jst.Id("libraryAlbumsButton")
 	libraryAlbumsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowAlbumsAction))
-	librarySongsButton := jst.Document.Call("getElementById", "librarySongsButton")
+	librarySongsButton := jst.Id("librarySongsButton")
 	librarySongsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowSongsAction))
-	libraryPlaylistsButton := jst.Document.Call("getElementById", "libraryPlaylistsButton")
+	libraryPlaylistsButton := jst.Id("libraryPlaylistsButton")
 	libraryPlaylistsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowPlaylistsAction))
-	libraryUsersButton := jst.Document.Call("getElementById", "libraryUsersButton")
+	libraryUsersButton := jst.Id("libraryUsersButton")
 	libraryUsersButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowUsersAction))
-	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
+	libraryAddToPlaylistButton := jst.Id("libraryAddToPlaylistButton")
 	libraryAddToPlaylistButton.Call("addEventListener", "click", c.app.AddEventFunc(c.AddToPlaylistAction))
 
-	librarySearchInput := jst.Document.Call("getElementById", "librarySearchInput")
+	librarySearchInput := jst.Id("librarySearchInput")
 	librarySearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.SearchAction))
-	libraryOnlyFavoritesButton := jst.Document.Call("getElementById", "libraryOnlyFavoritesButton")
+	libraryOnlyFavoritesButton := jst.Id("libraryOnlyFavoritesButton")
 	libraryOnlyFavoritesButton.Call("addEventListener", "click", c.app.AddEventFunc(c.FavoritesSwitchAction))
 
-	libraryList := jst.Document.Call("getElementById", "libraryList")
+	libraryList := jst.Id("libraryList")
 	libraryList.Call("addEventListener", "scroll", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
 		scrollHeight := libraryList.Get("scrollHeight").Int()
 		scrollTop := libraryList.Get("scrollTop").Int()
@@ -327,7 +327,7 @@ func (c *LibraryComponent) computeCache() {
 }
 
 func (c *LibraryComponent) RefreshView() {
-	libraryList := jst.Document.Call("getElementById", "libraryList")
+	libraryList := jst.Id("libraryList")
 	libraryList.Set("innerHTML", "Loading...")
 	c.libraryState.displayedPage = 0
 
@@ -337,13 +337,13 @@ func (c *LibraryComponent) RefreshView() {
 	c.updateTitle()
 
 	// Update buttons
-	libraryOnlyFavoritesButton := jst.Document.Call("getElementById", "libraryOnlyFavoritesButton")
+	libraryOnlyFavoritesButton := jst.Id("libraryOnlyFavoritesButton")
 	if c.libraryState.onlyFavoritesFilter {
 		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star-half-alt"></i>`)
 	} else {
 		libraryOnlyFavoritesButton.Set("innerHTML", `<i class="fas fa-star"></i>`)
 	}
-	libraryAddToPlaylistButton := jst.Document.Call("getElementById", "libraryAddToPlaylistButton")
+	libraryAddToPlaylistButton := jst.Id("libraryAddToPlaylistButton")
 	if len(c.libraryState.cachedSongs) > 0 {
 		libraryAddToPlaylistButton.Set("disabled", false)
 	} else {
@@ -578,12 +578,12 @@ func (c *LibraryComponent) updateTitle() {
 		title = "Users"
 	}
 
-	titleSpan := jst.Document.Call("getElementById", "libraryTitle")
+	titleSpan := jst.Id("libraryTitle")
 	titleSpan.Set("innerHTML", title)
 }
 
 func (c *LibraryComponent) updateLibraryList(direction int) {
-	libraryList := jst.Document.Call("getElementById", "libraryList")
+	libraryList := jst.Id("libraryList")
 	if direction == 0 {
 		libraryList.Set("scrollTop", 0)
 	}
@@ -835,7 +835,7 @@ func (c *LibraryComponent) ShowArtistsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeArtists,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -843,7 +843,7 @@ func (c *LibraryComponent) ShowAlbumsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeAlbums,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -851,7 +851,7 @@ func (c *LibraryComponent) ShowSongsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypeSongs,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -859,7 +859,7 @@ func (c *LibraryComponent) ShowPlaylistsAction() {
 	c.libraryState = libraryState{
 		libraryType: LibraryTypePlaylists,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -881,7 +881,7 @@ func (c *LibraryComponent) OpenAlbumAction(albumId restApiV1.AlbumId) {
 		libraryType: LibraryTypeSongs,
 		albumId:     &albumId,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -890,7 +890,7 @@ func (c *LibraryComponent) OpenArtistAction(artistId restApiV1.ArtistId) {
 		libraryType: LibraryTypeSongs,
 		artistId:    &artistId,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -899,7 +899,7 @@ func (c *LibraryComponent) OpenPlaylistAction(playlistId restApiV1.PlaylistId) {
 		libraryType: LibraryTypeSongs,
 		playlistId:  &playlistId,
 	}
-	jst.Document.Call("getElementById", "librarySearchInput").Set("value", "")
+	jst.Id("librarySearchInput").Set("value", "")
 	c.RefreshView()
 }
 
@@ -909,7 +909,7 @@ func (c *LibraryComponent) FavoritesSwitchAction() {
 }
 
 func (c *LibraryComponent) SearchAction() {
-	librarySearchInput := jst.Document.Call("getElementById", "librarySearchInput")
+	librarySearchInput := jst.Id("librarySearchInput")
 	nameFilter := librarySearchInput.Get("value").String()
 
 	if nameFilter != "" {

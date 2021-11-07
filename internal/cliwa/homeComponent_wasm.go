@@ -30,7 +30,7 @@ func NewHomeComponent(app *App) *HomeComponent {
 }
 
 func (c *HomeComponent) Show() {
-	mainComponent := jst.Document.Call("getElementById", "mainComponent")
+	mainComponent := jst.Id("mainComponent")
 	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "home/index"))
 
 	c.HeaderButtonsComponent.Show()
@@ -76,20 +76,20 @@ func (c *HomeComponent) Reload() {
 }
 
 func (c *HomeComponent) CloseModal() {
-	homeMainMaster := jst.Document.Call("getElementById", "homeMainMaster")
+	homeMainMaster := jst.Id("homeMainMaster")
 	homeMainMaster.Get("style").Set("display", "flex")
-	homeMainModal := jst.Document.Call("getElementById", "homeMainModal")
+	homeMainModal := jst.Id("homeMainModal")
 	homeMainModal.Set("innerHTML", "")
 	homeMainModal.Get("style").Set("display", "none")
-	homeHeaderButtonsComponent := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
+	homeHeaderButtonsComponent := jst.Id("homeHeaderButtonsComponent")
 	homeHeaderButtonsComponent.Get("style").Set("display", "flex")
 }
 
 func (c *HomeComponent) OpenModal() {
-	homeMainMaster := jst.Document.Call("getElementById", "homeMainMaster")
+	homeMainMaster := jst.Id("homeMainMaster")
 	homeMainMaster.Get("style").Set("display", "none")
-	homeMainModal := jst.Document.Call("getElementById", "homeMainModal")
+	homeMainModal := jst.Id("homeMainModal")
 	homeMainModal.Get("style").Set("display", "flex")
-	homeHeaderButtonsComponent := jst.Document.Call("getElementById", "homeHeaderButtonsComponent")
+	homeHeaderButtonsComponent := jst.Id("homeHeaderButtonsComponent")
 	homeHeaderButtonsComponent.Get("style").Set("display", "none")
 }

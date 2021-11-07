@@ -23,14 +23,14 @@ func NewHomeAlbumEditComponent(app *App, albumId restApiV1.AlbumId, albumMeta *r
 }
 
 func (c *HomeAlbumEditComponent) Show() {
-	div := jst.Document.Call("getElementById", "homeMainModal")
+	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.albumMeta, "home/albumEdit/index"),
 	)
 
-	form := jst.Document.Call("getElementById", "albumEditForm")
+	form := jst.Id("albumEditForm")
 	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.saveAction))
-	cancelButton := jst.Document.Call("getElementById", "albumEditCancelButton")
+	cancelButton := jst.Id("albumEditCancelButton")
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 }
@@ -42,7 +42,7 @@ func (c *HomeAlbumEditComponent) saveAction() {
 
 	c.app.ShowLoader("Updating all songs of the album")
 
-	albumName := jst.Document.Call("getElementById", "albumEditAlbumName")
+	albumName := jst.Id("albumEditAlbumName")
 	c.albumMeta.Name = albumName.Get("value").String()
 
 	if c.albumId != "" {
