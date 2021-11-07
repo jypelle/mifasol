@@ -1,0 +1,9 @@
+{{if not .}}
+<div style="padding: 0.4rem;">...</div>
+{{else}}
+{{range $index, $artist := .}}
+<div style="padding: 0.4rem;">
+    <a class="artistLink" href="#" data-artistid="{{.ArtistId}}">{{.ArtistName}}</a> <span class="songCount">{{.ArtistSongCount}}</span>
+</div>
+{{end}}
+{{end}}

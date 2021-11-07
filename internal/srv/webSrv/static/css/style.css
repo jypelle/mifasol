@@ -455,12 +455,26 @@ body.loading .modalLoader {
     color: var(--user-color);
 }
 
+.albumTag {
+    color: var(--album-color);
+    border: 0.1rem solid var(--album-color);
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+}
+
+.artistTag {
+    color: var(--artist-color);
+    border: 0.1rem solid var(--artist-color);
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+}
+
 .songCount {
     color: var(--bg-color);
     background-color: var(--song-tag-color);
     font-size: 0.7rem;
     font-weight: bold;
-    padding: 0.08rem 0.12rem;
+    padding: 0.06rem 0.2rem;
     margin-left: 0.2rem;
     border-radius: 0.2rem;
 }

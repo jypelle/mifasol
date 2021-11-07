@@ -1,0 +1,5 @@
+{{range $index, $artist := .}}
+<div style="display:flex; flex-flow: row nowrap; align-items:center; margin-bottom: 0.5rem;">
+    <span class="artistTag">{{.ArtistName}} <a class="artistLink" href="#" data-artistid="{{.ArtistId}}"><i class="fa fa-times"></i></a></span>
+</div>
+{{end}}
