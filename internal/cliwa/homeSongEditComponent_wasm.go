@@ -138,15 +138,26 @@ func (c *HomeSongEditComponent) Show() {
 		case "artistLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 
-			for idx, songArtistId := range c.songMeta.ArtistIds {
-				if songArtistId == artistId {
-					if idx == len(c.songMeta.ArtistIds)-1 {
-						c.songMeta.ArtistIds = c.songMeta.ArtistIds[0:idx]
-					} else {
-						c.songMeta.ArtistIds = append(c.songMeta.ArtistIds[0:idx], c.songMeta.ArtistIds[idx+1])
-					}
+			if artistId != "" {
+				for idx, songArtistId := range c.songMeta.ArtistIds {
+					if songArtistId == artistId {
+						if idx == len(c.songMeta.ArtistIds)-1 {
+							c.songMeta.ArtistIds = c.songMeta.ArtistIds[0:idx]
+						} else {
+							c.songMeta.ArtistIds = append(c.songMeta.ArtistIds[0:idx], c.songMeta.ArtistIds[idx+1:]...)
+						}
 
-					break
+						break
+					}
+				}
+			} else {
+				artistIdx := dataset.Get("artistidx").Int()
+				if artistIdx < len(c.newArtistNames) {
+					if artistIdx == len(c.newArtistNames)-1 {
+						c.newArtistNames = c.newArtistNames[0:artistIdx]
+					} else {
+						c.newArtistNames = append(c.newArtistNames[0:artistIdx], c.newArtistNames[artistIdx+1:]...)
+					}
 				}
 			}
 
@@ -183,7 +194,7 @@ func (c *HomeSongEditComponent) Show() {
 			// Refresh current artists
 			c.refreshCurrentArtistAction()
 		case "newArtistLink":
-			// TODO
+			c.newArtistNames = append(c.newArtistNames, artistSearchInput.Get("value").String())
 
 			// Clear search input
 			artistSearchInput.Set("value", "")
@@ -355,6 +366,7 @@ func (c *HomeSongEditComponent) albumSearchAction() {
 func (c *HomeSongEditComponent) refreshCurrentArtistAction() {
 	type ArtistCurrentItem struct {
 		ArtistId   restApiV1.ArtistId
+		ArtistIdx  int
 		ArtistName string
 	}
 
@@ -364,6 +376,16 @@ func (c *HomeSongEditComponent) refreshCurrentArtistAction() {
 		artistCurrentItem := &ArtistCurrentItem{
 			ArtistId:   artistId,
 			ArtistName: c.app.localDb.Artists[artistId].Name,
+		}
+
+		resultArtistList = append(resultArtistList, artistCurrentItem)
+	}
+
+	for idx, newArtistName := range c.newArtistNames {
+		artistCurrentItem := &ArtistCurrentItem{
+			ArtistId:   "",
+			ArtistIdx:  idx,
+			ArtistName: newArtistName,
 		}
 
 		resultArtistList = append(resultArtistList, artistCurrentItem)
