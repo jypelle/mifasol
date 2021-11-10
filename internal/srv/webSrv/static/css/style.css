@@ -474,9 +474,11 @@ body.loading .modalLoader {
     background-color: var(--song-tag-color);
     font-size: 0.7rem;
     font-weight: bold;
-    padding: 0.06rem 0.2rem;
+    padding: 0.04rem 0.14rem;
     margin-left: 0.2rem;
     border-radius: 0.2rem;
+    vertical-align: 0.1rem;
+    overflow-wrap: normal;
 }
 
 .duration {

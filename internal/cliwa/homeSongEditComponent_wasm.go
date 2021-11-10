@@ -1,6 +1,7 @@
 package cliwa
 
 import (
+	"fmt"
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
 	"html"
@@ -11,10 +12,12 @@ import (
 )
 
 type HomeSongEditComponent struct {
-	app      *App
-	songId   restApiV1.SongId
-	songMeta *restApiV1.SongMeta
-	closed   bool
+	app            *App
+	songId         restApiV1.SongId
+	songMeta       *restApiV1.SongMeta
+	closed         bool
+	newAlbumName   string
+	newArtistNames []string
 }
 
 func NewHomeSongEditComponent(app *App, songId restApiV1.SongId, songMeta *restApiV1.SongMeta) *HomeSongEditComponent {
@@ -36,7 +39,11 @@ func (c *HomeSongEditComponent) Show() {
 	}
 
 	if c.songMeta.AlbumId != restApiV1.UnknownAlbumId {
-		songItem.AlbumName = c.app.localDb.Albums[c.songMeta.AlbumId].Name
+		if c.songMeta.AlbumId != "" {
+			songItem.AlbumName = c.app.localDb.Albums[c.songMeta.AlbumId].Name
+		} else {
+			songItem.AlbumName = c.newAlbumName
+		}
 	}
 
 	div := jst.Id("homeMainModal")
@@ -61,12 +68,16 @@ func (c *HomeSongEditComponent) Show() {
 
 	albumCurrentDelete.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		c.songMeta.AlbumId = restApiV1.UnknownAlbumId
+		c.newAlbumName = ""
 		albumCurrentName.Set("innerHTML", "")
 		// Add searchInput
 		albumSearchBlock.Get("style").Set("display", "block")
 		albumCurrentBlock.Get("style").Set("display", "none")
 	}))
 
+	albumSearchInput.Call("addEventListener", "keydown", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
+
+	}))
 	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
 	albumSearchClean.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Clear
@@ -74,7 +85,7 @@ func (c *HomeSongEditComponent) Show() {
 		c.albumSearchAction()
 	}))
 	albumSearchList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("target").Call("closest", ".albumLink")
+		link := i[0].Get("target").Call("closest", ".albumLink, .newAlbumLink")
 		if !link.Truthy() {
 			return
 		}
@@ -84,7 +95,20 @@ func (c *HomeSongEditComponent) Show() {
 		case "albumLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
 			c.songMeta.AlbumId = albumId
+			c.newAlbumName = ""
 			albumCurrentName.Set("innerHTML", html.EscapeString(c.app.localDb.Albums[albumId].Name))
+
+			// Clear
+			albumSearchInput.Set("value", "")
+			c.albumSearchAction()
+
+			// Remove searchInput
+			albumSearchBlock.Get("style").Set("display", "none")
+			albumCurrentBlock.Get("style").Set("display", "flex")
+		case "newAlbumLink":
+			c.songMeta.AlbumId = ""
+			c.newAlbumName = albumSearchInput.Get("value").String()
+			albumCurrentName.Set("innerHTML", html.EscapeString(c.newAlbumName))
 
 			// Clear
 			albumSearchInput.Set("value", "")
@@ -141,7 +165,7 @@ func (c *HomeSongEditComponent) Show() {
 
 	// Add artist
 	artistSearchList.Call("addEventListener", "click", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("target").Call("closest", ".artistLink")
+		link := i[0].Get("target").Call("closest", ".artistLink, .newArtistLink")
 		if !link.Truthy() {
 			return
 		}
@@ -151,6 +175,15 @@ func (c *HomeSongEditComponent) Show() {
 		case "artistLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 			c.songMeta.ArtistIds = append(c.songMeta.ArtistIds, artistId)
+
+			// Clear search input
+			artistSearchInput.Set("value", "")
+			c.artistSearchAction()
+
+			// Refresh current artists
+			c.refreshCurrentArtistAction()
+		case "newArtistLink":
+			// TODO
 
 			// Clear search input
 			artistSearchInput.Set("value", "")
@@ -169,6 +202,13 @@ func (c *HomeSongEditComponent) saveAction() {
 	if c.closed {
 		return
 	}
+
+	defer func() {
+		// Close save pop-up and reload
+		c.close()
+		c.app.HomeComponent.Reload()
+		c.app.HideLoader()
+	}()
 
 	c.app.ShowLoader("Updating song")
 
@@ -198,6 +238,30 @@ func (c *HomeSongEditComponent) saveAction() {
 		}
 	}
 
+	// Album
+	if c.songMeta.AlbumId == "" {
+		// Create new album
+		newAlbum, cliErr := c.app.restClient.CreateAlbum(&restApiV1.AlbumMeta{Name: c.newAlbumName})
+		if cliErr != nil {
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to create the album", cliErr)
+			return
+		}
+		c.songMeta.AlbumId = newAlbum.Id
+		c.newAlbumName = ""
+	}
+
+	// Artists
+	for _, newArtistName := range c.newArtistNames {
+		// Create new artist
+		newArtist, cliErr := c.app.restClient.CreateArtist(&restApiV1.ArtistMeta{Name: newArtistName})
+		if cliErr != nil {
+			c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to create the artist %s", newArtistName), cliErr)
+			return
+		}
+		c.songMeta.ArtistIds = append(c.songMeta.ArtistIds, newArtist.Id)
+	}
+	c.newArtistNames = nil
+
 	// Explicit flag
 	c.songMeta.ExplicitFg = jst.Id("songEditExplicitFg").Get("checked").Bool()
 
@@ -206,9 +270,6 @@ func (c *HomeSongEditComponent) saveAction() {
 		c.app.HomeComponent.MessageComponent.ClientErrorMessage("Unable to update the song", cliErr)
 	}
 
-	c.close()
-	c.app.HomeComponent.Reload()
-	c.app.HideLoader()
 }
 
 func (c *HomeSongEditComponent) cancelAction() {
@@ -274,7 +335,14 @@ func (c *HomeSongEditComponent) albumSearchAction() {
 		}
 
 		albumSearchList.Set("innerHTML", c.app.RenderTemplate(
-			resultAlbumList, "home/songEdit/albumSearchList"),
+			struct {
+				AlbumList  []*AlbumSearchItem
+				NameFilter string
+			}{
+				AlbumList:  resultAlbumList,
+				NameFilter: nameFilter,
+			},
+			"home/songEdit/albumSearchList"),
 		)
 		albumSearchList.Get("style").Set("display", "block")
 	} else {
@@ -358,7 +426,13 @@ func (c *HomeSongEditComponent) artistSearchAction() {
 		}
 
 		artistSearchList.Set("innerHTML", c.app.RenderTemplate(
-			resultArtistList, "home/songEdit/artistSearchList"),
+			struct {
+				ArtistList []*ArtistSearchItem
+				NameFilter string
+			}{
+				ArtistList: resultArtistList,
+				NameFilter: nameFilter,
+			}, "home/songEdit/artistSearchList"),
 		)
 		artistSearchList.Get("style").Set("display", "block")
 	} else {
