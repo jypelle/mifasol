@@ -75,10 +75,15 @@ func (c *HomeSongEditComponent) Show() {
 		albumCurrentBlock.Get("style").Set("display", "none")
 	}))
 
-	albumSearchInput.Call("addEventListener", "keydown", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-
-	}))
 	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
+	albumSearchInput.Call("addEventListener", "focusout", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
+		link := i[0].Get("relatedTarget").Call("closest", ".albumLink, .newAlbumLink")
+		if !link.Truthy() {
+			// Clear search input
+			albumSearchInput.Set("value", "")
+			c.albumSearchAction()
+		}
+	}))
 	albumSearchClean.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Clear
 		albumSearchInput.Set("value", "")
@@ -168,6 +173,14 @@ func (c *HomeSongEditComponent) Show() {
 
 	// Search artist
 	artistSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.artistSearchAction))
+	artistSearchInput.Call("addEventListener", "focusout", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
+		link := i[0].Get("relatedTarget").Call("closest", ".artistLink, .newArtistLink")
+		if !link.Truthy() {
+			// Clear search input
+			artistSearchInput.Set("value", "")
+			c.artistSearchAction()
+		}
+	}))
 	artistSearchClean.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Clear search input
 		artistSearchInput.Set("value", "")
