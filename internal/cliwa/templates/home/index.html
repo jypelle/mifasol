@@ -15,8 +15,10 @@
     <div style="flex: 1 0 320px;" id="message">...</div>
     <div style="flex: 1 0 320px; display:flex; flex-flow: row nowrap; gap: 0.3rem; align-items:center;">
         <audio id="playerAudio" ></audio>
-        <button id="playerPlayButton" type="button" title="Play/Pause"><i class="fas fa-play"></i></button>
-        <button id="playerNextButton" type="button" title="Next song"><i class="fas fa-step-forward"></i></button>
+        <div class="buttonGroup">
+            <button id="playerPlayButton" type="button" title="Play/Pause"><i class="fas fa-play"></i></button>
+            <button id="playerNextButton" type="button" title="Next song"><i class="fas fa-step-forward"></i></button>
+        </div>
         <input style="flex:4;width: 3rem;padding:0;" type="range" id="playerSeekSlider" max="100" value="0">
         <div class="duration">
             <span id="playerCurrentTime">0:00</span> / <span id="playerDuration">0:00</span>

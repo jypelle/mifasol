@@ -135,6 +135,25 @@ button.light:not(:hover) {
     border-color: var(--button-alt-color);
 }
 
+.buttonGroup {
+    display:flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.buttonGroup > button {
+    border-radius: 0;
+}
+
+.buttonGroup > button:first-child {
+    border-top-left-radius: 0.3rem;
+    border-bottom-left-radius: 0.3rem;
+}
+
+.buttonGroup > button:last-child {
+    border-top-right-radius: 0.3rem;
+    border-bottom-right-radius: 0.3rem;
+}
 /* form */
 select,
 textarea,
