@@ -1,0 +1,10 @@
+{{if not .PlaylistList}}
+<div style="padding: 0.4rem;"><i>No playlist found</i></div>
+{{else}}
+{{range $index, $playlist := .PlaylistList}}
+<div style="padding: 0.4rem;">
+    <a class="playlistLink" href="#" data-playlistid="{{.PlaylistId}}">{{.PlaylistName}}</a>&nbsp;<span class="songCount">{{.PlaylistSongCount}}</span>
+</div>
+{{end}}
+{{end}}
+<div style="padding: 0.4rem;"><a class="newPlaylistLink" href="#">Add new playlist <b>{{.NameFilter}}</b></a></div>

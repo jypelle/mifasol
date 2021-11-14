@@ -1,0 +1,5 @@
+{{range $index, $user := .}}
+<div style="display:flex; flex-flow: row nowrap; align-items:center; margin-bottom: 0.5rem;">
+    <span class="userTag">{{.UserName}} <a class="userLink" href="#" data-userid="{{.UserId}}"><i class="fa fa-times"></i></a></span>
+</div>
+{{end}}

@@ -52,8 +52,11 @@ func (c *HomeCurrentComponent) Show() {
 	currentSaveButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		if c.modified {
 			if c.srcPlaylistId == nil {
-				// Save as
-				// OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+				// Save content as new playlist
+				component := NewHomePlaylistContentSaveAsComponent(c.app, c.songIds)
+
+				c.app.HomeComponent.OpenModal()
+				component.Show()
 			} else {
 				// Save
 				// Only admin or playlist owner can edit playlist content
@@ -80,8 +83,10 @@ func (c *HomeCurrentComponent) Show() {
 	}))
 	currentSaveAsButton := jst.Id("currentSaveAsButton")
 	currentSaveAsButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
-		// Save as
-		// OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+		// Save content as
+		component := NewHomePlaylistContentSaveAsComponent(c.app, c.songIds)
+		c.app.HomeComponent.OpenModal()
+		component.Show()
 	}))
 
 	listDiv := jst.Id("currentList")

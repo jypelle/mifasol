@@ -90,6 +90,13 @@ func (a *App) RenderTemplate(content interface{}, filenames ...string) string {
 	return w.String()
 }
 
+func (a *App) AddBlockingRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		fn(this, args)
+		return nil
+	})
+}
+
 func (a *App) AddRichEventFunc(fn func(this js.Value, args []js.Value)) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		a.eventFunc <- func() {

@@ -1,8 +1,10 @@
 <h2 id="currentTitle" style="margin: 0;">Playlist</h2>
 <div id="currentButtons" style="display: flex; flex-flow: row wrap; gap: 0.3rem; align-items: center;">
-    <button id="currentCleanButton" type="button" title="Clean"><i class="fas fa-broom"></i></button>
-    <button id="currentShuffleButton" type="button" title="Shuffle"><i class="fas fa-random"></i></button>
-    <button id="currentSaveButton" type="button" title="Save"><i class="fas fa-file"></i></button>
-    <button id="currentSaveAsButton" type="button" title="Save as" disabled><i class="fas fa-file-signature"></i></button>
+    <div class="buttonGroup">
+        <button id="currentCleanButton" type="button" title="Clean"><i class="fas fa-broom"></i></button>
+        <button id="currentShuffleButton" type="button" title="Shuffle"><i class="fas fa-random"></i></button>
+        <button id="currentSaveButton" type="button" title="Save"><i class="fas fa-file"></i></button>
+        <button id="currentSaveAsButton" type="button" title="Save as"><i class="fas fa-file-signature"></i></button>
+    </div>
 </div>
 <div id="currentList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>

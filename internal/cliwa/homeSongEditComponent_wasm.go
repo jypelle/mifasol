@@ -57,7 +57,6 @@ func (c *HomeSongEditComponent) Show() {
 	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
 
 	// Album
-
 	albumCurrentBlock := jst.Id("songEditAlbumCurrentBlock")
 	albumCurrentName := jst.Id("songEditAlbumCurrentName")
 	albumCurrentDelete := jst.Id("songEditAlbumCurrentDelete")
@@ -75,15 +74,22 @@ func (c *HomeSongEditComponent) Show() {
 		albumCurrentBlock.Get("style").Set("display", "none")
 	}))
 
-	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
-	albumSearchInput.Call("addEventListener", "focusout", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("relatedTarget").Call("closest", ".albumLink, .newAlbumLink")
-		if !link.Truthy() {
-			// Clear search input
-			albumSearchInput.Set("value", "")
-			c.albumSearchAction()
+	albumSearchInput.Call("addEventListener", "keypress", c.app.AddBlockingRichEventFunc(func(this js.Value, i []js.Value) {
+		if i[0].Get("which").Int() == 13 {
+			i[0].Call("preventDefault")
 		}
 	}))
+	albumSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.albumSearchAction))
+	albumSearchInput.Call("addEventListener", "focusout", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
+		relatedTarget := i[0].Get("relatedTarget")
+		if relatedTarget.Truthy() && relatedTarget.Call("closest", ".albumLink, .newAlbumLink").Truthy() {
+			return
+		}
+		// Clear search input
+		albumSearchInput.Set("value", "")
+		c.albumSearchAction()
+	}))
+
 	albumSearchClean.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Clear
 		albumSearchInput.Set("value", "")
@@ -112,7 +118,7 @@ func (c *HomeSongEditComponent) Show() {
 			albumCurrentBlock.Get("style").Set("display", "flex")
 		case "newAlbumLink":
 			c.songMeta.AlbumId = ""
-			c.newAlbumName = albumSearchInput.Get("value").String()
+			c.newAlbumName = strings.TrimSpace(albumSearchInput.Get("value").String())
 			albumCurrentName.Set("innerHTML", html.EscapeString(c.newAlbumName))
 
 			// Clear
@@ -172,14 +178,20 @@ func (c *HomeSongEditComponent) Show() {
 	}))
 
 	// Search artist
+	artistSearchInput.Call("addEventListener", "keypress", c.app.AddBlockingRichEventFunc(func(this js.Value, i []js.Value) {
+		if i[0].Get("which").Int() == 13 {
+			i[0].Call("preventDefault")
+		}
+	}))
 	artistSearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.artistSearchAction))
 	artistSearchInput.Call("addEventListener", "focusout", c.app.AddRichEventFunc(func(this js.Value, i []js.Value) {
-		link := i[0].Get("relatedTarget").Call("closest", ".artistLink, .newArtistLink")
-		if !link.Truthy() {
-			// Clear search input
-			artistSearchInput.Set("value", "")
-			c.artistSearchAction()
+		relatedTarget := i[0].Get("relatedTarget")
+		if relatedTarget.Truthy() && relatedTarget.Call("closest", ".artistLink, .newArtistLink").Truthy() {
+			return
 		}
+		// Clear search input
+		artistSearchInput.Set("value", "")
+		c.artistSearchAction()
 	}))
 	artistSearchClean.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		// Clear search input
@@ -207,7 +219,7 @@ func (c *HomeSongEditComponent) Show() {
 			// Refresh current artists
 			c.refreshCurrentArtistAction()
 		case "newArtistLink":
-			c.newArtistNames = append(c.newArtistNames, artistSearchInput.Get("value").String())
+			c.newArtistNames = append(c.newArtistNames, strings.TrimSpace(artistSearchInput.Get("value").String()))
 
 			// Clear search input
 			artistSearchInput.Set("value", "")
@@ -311,7 +323,7 @@ func (c *HomeSongEditComponent) close() {
 func (c *HomeSongEditComponent) albumSearchAction() {
 	albumSearchInput := jst.Id("songEditAlbumSearchInput")
 	albumSearchList := jst.Id("songEditAlbumSearchList")
-	nameFilter := albumSearchInput.Get("value").String()
+	nameFilter := strings.TrimSpace(albumSearchInput.Get("value").String())
 
 	type AlbumSearchItem struct {
 		AlbumId        restApiV1.AlbumId
@@ -414,7 +426,7 @@ func (c *HomeSongEditComponent) artistSearchAction() {
 	artistSearchInput := jst.Id("songEditArtistSearchInput")
 	artistSearchList := jst.Id("songEditArtistSearchList")
 
-	nameFilter := artistSearchInput.Get("value").String()
+	nameFilter := strings.TrimSpace(artistSearchInput.Get("value").String())
 
 	type ArtistSearchItem struct {
 		ArtistId        restApiV1.ArtistId

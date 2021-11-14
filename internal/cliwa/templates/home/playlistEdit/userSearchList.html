@@ -1,0 +1,9 @@
+{{if not .UserList}}
+<div style="padding: 0.4rem;"><i>No user found</i></div>
+{{else}}
+{{range $index, $user := .UserList}}
+<div style="padding: 0.4rem;">
+    <a class="userLink" href="#" data-userid="{{.UserId}}">{{.UserName}}</a>
+</div>
+{{end}}
+{{end}}

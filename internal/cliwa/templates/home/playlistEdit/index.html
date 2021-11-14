@@ -8,6 +8,18 @@
                 </div>
             </div>
             <div>
+                <label>Owners</label>
+                <div id="playlistEditOwnerBlock">
+                    <div id="playlistEditOwnerCurrentList"></div>
+                    <div id="playlistEditOwnerSearchBlock" style="display:block;">
+                        <div style="display:flex; flex-flow: row nowrap; align-items:center;">
+                            <i class="fa fa-search" style="position: relative; width: 0; left: 0.4rem; z-index: 1; color: gray;"></i><input id="playlistEditOwnerSearchInput" type="text" autocomplete="off" style="padding-left: 1.6rem; padding-right: 1.8rem;"><a id="playlistEditOwnerSearchClean" href="#" style="position: relative; width: 0; right: 1.5rem; z-index: 1; color: var(--bg-color-alt);"><i class="fa fa-broom"></i></a>
+                        </div>
+                        <div id="playlistEditOwnerSearchList" class="searchResultList" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+            <div>
                 <label></label>
                 <div>
                     <button type="submit">Save</button>

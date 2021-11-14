@@ -1,5 +1,5 @@
-{{if not .}}
-<div style="padding: 0.4rem;">...</div>
+{{if not .AlbumList}}
+<div style="padding: 0.4rem;"><i>No album found</i></div>
 {{else}}
 {{range $index, $album := .AlbumList}}
 <div style="padding: 0.4rem;">

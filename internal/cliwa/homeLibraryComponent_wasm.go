@@ -178,7 +178,6 @@ func (c *LibraryComponent) Show() {
 			component := NewHomePlaylistEditComponent(c.app, playlistId, &c.app.localDb.Playlists[playlistId].PlaylistMeta)
 			c.app.HomeComponent.OpenModal()
 			component.Show()
-
 		case "playlistDeleteLink":
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, playlistId)
@@ -364,7 +363,7 @@ func (c *LibraryComponent) computeArtistList() {
 	}
 
 	if c.libraryState.nameFilter != nil {
-		lowerNameFilter := strings.ToLower(*c.libraryState.nameFilter)
+		lowerNameFilter := strings.TrimSpace(strings.ToLower(*c.libraryState.nameFilter))
 		for _, artist := range artistList {
 			if artist != nil && !strings.Contains(strings.ToLower(artist.Name), lowerNameFilter) {
 				continue

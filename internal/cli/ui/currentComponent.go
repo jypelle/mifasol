@@ -48,13 +48,13 @@ func NewCurrentComponent(uiApp *App) *CurrentComponent {
 		case event.Key() == tcell.KeyRune:
 			switch event.Rune() {
 			case 'z':
-				// Save as
-				OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+				// Save content as
+				OpenPlaylistContentSaveAsComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
 			case 's':
 				if c.uiApp.currentComponent.IsModified() {
 					if c.srcPlaylistId == nil {
-						// Save as
-						OpenPlaylistContentSaveComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
+						// Save content as new playlist
+						OpenPlaylistContentSaveAsComponent(c.uiApp, c.songIds, c.srcPlaylistId, c)
 					} else {
 						// Save
 

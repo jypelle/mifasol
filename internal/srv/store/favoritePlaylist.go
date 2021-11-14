@@ -123,59 +123,59 @@ func (s *Store) CreateFavoritePlaylist(externalTrn *sqlx.Tx, favoritePlaylistMet
 		if err != nil {
 			return nil, err
 		}
+		/*
+			// Add favorite playlist songs to favorite songs
+			_, err = txn.NamedExec(`
+				INSERT INTO	favorite_song (
+				    user_id,
+					song_id,
+				    update_ts
+				)
+				SELECT DISTINCT
+				    :user_id,
+					ps.song_id,
+					:update_ts
+				FROM playlist_song ps
+				LEFT JOIN favorite_song fs ON fs.user_id = :user_id AND fs.song_id = ps.song_id
+				WHERE ps.playlist_id = :playlist_id
+				AND fs.user_id IS NULL
 
-		// Add favorite playlist songs to favorite songs
-		_, err = txn.NamedExec(`
-			INSERT INTO	favorite_song (
-			    user_id,
-				song_id,
-			    update_ts
-			)
-			SELECT DISTINCT
-			    :user_id,
-				ps.song_id,
-				:update_ts
-			FROM playlist_song ps
-			LEFT JOIN favorite_song fs ON fs.user_id = :user_id AND fs.song_id = ps.song_id
-			WHERE ps.playlist_id = :playlist_id
-			AND fs.user_id IS NULL
-			
-		`, &favoritePlaylistEntity)
-		if err != nil {
-			return nil, err
-		}
+			`, &favoritePlaylistEntity)
+			if err != nil {
+				return nil, err
+			}
 
-		// delete existing deletedFavoriteSong
-		queryArgs = make(map[string]interface{})
-		queryArgs["user_id"] = favoritePlaylistEntity.UserId
-		queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
-		_, err = txn.NamedExec(`
-			DELETE FROM deleted_favorite_song
-			where (user_id,song_id) in (select user_id,song_id from favorite_song where user_id = :user_id and update_ts = :update_ts)
-		`, queryArgs)
-		if err != nil {
-			return nil, err
-		}
+			// delete existing deletedFavoriteSong
+			queryArgs = make(map[string]interface{})
+			queryArgs["user_id"] = favoritePlaylistEntity.UserId
+			queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
+			_, err = txn.NamedExec(`
+				DELETE FROM deleted_favorite_song
+				where (user_id,song_id) in (select user_id,song_id from favorite_song where user_id = :user_id and update_ts = :update_ts)
+			`, queryArgs)
+			if err != nil {
+				return nil, err
+			}
 
-		// force resync on linked favoritePlaylist
-		queryArgs = make(map[string]interface{})
-		queryArgs["user_id"] = favoritePlaylistEntity.UserId
-		queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
-		_, err = txn.NamedExec(`
-			UPDATE favorite_playlist
-			SET update_ts = :update_ts
-			WHERE user_id = :user_id AND playlist_id in (
-			    select distinct playlist_id
-			    from favorite_song fs
-			    join playlist_song ps using (song_id)
-			    join favorite_playlist fp using (playlist_id,user_id)
-			    where fs.user_id = :user_id and fs.update_ts = :update_ts
-			)
-		`, queryArgs)
-		if err != nil {
-			return nil, err
-		}
-
+			// force resync on linked favoritePlaylist
+			queryArgs = make(map[string]interface{})
+			queryArgs["user_id"] = favoritePlaylistEntity.UserId
+			queryArgs["update_ts"] = favoritePlaylistEntity.UpdateTs
+			_, err = txn.NamedExec(`
+				UPDATE favorite_playlist
+				SET update_ts = :update_ts
+				WHERE user_id = :user_id AND playlist_id in (
+				    select distinct playlist_id
+				    from favorite_song fs
+				    join playlist_song ps using (song_id)
+				    join favorite_playlist fp using (playlist_id,user_id)
+				    where fs.user_id = :user_id and fs.update_ts = :update_ts
+				)
+			`, queryArgs)
+			if err != nil {
+				return nil, err
+			}
+		*/
 		// Commit transaction
 		if externalTrn == nil {
 			txn.Commit()

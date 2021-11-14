@@ -118,6 +118,7 @@ button {
     border-radius: 0.3rem;
     padding: 0.4rem 0.4rem;
     min-width: 2.2rem;
+    line-height: 1.2;
 }
 
 button:hover {
@@ -154,6 +155,21 @@ button.light:not(:hover) {
     border-top-right-radius: 0.3rem;
     border-bottom-right-radius: 0.3rem;
 }
+
+.buttonGroup input[type="text"] {
+    border-radius: 0;
+}
+
+.buttonGroup > *:first-child input[type="text"] {
+    border-top-left-radius: 0.3rem;
+    border-bottom-left-radius: 0.3rem;
+}
+
+.buttonGroup > *:last-child input[type="text"] {
+    border-top-right-radius: 0.3rem;
+    border-bottom-right-radius: 0.3rem;
+}
+
 /* form */
 select,
 textarea,
@@ -173,7 +189,7 @@ textarea {
 textarea,
 input {
     background-color: var(--fg-color-alt);
-    border-width: 0px;
+    border: 0.1rem solid var(--fg-color-alt);
     transition: border linear .2s, box-shadow linear .2s;
 }
 
@@ -484,6 +500,20 @@ body.loading .modalLoader {
 .artistTag {
     color: var(--artist-color);
     border: 0.1rem solid var(--artist-color);
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+}
+
+.playlistTag {
+    color: var(--playlist-color);
+    border: 0.1rem solid var(--playlist-color);
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+}
+
+.userTag {
+    color: var(--user-color);
+    border: 0.1rem solid var(--user-color);
     padding: 0.4rem;
     border-radius: 0.3rem;
 }

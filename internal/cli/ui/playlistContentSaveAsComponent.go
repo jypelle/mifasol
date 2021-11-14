@@ -5,7 +5,7 @@ import (
 	"gitlab.com/tslocum/cview"
 )
 
-type PlaylistSaveComponent struct {
+type PlaylistContentSaveAsComponent struct {
 	*cview.Form
 	playlistsDropDown        *cview.DropDown
 	nameInputField           *cview.InputField
@@ -16,7 +16,7 @@ type PlaylistSaveComponent struct {
 	originPrimitive          cview.Primitive
 }
 
-func OpenPlaylistContentSaveComponent(uiApp *App, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive cview.Primitive) {
+func OpenPlaylistContentSaveAsComponent(uiApp *App, songIds []restApiV1.SongId, srcPlaylistId *restApiV1.PlaylistId, originPrimitive cview.Primitive) {
 
 	// Only admin or playlist owner can edit playlist content
 	if srcPlaylistId != nil && !uiApp.IsConnectedUserAdmin() && !uiApp.localDb.IsPlaylistOwnedBy(*srcPlaylistId, uiApp.ConnectedUserId()) {
@@ -24,7 +24,7 @@ func OpenPlaylistContentSaveComponent(uiApp *App, songIds []restApiV1.SongId, sr
 		return
 	}
 
-	c := &PlaylistSaveComponent{
+	c := &PlaylistContentSaveAsComponent{
 		uiApp:           uiApp,
 		srcPlaylistId:   srcPlaylistId,
 		songIds:         songIds,
@@ -76,11 +76,11 @@ func OpenPlaylistContentSaveComponent(uiApp *App, songIds []restApiV1.SongId, sr
 	c.Form.SetBorder(true)
 	c.Form.SetTitle("Save playlist content")
 
-	uiApp.pagesComponent.AddAndSwitchToPage("playlistContentSave", c, true)
+	uiApp.pagesComponent.AddAndSwitchToPage("playlistContentSaveAs", c, true)
 
 }
 
-func (c *PlaylistSaveComponent) save() {
+func (c *PlaylistContentSaveAsComponent) save() {
 	selectedPlaylistInd, _ := c.playlistsDropDown.GetCurrentOption()
 	var id restApiV1.PlaylistId
 	var playlistMeta restApiV1.PlaylistMeta
@@ -105,7 +105,7 @@ func (c *PlaylistSaveComponent) save() {
 
 		_, cliErr := c.uiApp.restClient.UpdatePlaylist(selectedPlaylist.Id, &playlistMeta)
 		if cliErr != nil {
-			c.uiApp.ClientErrorMessage("Unable to create the playlist", cliErr)
+			c.uiApp.ClientErrorMessage("Unable to update the playlist", cliErr)
 			return
 		}
 
@@ -117,11 +117,11 @@ func (c *PlaylistSaveComponent) save() {
 	c.close()
 }
 
-func (c *PlaylistSaveComponent) cancel() {
+func (c *PlaylistContentSaveAsComponent) cancel() {
 	c.close()
 }
 
-func (c *PlaylistSaveComponent) close() {
-	c.uiApp.pagesComponent.RemovePage("playlistContentSave")
+func (c *PlaylistContentSaveAsComponent) close() {
+	c.uiApp.pagesComponent.RemovePage("playlistContentSaveAs")
 	c.uiApp.cviewApp.SetFocus(c.originPrimitive)
 }
