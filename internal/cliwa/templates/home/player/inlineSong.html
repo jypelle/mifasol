@@ -1,0 +1,7 @@
+<span class="songLink" xmlns:ul="http://www.w3.org/1999/html">{{.SongName}}</span>
+{{if .AlbumId}}
+/ <span class="albumLink" href="#" data-albumid="{{.AlbumId}}">{{.AlbumName}}</span>
+{{end}}
+{{range $index, $artist := .Artists}}
+/ <span class="artistLink" href="#" data-artistid="{{.ArtistId}}">{{.ArtistName}}</span>
+{{end}}

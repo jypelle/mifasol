@@ -1,4 +1,4 @@
-<div class="item currentSongItem" draggable="true">
+<div class="item currentSongItem" style="{{if .IsPlaying}}background-color: var(--bg-color-alt);{{end}}" draggable="true">
     <div class="itemTitle">
         <div>
             <span class="songLink">{{.SongName}}</span>
@@ -20,8 +20,8 @@
         <a class="currentRemoveSongFromPlaylistLink" href="#" title="Remove" data-songidx="{{.SongIdx}}">
             <i class="fas fa-times"></i>
         </a>
-        <a class="currentPlaySongNowLink" href="#" title="Play" data-songid="{{.SongId}}" data-songidx="{{.SongIdx}}">
-            <i class="fas fa-play"></i>
+        <a class="currentPlaySongNowLink" href="#" title="Play" data-songid="{{.SongId}}" data-songidx="{{.SongIdx}}" >
+            <i class="fas fa-play" ></i>
         </a>
     </div>
 </div>

@@ -22,8 +22,9 @@ type HomeCurrentComponent struct {
 
 func NewHomeCurrentComponent(app *App) *HomeCurrentComponent {
 	c := &HomeCurrentComponent{
-		app:      app,
-		modified: true,
+		app:            app,
+		modified:       true,
+		currentSongIdx: -1,
 	}
 
 	return c
@@ -40,12 +41,14 @@ func (c *HomeCurrentComponent) Show() {
 		c.songIds = nil
 		c.srcPlaylistId = nil
 		c.modified = true
+		c.currentSongIdx = -1
 		c.RefreshView()
 	}))
 	currentShuffleButton := jst.Id("currentShuffleButton")
 	currentShuffleButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
 		rand.Shuffle(len(c.songIds), func(i, j int) { c.songIds[i], c.songIds[j] = c.songIds[j], c.songIds[i] })
 		c.modified = true
+		c.currentSongIdx = -1
 		c.RefreshView()
 	}))
 	currentSaveButton := jst.Id("currentSaveButton")
@@ -186,10 +189,12 @@ func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) st
 			ArtistId   string
 			ArtistName string
 		}
+		IsPlaying bool
 	}{
-		SongId:   string(song.Id),
-		SongIdx:  songIdx,
-		SongName: song.Name,
+		SongId:    string(song.Id),
+		SongIdx:   songIdx,
+		SongName:  song.Name,
+		IsPlaying: songIdx == c.currentSongIdx,
 	}
 
 	if song.AlbumId != restApiV1.UnknownAlbumId {
@@ -258,6 +263,7 @@ func (c *HomeCurrentComponent) LoadSongsFromPlaylistAction(playlistId restApiV1.
 		c.tryToAppendSong(c.app.localDb.Songs[songId])
 	}
 	c.modified = false
+	c.currentSongIdx = -1
 	c.RefreshView()
 }
 

@@ -5,7 +5,6 @@ import (
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/sirupsen/logrus"
-	"html"
 	"strconv"
 )
 
@@ -112,9 +111,43 @@ func (c *HomePlayerComponent) PlaySongAction(songId restApiV1.SongId) {
 	player.Set("src", "/api/v1/songContents/"+string(songId)+"?bearer="+token.AccessToken)
 	player.Call("play")
 
-	c.app.HomeComponent.MessageComponent.Message(fmt.Sprintf(`Playing <span class="songLink">%s</span> ...`, html.EscapeString(c.app.localDb.Songs[songId].Name)))
+	c.app.HomeComponent.MessageComponent.Message(`Playing ` + c.InlineSong(songId))
 
 	return
+}
+
+func (c *HomePlayerComponent) InlineSong(songId restApiV1.SongId) string {
+
+	song := c.app.localDb.Songs[songId]
+
+	songItem := struct {
+		SongName  string
+		AlbumId   *string
+		AlbumName string
+		Artists   []struct {
+			ArtistId   string
+			ArtistName string
+		}
+	}{
+		SongName: song.Name,
+	}
+
+	if song.AlbumId != restApiV1.UnknownAlbumId {
+		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
+		songItem.AlbumId = (*string)(&song.AlbumId)
+	}
+
+	for _, artistId := range song.ArtistIds {
+		songItem.Artists = append(songItem.Artists, struct {
+			ArtistId   string
+			ArtistName string
+		}{
+			ArtistId:   string(artistId),
+			ArtistName: c.app.localDb.Artists[artistId].Name,
+		})
+	}
+
+	return c.app.RenderTemplate(&songItem, "home/player/inlineSong")
 }
 
 func (c *HomePlayerComponent) PauseSongAction() {
