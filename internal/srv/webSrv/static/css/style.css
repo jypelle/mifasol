@@ -408,6 +408,10 @@ body.loading .modalLoader {
     background-color: var(--hover-color);
 }
 
+.itemPlaying {
+    background-color: var(--bg-color-alt);
+}
+
 .itemFavorite {
 
 }

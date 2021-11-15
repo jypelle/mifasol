@@ -1,4 +1,4 @@
-<div class="item currentSongItem" style="{{if .IsPlaying}}background-color: var(--bg-color-alt);{{end}}" draggable="true">
+<div class="item {{if .IsPlaying}}itemPlaying{{end}} currentSongItem" draggable="true">
     <div class="itemTitle">
         <div>
             <span class="songLink">{{.SongName}}</span>

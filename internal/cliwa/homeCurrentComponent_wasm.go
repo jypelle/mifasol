@@ -111,6 +111,7 @@ func (c *HomeCurrentComponent) Show() {
 			songId := dataset.Get("songid").String()
 			c.currentSongIdx, _ = strconv.Atoi(dataset.Get("songidx").String())
 			c.app.HomeComponent.PlayerComponent.PlaySongAction(restApiV1.SongId(songId))
+			c.RefreshView()
 		case "currentRemoveSongFromPlaylistLink":
 			songIdx, _ := strconv.Atoi(dataset.Get("songidx").String())
 			c.RemoveSongFromPlaylistAction(songIdx)
@@ -126,6 +127,7 @@ func (c *HomeCurrentComponent) PlayNextSongAction() {
 	} else {
 		c.currentSongIdx = -1
 	}
+	c.RefreshView()
 }
 
 func (c *HomeCurrentComponent) RefreshView() {
