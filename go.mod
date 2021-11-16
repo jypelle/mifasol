@@ -19,7 +19,7 @@ require (
 	github.com/vearutop/statigz v1.1.4
 	gitlab.com/tslocum/cview v1.5.3
 	golang.org/x/text v0.3.5
-	modernc.org/sqlite v1.13.3
+	modernc.org/sqlite v1.14.1
 )
 
 require (
@@ -52,9 +52,9 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 	lukechampine.com/uint128 v1.1.1 // indirect
-	modernc.org/cc/v3 v3.35.15 // indirect
-	modernc.org/ccgo/v3 v3.12.39 // indirect
-	modernc.org/libc v1.11.40 // indirect
+	modernc.org/cc/v3 v3.35.17 // indirect
+	modernc.org/ccgo/v3 v3.12.65 // indirect
+	modernc.org/libc v1.11.71 // indirect
 	modernc.org/mathutil v1.4.1 // indirect
 	modernc.org/memory v1.0.5 // indirect
 	modernc.org/opt v0.1.1 // indirect
