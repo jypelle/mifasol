@@ -9,11 +9,13 @@
     </div>
     <div class="buttonGroup" style="flex:1;">
         <div style="flex:1;">
-            <i class="fa fa-search" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input type="text" id="librarySearchInput" style="width: 100%; min-width:5rem; padding-left: 1.6rem;">
+            <i class="fa fa-search" style="position: relative; width: 0; left: 0.4rem; top: 0.2rem; z-index: 1; color: gray;"></i><input type="text" id="librarySearchInput" style="width: 100%; min-width:3.2rem; padding-left: 1.6rem;">
         </div>
         <button id="libraryOnlyFavoritesButton" type="button" title="Only favorites on/off"><i class="fas fa-star"></i></button>
     </div>
-    <button id="libraryAddToPlaylistButton" type="button" title="Add songs to playlist" disabled><i class="fas fa-arrow-right"></i></button>
-    <button id="libraryCreateButton" type="button" title="Create" disabled><i class="fas fa-plus"></i></button>
+    <div class="buttonGroup">
+        <button id="libraryAddToPlaylistButton" type="button" title="Add songs to playlist" disabled><i class="fas fa-arrow-right"></i></button>
+        <button id="libraryCreateButton" type="button" title="Create" disabled><i class="fas fa-plus"></i></button>
+    </div>
 </div>
 <div id="libraryList" style="display: flex; flex-flow: column nowrap; flex: 1 1 auto; overflow-y: scroll;"></div>
