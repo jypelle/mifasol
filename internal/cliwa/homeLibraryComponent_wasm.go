@@ -91,6 +91,14 @@ func (c *LibraryComponent) Show() {
 	libraryUsersButton.Call("addEventListener", "click", c.app.AddEventFunc(c.ShowUsersAction))
 	libraryAddToPlaylistButton := jst.Id("libraryAddToPlaylistButton")
 	libraryAddToPlaylistButton.Call("addEventListener", "click", c.app.AddEventFunc(c.AddToPlaylistAction))
+	libraryCreateButton := jst.Id("libraryCreateButton")
+	libraryCreateButton.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		if c.libraryState.libraryType == LibraryTypeUsers {
+			component := NewHomeUserCreateComponent(c.app)
+			c.app.HomeComponent.OpenModal()
+			component.Show()
+		}
+	}))
 
 	librarySearchInput := jst.Id("librarySearchInput")
 	librarySearchInput.Call("addEventListener", "input", c.app.AddEventFunc(c.SearchAction))
@@ -347,6 +355,12 @@ func (c *LibraryComponent) RefreshView() {
 		libraryAddToPlaylistButton.Set("disabled", false)
 	} else {
 		libraryAddToPlaylistButton.Set("disabled", true)
+	}
+	libraryCreateButton := jst.Id("libraryCreateButton")
+	if c.libraryState.libraryType == LibraryTypeUsers {
+		libraryCreateButton.Set("disabled", false)
+	} else {
+		libraryCreateButton.Set("disabled", true)
 	}
 
 	// Update list
@@ -754,13 +768,13 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 		SongId:     string(song.Id),
 		Favorite:   favorite,
 		SongName:   song.Name,
+		ExplicitFg: song.ExplicitFg,
 		IsEditable: c.app.IsConnectedUserAdmin(),
 	}
 
 	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
 		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
 		songItem.AlbumId = (*string)(&song.AlbumId)
-		songItem.ExplicitFg = song.ExplicitFg
 	}
 
 	for _, artistId := range song.ArtistIds {
@@ -827,7 +841,7 @@ func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restAp
 		}{
 			UserId:     string(user.Id),
 			Name:       user.Name,
-			IsEditable: c.app.IsConnectedUserAdmin(),
+			IsEditable: c.app.IsConnectedUserAdmin() || c.app.ConnectedUserId() == user.Id,
 		}, "home/library/userItem"),
 	)
 }

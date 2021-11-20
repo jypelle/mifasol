@@ -1,5 +1,5 @@
-    <div style="flex: 0 1 22rem;">
-        <h2>Edit user</h2>
+    <div style="flex: 0; margin: auto;">
+        <h2>{{if .IsNewUser}}New user{{else}}Edit user{{end}}</h2>
         <form id="userEditForm">
             <div>
                 <label for="userEditUserName">Name</label>
@@ -7,6 +7,28 @@
                     <input id="userEditUserName" type="text" value="{{.Name}}">
                 </div>
             </div>
+            <div>
+                <label for="userEditPassword">Password</label>
+                <div>
+                    <input id="userEditPassword" type="password" value="">
+                </div>
+            </div>
+            {{if .IsConnectedUserAdmin}}
+            <div>
+                <label></label>
+                <div>
+                    <input id="userEditHideExplicitFg" value="true" type="checkbox" {{if .HideExplicitFg}}checked{{end}}><label for="userEditHideExplicitFg"></label>
+                    Hide explicit songs
+                </div>
+            </div>
+            <div>
+                <label></label>
+                <div>
+                    <input id="userEditAdminFg" value="true" type="checkbox" {{if .AdminFg}}checked{{end}}><label for="userEditAdminFg"></label>
+                    Administrator
+                </div>
+            </div>
+            {{end}}
             <div>
                 <label></label>
                 <div>

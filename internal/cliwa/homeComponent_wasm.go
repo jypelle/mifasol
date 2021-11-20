@@ -90,6 +90,7 @@ func (c *HomeComponent) OpenModal() {
 	homeMainMaster.Get("style").Set("display", "none")
 	homeMainModal := jst.Id("homeMainModal")
 	homeMainModal.Get("style").Set("display", "flex")
+	homeMainModal.Set("scrollTop", 0)
 	homeHeaderButtonsComponent := jst.Id("homeHeaderButtonsComponent")
 	homeHeaderButtonsComponent.Get("style").Set("display", "none")
 }
