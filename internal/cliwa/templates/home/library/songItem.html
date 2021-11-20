@@ -8,7 +8,7 @@
     </a></div>
     <div class="itemTitle">
         <div>
-            <span class="songLink">{{.SongName}}</span>
+            <span class="songLink">{{.SongName}}</span>{{if .ExplicitFg}}&nbsp;<span class="songCount">EC</span>{{end}}
         </div>
         <div>
             {{$separator := ""}}

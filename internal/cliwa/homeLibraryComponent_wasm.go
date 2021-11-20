@@ -748,6 +748,7 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 			ArtistId   string
 			ArtistName string
 		}
+		ExplicitFg bool
 		IsEditable bool
 	}{
 		SongId:     string(song.Id),
@@ -759,6 +760,7 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
 		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
 		songItem.AlbumId = (*string)(&song.AlbumId)
+		songItem.ExplicitFg = song.ExplicitFg
 	}
 
 	for _, artistId := range song.ArtistIds {

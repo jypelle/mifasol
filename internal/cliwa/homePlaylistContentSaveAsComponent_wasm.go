@@ -40,9 +40,19 @@ func (c *HomePlaylistContentSaveAsComponent) Show() {
 	// Playlist
 	playlistCurrentBlock := jst.Id("playlistContentSaveAsPlaylistCurrentBlock")
 	playlistCurrentName := jst.Id("playlistContentSaveAsPlaylistCurrentName")
-	//	playlistSearchBlock := jst.Id("playlistContentSaveAsPlaylistSearchBlock")
+	playlistCurrentDelete := jst.Id("playlistContentSaveAsPlaylistCurrentDelete")
+	playlistSearchBlock := jst.Id("playlistContentSaveAsPlaylistSearchBlock")
 	playlistSearchInput := jst.Id("playlistContentSaveAsPlaylistSearchInput")
 	playlistSearchList := jst.Id("playlistContentSaveAsPlaylistSearchList")
+
+	playlistCurrentDelete.Call("addEventListener", "click", c.app.AddEventFunc(func() {
+		c.targetPlaylistId = ""
+		c.newPlaylistName = ""
+		playlistCurrentName.Set("innerHTML", "")
+		// Add searchInput
+		playlistSearchBlock.Get("style").Set("display", "block")
+		playlistCurrentBlock.Get("style").Set("display", "none")
+	}))
 
 	playlistSearchInput.Call("addEventListener", "keypress", c.app.AddBlockingRichEventFunc(func(this js.Value, i []js.Value) {
 		if i[0].Get("which").Int() == 13 {
@@ -77,6 +87,8 @@ func (c *HomePlaylistContentSaveAsComponent) Show() {
 			playlistSearchInput.Set("value", "")
 			c.playlistSearchAction()
 
+			// Remove searchInput
+			playlistSearchBlock.Get("style").Set("display", "none")
 			playlistCurrentBlock.Get("style").Set("display", "flex")
 
 		case "newPlaylistLink":
@@ -88,6 +100,8 @@ func (c *HomePlaylistContentSaveAsComponent) Show() {
 			playlistSearchInput.Set("value", "")
 			c.playlistSearchAction()
 
+			// Remove searchInput
+			playlistSearchBlock.Get("style").Set("display", "none")
 			playlistCurrentBlock.Get("style").Set("display", "flex")
 		}
 	}))

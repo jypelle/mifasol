@@ -191,7 +191,8 @@ func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) st
 			ArtistId   string
 			ArtistName string
 		}
-		IsPlaying bool
+		ExplicitFg bool
+		IsPlaying  bool
 	}{
 		SongId:    string(song.Id),
 		SongIdx:   songIdx,
@@ -202,6 +203,7 @@ func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) st
 	if song.AlbumId != restApiV1.UnknownAlbumId {
 		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
 		songItem.AlbumId = (*string)(&song.AlbumId)
+		songItem.ExplicitFg = song.ExplicitFg
 	}
 
 	for _, artistId := range song.ArtistIds {
