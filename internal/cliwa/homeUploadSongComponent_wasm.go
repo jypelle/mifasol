@@ -1,0 +1,121 @@
+package cliwa
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/jypelle/mifasol/internal/cliwa/jst"
+	"github.com/jypelle/mifasol/restApiV1"
+	"github.com/sirupsen/logrus"
+	"html"
+	"strings"
+	"syscall/js"
+)
+
+type HomeUploadSongComponent struct {
+	app          *App
+	closed       bool
+	songFiles    []js.Value
+	songFilesIdx int
+}
+
+func NewHomeUploadSongComponent(app *App) *HomeUploadSongComponent {
+	c := &HomeUploadSongComponent{
+		app: app,
+	}
+
+	return c
+}
+
+func (c *HomeUploadSongComponent) Show() {
+	div := jst.Id("homeMainModal")
+	div.Set("innerHTML", c.app.RenderTemplate(
+		nil, "home/uploadSong/index"),
+	)
+
+	form := jst.Id("uploadSongForm")
+	form.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.uploadAction))
+	cancelButton := jst.Id("uploadSongCancelButton")
+	cancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.cancelAction))
+	uploadSongFolder := jst.Id("uploadSongFolder")
+	uploadSongFolder.Call("addEventListener", "change", c.app.AddEventFunc(func() {
+		files := uploadSongFolder.Get("files")
+
+		// Keep only flac and mp3 files
+		c.songFiles = nil
+		c.songFilesIdx = 0
+		for i := 0; i < files.Length(); i++ {
+			file := files.Index(i)
+			lowerName := strings.ToLower(file.Get("name").String())
+			if strings.HasSuffix(lowerName, ".mp3") || strings.HasSuffix(lowerName, ".flac") {
+				c.songFiles = append(c.songFiles, file)
+			}
+		}
+
+		jst.Id("uploadSongReport").Set("innerHTML", fmt.Sprintf("%d song(s) to import", len(c.songFiles)))
+
+	}))
+}
+
+func (c *HomeUploadSongComponent) uploadAction() {
+	if c.closed {
+		return
+	}
+
+	if len(c.songFiles) == 0 {
+		return
+	}
+
+	div := jst.Id("homeMainModal")
+	div.Set("innerHTML", c.app.RenderTemplate(
+		nil, "home/uploadSong/uploading"),
+	)
+
+	c.loadSong()
+}
+
+func (c *HomeUploadSongComponent) loadSong() {
+	songFile := c.songFiles[c.songFilesIdx]
+	uploadingStatus := jst.Id("uploadSongUploadingStatus")
+	uploadingStatus.Set("innerHTML", fmt.Sprintf("Loading: %s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
+	reader := js.Global().Get("FileReader").New()
+	reader.Call("addEventListener", "load", c.app.AddRichEventFunc(c.uploadSong))
+	reader.Call("readAsArrayBuffer", songFile)
+}
+
+func (c *HomeUploadSongComponent) uploadSong(this js.Value, args []js.Value) {
+	songFile := c.songFiles[c.songFilesIdx]
+	uploadingStatus := jst.Id("uploadSongUploadingStatus")
+	uploadingStatus.Set("innerHTML", fmt.Sprintf("Uploading: %s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
+
+	result := this.Get("result")
+	jscontent := js.Global().Get("Uint8Array").New(result)
+	content := make([]byte, songFile.Get("size").Int())
+	js.CopyBytesToGo(content, jscontent)
+
+	_, cliErr := c.app.restClient.CreateSongContent(restApiV1.SongFormatFlac, bytes.NewReader(content))
+	if cliErr != nil {
+		c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to upload song %s", songFile.Get("name")), cliErr)
+	}
+
+	if c.songFilesIdx < len(c.songFiles)-1 {
+		c.songFilesIdx++
+		c.loadSong()
+	} else {
+		c.close()
+		c.app.HomeComponent.Reload()
+		c.app.HideLoader()
+	}
+}
+
+func (c *HomeUploadSongComponent) cancelAction() {
+	logrus.Infof("Cancel")
+	if c.closed {
+		return
+	}
+	c.close()
+}
+
+func (c *HomeUploadSongComponent) close() {
+	c.closed = true
+	c.app.HomeComponent.CloseModal()
+}

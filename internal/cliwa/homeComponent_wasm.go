@@ -43,6 +43,10 @@ func (c *HomeComponent) Show() {
 }
 
 func (c *HomeComponent) uploadSongsAction() {
+	component := NewHomeUploadSongComponent(c.app)
+
+	c.OpenModal()
+	component.Show()
 }
 
 func (c *HomeComponent) logOutAction() {
