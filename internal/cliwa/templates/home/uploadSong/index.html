@@ -1,19 +1,19 @@
-    <div style="flex: 0; margin: auto;">
-        <h2>Upload songs</h2>
-        <form id="uploadSongForm">
+<div>
+    <h2>Upload songs</h2>
+    <form id="uploadSongForm">
+        <div>
+            <label for="uploadSongFolder">Folder to import</label>
             <div>
-                <label for="uploadSongFolder">Folder to import</label>
-                <div>
-                    <input type="file" id="uploadSongFolder" webkitdirectory multiple />
-                </div>
+                <input type="file" id="uploadSongFolder" webkitdirectory multiple/>
             </div>
-            <div id="uploadSongReport"></div>
+        </div>
+        <div id="uploadSongReport"></div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="submit">Upload</button>
-                    <button type="button" id="uploadSongCancelButton">Cancel</button>
-                </div>
+                <button type="submit">Upload</button>
+                <button type="button" id="uploadSongCancelButton">Cancel</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>

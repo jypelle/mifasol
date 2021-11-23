@@ -76,7 +76,7 @@ func (c *HomeUploadSongComponent) uploadAction() {
 func (c *HomeUploadSongComponent) loadSong() {
 	songFile := c.songFiles[c.songFilesIdx]
 	uploadingStatus := jst.Id("uploadSongUploadingStatus")
-	uploadingStatus.Set("innerHTML", fmt.Sprintf("Loading: %s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
+	uploadingStatus.Set("innerHTML", fmt.Sprintf("%s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
 	reader := js.Global().Get("FileReader").New()
 	reader.Call("addEventListener", "load", c.app.AddRichEventFunc(c.uploadSong))
 	reader.Call("readAsArrayBuffer", songFile)
@@ -85,17 +85,28 @@ func (c *HomeUploadSongComponent) loadSong() {
 func (c *HomeUploadSongComponent) uploadSong(this js.Value, args []js.Value) {
 	songFile := c.songFiles[c.songFilesIdx]
 	uploadingStatus := jst.Id("uploadSongUploadingStatus")
-	uploadingStatus.Set("innerHTML", fmt.Sprintf("Uploading: %s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
+	uploadingStatus.Set("innerHTML", fmt.Sprintf("%s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
 
 	result := this.Get("result")
 	jscontent := js.Global().Get("Uint8Array").New(result)
 	content := make([]byte, songFile.Get("size").Int())
 	js.CopyBytesToGo(content, jscontent)
 
-	_, cliErr := c.app.restClient.CreateSongContent(restApiV1.SongFormatFlac, bytes.NewReader(content))
+	lowerName := strings.ToLower(songFile.Get("name").String())
+	var songFormat restApiV1.SongFormat
+	if strings.HasSuffix(lowerName, ".flac") {
+		songFormat = restApiV1.SongFormatFlac
+	} else {
+		songFormat = restApiV1.SongFormatMp3
+	}
+
+	_, cliErr := c.app.restClient.CreateSongContent(songFormat, bytes.NewReader(content))
 	if cliErr != nil {
 		c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to upload song %s", songFile.Get("name")), cliErr)
 	}
+
+	uploadSongUploadingProgressbar := jst.Id("uploadSongUploadingProgressbar")
+	uploadSongUploadingProgressbar.Get("style").Set("width", fmt.Sprintf("%f%%", 100.0*float64(c.songFilesIdx+1)/float64(len(c.songFiles))))
 
 	if c.songFilesIdx < len(c.songFiles)-1 {
 		c.songFilesIdx++

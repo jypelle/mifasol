@@ -1,18 +1,18 @@
-    <div style="flex: 0; margin: auto;">
-        <h2>Edit artist</h2>
-        <form id="artistEditForm">
+<div>
+    <h2>Edit artist</h2>
+    <form id="artistEditForm">
+        <div>
+            <label for="artistEditArtistName">Name</label>
             <div>
-                <label for="artistEditArtistName">Name</label>
-                <div>
-                    <input id="artistEditArtistName" type="text" value="{{.Name}}">
-                </div>
+                <input id="artistEditArtistName" type="text" value="{{.Name}}">
             </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="submit">Save</button>
-                    <button type="button" id="artistEditCancelButton">Cancel</button>
-                </div>
+                <button type="submit">Save</button>
+                <button type="button" id="artistEditCancelButton">Cancel</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>

@@ -1,18 +1,18 @@
-    <div style="flex: 0; margin: auto;">
-        <h2>Edit album</h2>
-        <form id="albumEditForm">
+<div>
+    <h2>Edit album</h2>
+    <form id="albumEditForm">
+        <div>
+            <label for="albumEditAlbumName">Name</label>
             <div>
-                <label for="albumEditAlbumName">Name</label>
-                <div>
-                    <input id="albumEditAlbumName" type="text" value="{{.Name}}">
-                </div>
+                <input id="albumEditAlbumName" type="text" value="{{.Name}}">
             </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="submit">Save</button>
-                    <button type="button" id="albumEditCancelButton">Cancel</button>
-                </div>
+                <button type="submit">Save</button>
+                <button type="button" id="albumEditCancelButton">Cancel</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>

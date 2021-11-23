@@ -179,7 +179,7 @@ input {
     border-radius: 0.3rem;
     padding: 0.4rem;
     vertical-align: middle;
-    width: 20rem;
+    width: 100%;
 }
 
 textarea {
@@ -206,8 +206,6 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-input[type="file"],
-input[type="image"],
 input[type="submit"],
 input[type="reset"],
 input[type="button"],
@@ -233,20 +231,26 @@ input[type="checkbox"]:focus {
     color: var(--input-placeholder-color);
 }
 
+form {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 2rem;
+}
+
 form > div {
     display: flex;
     flex-flow: row wrap;
+    gap: 1rem;
 }
 
 form > div > label {
     flex: 0 0 14rem;
-    margin: 0 1rem 1rem 0;
     font-weight: 500;
+    margin-top:0.5rem;
 }
 
 form > div > div {
-    flex: 2 2 18rem;
-    margin: 0 0rem 1.2rem 0;
+    flex: 1 1 14rem;
 }
 /*
 form > div > div > select,
@@ -549,4 +553,23 @@ body.loading .modalLoader {
     background-color: var(--bg-color-alt);
     max-height: 14rem;
     overflow-y: auto;
+}
+
+#homeMainModal {
+    display: none;
+    flex-flow: column nowrap;
+    flex: 1 0 4rem;
+    gap: 1rem;
+    overflow-y: auto;
+    align-items: center;
+}
+
+#homeMainModal > div {
+    flex: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+    max-width: 600px;
+    display: flex;
+    flex-flow: column nowrap;
+    width: 100%;
 }

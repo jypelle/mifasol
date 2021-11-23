@@ -1,40 +1,40 @@
-    <div style="flex: 0; margin: auto;">
-        <h2>{{if .IsNewUser}}New user{{else}}Edit user{{end}}</h2>
-        <form id="userEditForm">
+<div>
+    <h2>{{if .IsNewUser}}New user{{else}}Edit user{{end}}</h2>
+    <form id="userEditForm">
+        <div>
+            <label for="userEditUserName">Name</label>
             <div>
-                <label for="userEditUserName">Name</label>
-                <div>
-                    <input id="userEditUserName" type="text" value="{{.Name}}">
-                </div>
+                <input id="userEditUserName" type="text" value="{{.Name}}">
             </div>
+        </div>
+        <div>
+            <label for="userEditPassword">Password</label>
             <div>
-                <label for="userEditPassword">Password</label>
-                <div>
-                    <input id="userEditPassword" type="password" value="">
-                </div>
+                <input id="userEditPassword" type="password" value="">
             </div>
-            {{if .IsConnectedUserAdmin}}
+        </div>
+        {{if .IsConnectedUserAdmin}}
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <input id="userEditHideExplicitFg" value="true" type="checkbox" {{if .HideExplicitFg}}checked{{end}}><label for="userEditHideExplicitFg"></label>
-                    Hide explicit songs
-                </div>
+                <input id="userEditHideExplicitFg" value="true" type="checkbox" {{if .HideExplicitFg}}checked{{end}}><label for="userEditHideExplicitFg"></label>
+                Hide explicit songs
             </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <input id="userEditAdminFg" value="true" type="checkbox" {{if .AdminFg}}checked{{end}}><label for="userEditAdminFg"></label>
-                    Administrator
-                </div>
+                <input id="userEditAdminFg" value="true" type="checkbox" {{if .AdminFg}}checked{{end}}><label for="userEditAdminFg"></label>
+                Administrator
             </div>
-            {{end}}
+        </div>
+        {{end}}
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="submit">Save</button>
-                    <button type="button" id="userEditCancelButton">Cancel</button>
-                </div>
+                <button type="submit">Save</button>
+                <button type="button" id="userEditCancelButton">Cancel</button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>

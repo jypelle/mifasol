@@ -1,12 +1,24 @@
-    <div style="flex: 0; margin: auto;">
-        <h2>Uploading</h2>
-        <p id="uploadSongUploadingStatus"></p>
-        <form id="uploadSongUploadingForm">
+<div>
+    <h2>Uploading</h2>
+    <form id="uploadSongUploadingForm">
+        <div>
+            <label></label>
+            <div id="uploadSongUploadingStatus">
+            </div>
+        </div>
+        <div>
+            <label></label>
             <div>
-                <label></label>
-                <div>
-                    <button type="button" id="uploadSongUploadingCancelButton">Cancel</button>
+                <div style="border: 0.2rem solid var(--fg-color-alt); border-radius: 0.3rem; background-color: var(--fg-color-alt); height:1.8rem; width:100%;">
+                    <div id="uploadSongUploadingProgressbar" style="border-radius: 0.3rem; background-color: var(--main-color); height:1.4rem; width:0%"></div>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+        <div>
+            <label></label>
+            <div>
+                <button type="button" id="uploadSongUploadingCancelButton">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
