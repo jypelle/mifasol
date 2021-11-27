@@ -2,23 +2,26 @@
 
 Mifasol is a self-hosted *opinionated* music server.
 
-![mifasolcli console user interface](docs/mifasolcli-ui-screenshot.png)
+![mifasolsrv web_client](docs/mifasolsrv-web-screenshot.png)
+
+![mifasolcli console client](docs/mifasolcli-ui-screenshot.png)
 
 ## Key features
 
-1. Songs and playlists management on a self-hosted server for multiple users.
-2. One server, Two clients (web & console), and a REST API for those who want to develop their own client.
-3. Keeping local favorite song and playlist files synced with server content.
-4. No requirements about music player used to listen your music (thanks to file sync).
-5. Differentiation of homonym artists and albums.
-6. Management of multi-artist songs.
-7. Avoiding playlists being broken updating song's name, album's name, artist's name or reorganizing song files hierarchy.
-8. Server is easy to
+1. Management of homonym artists and albums.
+2. Management of multi-artist songs.
+3. Avoiding playlists being broken updating songs, albums, or artists.
+4. Listening to songs
+   - in streaming (via web or console clients)
+   - or locally (via file synchronization and the music player of your choice).
+5. REST API for those who want to develop their own client.
+6. Easy to
     1. Install (one executable file to copy, and you are done)
     2. Backup (all data in one folder)
     3. Secure (https by default)
-9. Blazing fast navigation with console & web clients.
-10. Multiplatform.
+7. Blazing fast navigation with console & web clients.
+8. Multiplatform.
+9. You can even build your [own internet radio](https://github.com/jypelle/vekigi) to listen to your playlists !
 
 Mifasol is a free and open source project distributed under the permissive Apache 2.0 License. 
 
@@ -39,10 +42,10 @@ Mifasol is a free and open source project distributed under the permissive Apach
 This software doesn’t try to satisfy the needs of everyone.
 
 - The number of features is voluntarily limited to facilitate its maintenance.
-- Only **flac** and **mp3** formats are supported (**ogg** may come later).
+- Only **flac** and **mp3** formats are supported.
 - When you import some music on mifasol server, **song filenames are ignored**, only song tags are used to link your song to an artist, an album or to know the song name.
-- Once your music is imported, **song tags are partially managed by mifasol server** and are used to generate song filename on mifasol clients.
-- **Only one-way sync is supported**:  song files and playlists are copied from mifasol server to client device.
+- Once your music is imported, **song tags are partially managed by mifasol server** and are used to generate song filename during files sync.
+- **Only one-way sync is supported**: song files and playlists are copied from mifasol server to client device.
 
 ## Mifasol server
 
@@ -57,7 +60,7 @@ Drop the dedicated `mifasolsrv` binary on your server and you are done.
 You need:
 
 - Linux
-- Golang >= 1.16
+- Golang >= 1.17
 - ANDROID_NDK_HOME set (to build android console client).
 
 ```
@@ -75,7 +78,7 @@ mifasolsrv run
 Use Ctrl+C to gracefully stop it (and to avoid database corruption).
 
 On first launch, `mifasolsrv run` will:
-- Create default admin user with mifasol/mifasol as username/password
+- Create default admin user with `mifasol`/`mifasol` as username/password
 - Create a self-signed certificate valid for localhost only
 - Listen requests on https://localhost:6620
 
@@ -96,7 +99,7 @@ mifasolsrv --help
 mifasolsrv <COMMAND> --help
 ```
 
-for more information
+for more information.
 
 ### Where is my data stored ?
 
@@ -155,7 +158,7 @@ Configuration file, embedded database, song and cover files are all saved into *
 
 ## Mifasol web client
 
-Connect to your mifasol server: https://localhost:6620 to manage and listen server content.
+You just have to connect to your mifasol server: https://localhost:6620
 
 ## Mifasol console client
 
@@ -167,7 +170,7 @@ Mifasol server embeds clients, so you just have to download the dedicated `mifas
 
 #### From sources
 
-You need golang >= 1.16 and
+You need golang >= 1.17 and
 - `libasound2-dev` on linux
 - `mingw-w64` on windows
 - `AudioToolbox.framework` on mac
@@ -181,7 +184,7 @@ go install ./cmd/mifasolcli
 #### Configuration
 
 On first launch, *mifasolcli* try to connect to mifasol server using https://localhost:6620
-(only accepting server self-signed certificate read on first connection) with mifasol/mifasol as username/password.
+(only accepting server self-signed certificate read on first connection) with `mifasol`/`mifasol` as username/password.
 
 You can change default configuration with:
 
@@ -197,7 +200,7 @@ NB: \<HOSTNAME\> should match with one of the hostnames configured on mifasol se
 mifasolcli import [Location of music folder to import]
 ```
 
-*mifasolcli* will recursively loop through specified folder to import every .flac and .mp3 files to mifasol server.
+*mifasolcli* will recursively loop through specified folder to import every `flac` and `mp3` files to mifasol server.
 
 #### Sync local music folder with mifasol server's user favorite content
 
@@ -223,7 +226,7 @@ Press `h` to display available shortcuts to navigate through the interface.
 
 ##### Tips:
 
-- **After a fresh server installation, use the console user interface or web client to change the default username/password**.
+- **After a fresh server installation, use the console or web client to change the default username/password**.
 - Windows users should use new *Windows Terminal* to correctly display unicode emojis.  
 
 #### More options
@@ -236,4 +239,4 @@ mifasolcli <COMMAND> --help
 mifasolcli <COMMAND> <SUBCOMMAND> --help
 ```
 
-for more informations.
+for more information.
