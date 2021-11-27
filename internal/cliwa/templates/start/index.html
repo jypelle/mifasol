@@ -3,8 +3,8 @@
         <h1 style="margin: 2rem;"><img src="/static/image/logo64.png" style="vertical-align:middle;"> Mifasol</h1>
     </div>
     <div style="flex: 2; display: flex; flex-flow: row wrap; align-content: flex-start; justify-content: center; padding-top: 2rem;">
-        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 22rem;">
-            <h2>Connect to web client (alpha!)</h2>
+        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 20rem;">
+            <h2>Connect to web client</h2>
             <form id="startForm">
                 <div>
                     <label for="mifasolUsername">Username</label>
@@ -25,7 +25,10 @@
                         Remember me
                     </div>
                 </div>
-                <p id="message"></p>
+                <div id="startMessageBlock" style="display: none;">
+                    <label></label>
+                    <div id="startMessage"></div>
+                </div>
                 <div>
                     <label></label>
                     <div>
@@ -34,7 +37,7 @@
                 </div>
             </form>
         </div>
-        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 22rem;">
+        <div style="margin: 0 2rem 2rem 2rem; flex: 0 1 20rem;">
             <h2>Download console client</h2>
             <p><a href="/clients/mifasolcli-windows-amd64.exe"><i class="fab fa-windows" style="font-size: 2rem;"></i>
                 mifasolcli (windows amd64)</a></p>

@@ -72,14 +72,16 @@ func (c *StartComponent) logInAction() {
 	// Create rest Client
 	var err error
 	c.app.restClient, err = restClientV1.NewRestClient(&c.app.config, true)
+	messageBlock := jst.Id("startMessageBlock")
+	message := jst.Id("startMessage")
 	if err != nil {
-		message := jst.Id("message")
+		messageBlock.Get("style").Set("display", "flex")
 		message.Set("innerHTML", "Unable to connect to server")
 		logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
 		return
 	}
 	if c.app.ConnectedUserId() == restApiV1.UndefinedUserId {
-		message := jst.Id("message")
+		messageBlock.Get("style").Set("display", "flex")
 		message.Set("innerHTML", "Wrong credentials")
 		jst.LocalStorage.Set("mifasolUsername", "")
 		jst.LocalStorage.Set("mifasolPassword", "")
