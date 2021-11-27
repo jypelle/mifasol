@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
 	"github.com/jypelle/mifasol/restApiV1"
-	"github.com/sirupsen/logrus"
 	"html"
 	"strings"
 	"syscall/js"
@@ -69,20 +68,28 @@ func (c *HomeUploadSongComponent) uploadAction() {
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/uploadSong/uploading"),
 	)
+	uploadingCancelButton := jst.Id("uploadSongUploadingCancelButton")
+	uploadingCancelButton.Call("addEventListener", "click", c.app.AddEventFunc(c.uploadingCancelAction))
 
-	c.loadSong()
+	c.loadSongAction()
 }
 
-func (c *HomeUploadSongComponent) loadSong() {
+func (c *HomeUploadSongComponent) loadSongAction() {
+	if c.closed {
+		return
+	}
 	songFile := c.songFiles[c.songFilesIdx]
 	uploadingStatus := jst.Id("uploadSongUploadingStatus")
 	uploadingStatus.Set("innerHTML", fmt.Sprintf("%s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
 	reader := js.Global().Get("FileReader").New()
-	reader.Call("addEventListener", "load", c.app.AddRichEventFunc(c.uploadSong))
+	reader.Call("addEventListener", "load", c.app.AddRichEventFunc(c.uploadSongAction))
 	reader.Call("readAsArrayBuffer", songFile)
 }
 
-func (c *HomeUploadSongComponent) uploadSong(this js.Value, args []js.Value) {
+func (c *HomeUploadSongComponent) uploadSongAction(this js.Value, args []js.Value) {
+	if c.closed {
+		return
+	}
 	songFile := c.songFiles[c.songFilesIdx]
 	uploadingStatus := jst.Id("uploadSongUploadingStatus")
 	uploadingStatus.Set("innerHTML", fmt.Sprintf("%s", html.EscapeString(songFile.Get("webkitRelativePath").String())))
@@ -110,20 +117,26 @@ func (c *HomeUploadSongComponent) uploadSong(this js.Value, args []js.Value) {
 
 	if c.songFilesIdx < len(c.songFiles)-1 {
 		c.songFilesIdx++
-		c.loadSong()
+		c.loadSongAction()
 	} else {
 		c.close()
 		c.app.HomeComponent.Reload()
-		c.app.HideLoader()
 	}
 }
 
 func (c *HomeUploadSongComponent) cancelAction() {
-	logrus.Infof("Cancel")
 	if c.closed {
 		return
 	}
 	c.close()
+}
+
+func (c *HomeUploadSongComponent) uploadingCancelAction() {
+	if c.closed {
+		return
+	}
+	c.close()
+	c.app.HomeComponent.Reload()
 }
 
 func (c *HomeUploadSongComponent) close() {

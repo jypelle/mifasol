@@ -45,12 +45,12 @@ func NewHomeConfirmDeleteComponent(
 	case restApiV1.AlbumId:
 		if len(app.localDb.AlbumOrderedSongs[v]) == 1 {
 			c.name = template.HTML(fmt.Sprintf(
-				"Do you want to delete <span class=\"albumLink\">%s</span> ant its songs ?",
+				"Do you want to delete <span class=\"albumLink\">%s</span> and its song ?",
 				html.EscapeString(app.localDb.Albums[v].Name),
 			))
 		} else if len(app.localDb.AlbumOrderedSongs[v]) > 1 {
 			c.name = template.HTML(fmt.Sprintf(
-				"Do you want to delete <span class=\"albumLink\">%s</span> ant its %d songs ?",
+				"Do you want to delete <span class=\"albumLink\">%s</span> and its %d songs ?",
 				html.EscapeString(app.localDb.Albums[v].Name),
 				len(app.localDb.AlbumOrderedSongs[v]),
 			))
