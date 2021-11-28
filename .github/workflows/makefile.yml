@@ -13,6 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: nttld/setup-ndk@v1
+      id: setup-ndk
+      with:
+        ndk-version: r23b
+        add-to-path: false
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -21,6 +26,8 @@ jobs:
 
     - name: Install dependencies
       run: sudo apt install libasound2-dev
-
+      
     - name: Run release
       run: make release
+      env:
+        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
