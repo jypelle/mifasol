@@ -39,8 +39,8 @@ var ColorWhiteStr = "#F5F5F5"
 func init() {
 
 	cview.Styles.PrimitiveBackgroundColor = ColorBlack
-	cview.Styles.ContrastBackgroundColor = tcell.NewHexColor(0x403030)
-	cview.Styles.MoreContrastBackgroundColor = tcell.ColorGreen
+	cview.Styles.ContrastBackgroundColor = ColorSelected
+	cview.Styles.MoreContrastBackgroundColor = tcell.NewHexColor(0x202020)
 	cview.Styles.BorderColor = tcell.NewHexColor(0x808080)
 	cview.Styles.TitleColor = ColorWhite
 	cview.Styles.GraphicsColor = ColorWhite
@@ -49,7 +49,6 @@ func init() {
 	cview.Styles.TertiaryTextColor = tcell.ColorGreen
 	cview.Styles.InverseTextColor = tcell.ColorBlue
 	cview.Styles.ContrastSecondaryTextColor = tcell.ColorDarkCyan
-
 }
 
 /*
