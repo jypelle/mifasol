@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jypelle/mifasol/internal/cli"
 	"github.com/jypelle/mifasol/internal/version"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,6 +16,8 @@ import (
 const configSuffix = "mifasolcli"
 
 func main() {
+	// Set random seed
+	rand.Seed(time.Now().UnixNano())
 
 	// Logger
 	logrus.SetFormatter(&logrus.TextFormatter{ForceColors: true})
