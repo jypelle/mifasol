@@ -171,17 +171,8 @@ func (c *HomeCurrentComponent) RefreshView() {
 
 	// Update list
 	var divContent strings.Builder
-	for songIdx, songId := range c.songIds {
-		divContent.WriteString(c.addSongItem(songIdx, c.app.localDb.Songs[songId]))
-	}
-	listDiv := jst.Id("currentList")
-	listDiv.Set("innerHTML", divContent.String())
-}
 
-func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) string {
-	var divContent strings.Builder
-
-	songItem := struct {
+	type SongItem struct {
 		SongId    string
 		SongIdx   int
 		SongName  string
@@ -193,32 +184,37 @@ func (c *HomeCurrentComponent) addSongItem(songIdx int, song *restApiV1.Song) st
 		}
 		ExplicitFg bool
 		IsPlaying  bool
-	}{
-		SongId:    string(song.Id),
-		SongIdx:   songIdx,
-		SongName:  song.Name,
-		IsPlaying: songIdx == c.currentSongIdx,
 	}
 
-	if song.AlbumId != restApiV1.UnknownAlbumId {
-		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
-		songItem.AlbumId = (*string)(&song.AlbumId)
-		songItem.ExplicitFg = song.ExplicitFg
+	var songItemList = make([]SongItem, len(c.songIds))
+	var song *restApiV1.Song
+
+	for songIdx, songId := range c.songIds {
+		song = c.app.localDb.Songs[songId]
+		songItemList[songIdx].SongId = string(song.Id)
+		songItemList[songIdx].SongName = song.Name
+		songItemList[songIdx].IsPlaying = songIdx == c.currentSongIdx
+
+		if song.AlbumId != restApiV1.UnknownAlbumId {
+			songItemList[songIdx].AlbumName = c.app.localDb.Albums[song.AlbumId].Name
+			songItemList[songIdx].AlbumId = (*string)(&song.AlbumId)
+			songItemList[songIdx].ExplicitFg = song.ExplicitFg
+		}
+
+		for _, artistId := range song.ArtistIds {
+			songItemList[songIdx].Artists = append(songItemList[songIdx].Artists, struct {
+				ArtistId   string
+				ArtistName string
+			}{
+				ArtistId:   string(artistId),
+				ArtistName: c.app.localDb.Artists[artistId].Name,
+			})
+		}
 	}
 
-	for _, artistId := range song.ArtistIds {
-		songItem.Artists = append(songItem.Artists, struct {
-			ArtistId   string
-			ArtistName string
-		}{
-			ArtistId:   string(artistId),
-			ArtistName: c.app.localDb.Artists[artistId].Name,
-		})
-	}
-
-	divContent.WriteString(c.app.RenderTemplate(&songItem, "home/current/songItem"))
-
-	return divContent.String()
+	divContent.WriteString(c.app.RenderTemplate(songItemList, "home/current/songItemList"))
+	listDiv := jst.Id("currentList")
+	listDiv.Set("innerHTML", divContent.String())
 }
 
 func (c *HomeCurrentComponent) AddSongAction(songId restApiV1.SongId) {

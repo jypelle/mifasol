@@ -1,3 +1,4 @@
+{{range $index, $song := .}}
 <div class="item {{if .IsPlaying}}itemPlaying{{end}} currentSongItem" draggable="true">
     <div class="itemTitle">
         <div>
@@ -25,3 +26,4 @@
         </a>
     </div>
 </div>
+{{end}}
