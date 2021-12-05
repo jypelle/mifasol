@@ -76,9 +76,8 @@ func (c *PlaylistEditComponent) save() {
 		return
 	}
 
-	c.uiApp.Reload()
-
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *PlaylistEditComponent) cancel() {

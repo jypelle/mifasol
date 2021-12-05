@@ -112,9 +112,9 @@ func (c *PlaylistContentSaveAsComponent) save() {
 		id = selectedPlaylist.Id
 	}
 	c.uiApp.currentComponent.srcPlaylistId = &id
-	c.uiApp.Reload()
 	c.uiApp.currentComponent.SetModified(false)
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *PlaylistContentSaveAsComponent) cancel() {

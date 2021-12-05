@@ -119,7 +119,7 @@ func (c *HomeConfirmDeleteComponent) deleteAction() {
 	case restApiV1.AlbumId:
 		album := c.app.localDb.Albums[v]
 		for _, song := range c.app.localDb.AlbumOrderedSongs[v] {
-			c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"songLink\">%s</span> from: <span class=\"albumLink\">%s</span>", html.EscapeString(song.Name), html.EscapeString(album.Name)))
+			c.app.ShowLoader(fmt.Sprintf("Deleting <span class=\"songLink\">%s</span> from <span class=\"albumLink\">%s</span>", html.EscapeString(song.Name), html.EscapeString(album.Name)))
 			_, cliErr := c.app.restClient.DeleteSong(song.Id)
 			if cliErr != nil {
 				c.app.HomeComponent.MessageComponent.ClientErrorMessage(fmt.Sprintf("Unable to delete <span class=\"songLink\">%s</span>", html.EscapeString(song.Name)), cliErr)

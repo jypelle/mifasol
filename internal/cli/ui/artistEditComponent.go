@@ -62,16 +62,17 @@ func (c *ArtistEditComponent) save() {
 		_, cliErr := c.uiApp.restClient.UpdateArtist(c.artistId, c.artistMeta)
 		if cliErr != nil {
 			c.uiApp.ClientErrorMessage("Unable to update the artist", cliErr)
+			return
 		}
 	} else {
 		_, cliErr := c.uiApp.restClient.CreateArtist(c.artistMeta)
 		if cliErr != nil {
 			c.uiApp.ClientErrorMessage("Unable to create the artist", cliErr)
+			return
 		}
 	}
-	c.uiApp.Reload()
-
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *ArtistEditComponent) cancel() {

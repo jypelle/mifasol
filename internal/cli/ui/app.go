@@ -153,7 +153,7 @@ func (a *App) Start() {
 
 	// Refresh Db from Server
 	fmt.Println("Syncing...")
-	a.Reload()
+	a.cviewApp.QueueUpdateDraw(a.Reload)
 
 	// Start event loop
 	a.cviewApp.SetFocus(a.libraryComponent)
@@ -195,13 +195,26 @@ func (a *App) ConfirmSongDelete(song *restApiV1.Song) {
 	modal.SetText("Do you want to delete \"" + song.Name + "\" ?")
 	modal.AddButtons([]string{"Yes", "Cancel"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			a.restClient.DeleteSong(song.Id)
-			a.Reload()
-		}
 		a.pagesComponent.HidePage("songDeleteConfirm")
 		a.pagesComponent.RemovePage("songDeleteConfirm")
 		a.cviewApp.SetFocus(currentFocus)
+
+		if buttonLabel == "Yes" {
+			mfModal := a.OpenModalMessage(fmt.Sprintf("Deleting \"%s\"", song.Name))
+
+			go func() {
+				defer func() {
+					mfModal.Close()
+					a.Reload()
+				}()
+
+				_, cliErr := a.restClient.DeleteSong(song.Id)
+				if cliErr != nil {
+					a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", song.Name), cliErr)
+					return
+				}
+			}()
+		}
 	})
 
 	a.pagesComponent.AddPage(
@@ -221,24 +234,48 @@ func (a *App) ConfirmArtistDelete(artist *restApiV1.Artist) {
 
 	currentFocus := a.cviewApp.GetFocus()
 	modal := cview.NewModal()
-	modal.SetText("Do you want to delete \"" + artist.Name + "\" ?")
+	if len(a.localDb.ArtistOrderedSongs[artist.Id]) == 1 {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" and its song ?", artist.Name))
+	} else if len(a.localDb.ArtistOrderedSongs[artist.Id]) > 1 {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" and its %d songs ?", artist.Name, len(a.localDb.ArtistOrderedSongs[artist.Id])))
+	} else {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" ?", artist.Name))
+	}
 	modal.AddButtons([]string{"Yes", "Cancel"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			_, cliErr := a.restClient.DeleteArtist(artist.Id)
-			if cliErr != nil {
-				if cliErr.Code() == restApiV1.DeleteArtistWithSongsErrorCode {
-					a.WarningMessage("You should first delete or unlink artist's songs")
-				} else {
-					a.ClientErrorMessage("Unable to delete the artist", cliErr)
-				}
-			} else {
-				a.Reload()
-			}
-		}
 		a.pagesComponent.HidePage("artistDeleteConfirm")
 		a.pagesComponent.RemovePage("artistDeleteConfirm")
 		a.cviewApp.SetFocus(currentFocus)
+
+		if buttonLabel == "Yes" {
+			mfModal := a.OpenModalMessage("Deleting...")
+
+			go func() {
+				defer func() {
+					mfModal.Close()
+					a.Reload()
+				}()
+
+				for _, song := range a.localDb.ArtistOrderedSongs[artist.Id] {
+					mfModal.SetText(fmt.Sprintf("Deleting \"%s\" from \"%s\"", song.Name, artist.Name))
+					a.cviewApp.Draw()
+
+					_, cliErr := a.restClient.DeleteSong(song.Id)
+					if cliErr != nil {
+						a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", song.Name), cliErr)
+						return
+					}
+				}
+				mfModal.SetText(fmt.Sprintf("Deleting \"%s\"", artist.Name))
+				a.cviewApp.Draw()
+
+				_, cliErr := a.restClient.DeleteArtist(artist.Id)
+				if cliErr != nil {
+					a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", artist.Name), cliErr)
+					return
+				}
+			}()
+		}
 	})
 
 	a.pagesComponent.AddPage("artistDeleteConfirm", modal, false, true)
@@ -253,24 +290,49 @@ func (a *App) ConfirmAlbumDelete(album *restApiV1.Album) {
 
 	currentFocus := a.cviewApp.GetFocus()
 	modal := cview.NewModal()
-	modal.SetText("Do you want to delete \"" + album.Name + "\" ?")
+	if len(a.localDb.AlbumOrderedSongs[album.Id]) == 1 {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" and its song ?", album.Name))
+	} else if len(a.localDb.AlbumOrderedSongs[album.Id]) > 1 {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" and its %d songs ?", album.Name, len(a.localDb.AlbumOrderedSongs[album.Id])))
+	} else {
+		modal.SetText(fmt.Sprintf("Do you want to delete \"%s\" ?", album.Name))
+	}
+
 	modal.AddButtons([]string{"Yes", "Cancel"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			_, cliErr := a.restClient.DeleteAlbum(album.Id)
-			if cliErr != nil {
-				if cliErr.Code() == restApiV1.DeleteAlbumWithSongsErrorCode {
-					a.WarningMessage("You should first delete or unlink album's songs")
-				} else {
-					a.ClientErrorMessage("Unable to delete the album", cliErr)
-				}
-			} else {
-				a.Reload()
-			}
-		}
 		a.pagesComponent.HidePage("albumDeleteConfirm")
 		a.pagesComponent.RemovePage("albumDeleteConfirm")
 		a.cviewApp.SetFocus(currentFocus)
+
+		if buttonLabel == "Yes" {
+			mfModal := a.OpenModalMessage("Deleting...")
+
+			go func() {
+				defer func() {
+					mfModal.Close()
+					a.Reload()
+				}()
+
+				for _, song := range a.localDb.AlbumOrderedSongs[album.Id] {
+					mfModal.SetText(fmt.Sprintf("Deleting \"%s\" from \"%s\"", song.Name, album.Name))
+					a.cviewApp.Draw()
+
+					_, cliErr := a.restClient.DeleteSong(song.Id)
+					if cliErr != nil {
+						a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", song.Name), cliErr)
+						return
+					}
+				}
+				mfModal.SetText(fmt.Sprintf("Deleting \"%s\"", album.Name))
+				a.cviewApp.Draw()
+
+				_, cliErr := a.restClient.DeleteAlbum(album.Id)
+				if cliErr != nil {
+					a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", album.Name), cliErr)
+					return
+				}
+			}()
+		}
 	})
 	a.pagesComponent.AddPage("albumDeleteConfirm", modal, false, true)
 }
@@ -292,13 +354,26 @@ func (a *App) ConfirmPlaylistDelete(playlist *restApiV1.Playlist) {
 	modal.SetText("Do you want to delete \"" + playlist.Name + "\" ?")
 	modal.AddButtons([]string{"Yes", "Cancel"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			a.restClient.DeletePlaylist(playlist.Id)
-			a.Reload()
-		}
 		a.pagesComponent.HidePage("playlistDeleteConfirm")
 		a.pagesComponent.RemovePage("playlistDeleteConfirm")
 		a.cviewApp.SetFocus(currentFocus)
+
+		if buttonLabel == "Yes" {
+			mfModal := a.OpenModalMessage(fmt.Sprintf("Deleting \"%s\"", playlist.Name))
+
+			go func() {
+				defer func() {
+					mfModal.Close()
+					a.Reload()
+				}()
+
+				_, cliErr := a.restClient.DeletePlaylist(playlist.Id)
+				if cliErr != nil {
+					a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", playlist.Name), cliErr)
+					return
+				}
+			}()
+		}
 	})
 	a.pagesComponent.AddPage("playlistDeleteConfirm", modal, false, true)
 }
@@ -320,13 +395,25 @@ func (a *App) ConfirmUserDelete(user *restApiV1.User) {
 	modal.SetText("Do you want to delete \"" + user.Name + "\" ?")
 	modal.AddButtons([]string{"Yes", "Cancel"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
-			a.restClient.DeleteUser(user.Id)
-			a.Reload()
-		}
 		a.pagesComponent.HidePage("userDeleteConfirm")
 		a.pagesComponent.RemovePage("userDeleteConfirm")
 		a.cviewApp.SetFocus(currentFocus)
+		if buttonLabel == "Yes" {
+			mfModal := a.OpenModalMessage(fmt.Sprintf("Deleting \"%s\"", user.Name))
+
+			go func() {
+				defer func() {
+					mfModal.Close()
+					a.Reload()
+				}()
+
+				_, cliErr := a.restClient.DeleteUser(user.Id)
+				if cliErr != nil {
+					a.ClientErrorMessage(fmt.Sprintf("Unable to delete \"%s\"", user.Name), cliErr)
+					return
+				}
+			}()
+		}
 	})
 	a.pagesComponent.AddPage("userDeleteConfirm", modal, false, true)
 }
@@ -334,10 +421,7 @@ func (a *App) ConfirmUserDelete(user *restApiV1.User) {
 func (a *App) Message(message string) {
 	a.messageComponent.SetMessage(message)
 }
-func (a *App) ForceMessage(message string) {
-	a.Message(message)
-	a.cviewApp.Draw()
-}
+
 func (a *App) WarningMessage(message string) {
 	a.messageComponent.SetWarningMessage("! " + message)
 }
@@ -347,18 +431,23 @@ func (a *App) ClientErrorMessage(message string, cliErr restClientV1.ClientError
 
 func (a *App) Reload() {
 
-	a.ForceMessage("Syncing...")
-	// Refresh In memory Db
-	cliErr := a.localDb.Refresh()
-	if cliErr != nil {
-		a.ClientErrorMessage("Unable to load data from mifasolsrv", cliErr)
-		return
-	}
+	mfModal := a.OpenModalMessage("Syncing...")
 
-	a.libraryComponent.RefreshView()
-	a.currentComponent.RefreshView()
+	go func() {
+		defer mfModal.Close()
 
-	a.Message(strconv.Itoa(len(a.localDb.Songs)) + " songs, " + strconv.Itoa(len(a.localDb.Artists)) + " artists, " + strconv.Itoa(len(a.localDb.Albums)) + " albums, " + strconv.Itoa(len(a.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(a.localDb.Users)) + " users.")
+		// Refresh In memory Db
+		cliErr := a.localDb.Refresh()
+		if cliErr != nil {
+			a.ClientErrorMessage("Unable to load data from mifasolsrv", cliErr)
+			return
+		}
+
+		a.libraryComponent.RefreshView()
+		a.currentComponent.RefreshView()
+
+		a.Message(strconv.Itoa(len(a.localDb.Songs)) + " songs, " + strconv.Itoa(len(a.localDb.Artists)) + " artists, " + strconv.Itoa(len(a.localDb.Albums)) + " albums, " + strconv.Itoa(len(a.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(a.localDb.Users)) + " users.")
+	}()
 }
 
 func (a *App) LocalDb() *localdb.LocalDb {

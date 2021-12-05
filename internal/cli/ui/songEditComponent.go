@@ -153,11 +153,11 @@ func (c *SongEditComponent) save() {
 	_, cliErr := c.uiApp.restClient.UpdateSong(c.song.Id, &c.song.SongMeta)
 	if cliErr != nil {
 		c.uiApp.ClientErrorMessage("Unable to update the song", cliErr)
+		return
 	}
 
-	c.uiApp.Reload()
-
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *SongEditComponent) cancel() {

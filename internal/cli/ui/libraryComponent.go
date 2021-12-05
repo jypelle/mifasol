@@ -75,21 +75,21 @@ func (l libraryFilter) label() string {
 			return "All songs"
 		}
 		if l.playlistId != nil {
-			return "Songs from %s playlist"
+			return "Songs from %s"
 		}
 		if l.userId != nil {
 			return "Favorite songs from %s"
 		}
 		if l.artistId != nil {
 			if *l.artistId != restApiV1.UnknownArtistId {
-				return "Songs from %s artist"
+				return "Songs from %s"
 			} else {
 				return "Songs from unknown artists"
 			}
 		}
 		if l.albumId != nil {
 			if *l.albumId != restApiV1.UnknownAlbumId {
-				return "Songs from %s album"
+				return "Songs from %s"
 			} else {
 				return "Songs from unknown album"
 			}
@@ -349,13 +349,13 @@ func NewLibraryComponent(uiApp *App) *LibraryComponent {
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to add playlist to favorites", cliErr)
 								}
-								c.uiApp.Reload()
+								defer c.uiApp.Reload()
 							} else {
 								_, cliErr := c.uiApp.restClient.CreateFavoritePlaylist(&restApiV1.FavoritePlaylistMeta{Id: favoritePlaylistId})
 								if cliErr != nil {
 									c.uiApp.ClientErrorMessage("Unable to remove playlist from favorites", cliErr)
 								}
-								c.uiApp.Reload()
+								defer c.uiApp.Reload()
 							}
 							if !(currentFilter.userId != nil && *currentFilter.userId == c.uiApp.ConnectedUserId()) {
 								c.list.SetCurrentItem(c.list.GetCurrentItem() + 1)

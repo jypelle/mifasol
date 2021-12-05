@@ -72,8 +72,8 @@ func NewCurrentComponent(uiApp *App) *CurrentComponent {
 							} else {
 								var id restApiV1.PlaylistId = selectedPlaylist.Id
 								c.uiApp.currentComponent.srcPlaylistId = &id
-								c.uiApp.Reload()
 								c.uiApp.currentComponent.SetModified(false)
+								c.uiApp.Reload()
 							}
 
 						}

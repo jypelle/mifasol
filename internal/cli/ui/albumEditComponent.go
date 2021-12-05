@@ -62,16 +62,17 @@ func (c *AlbumEditComponent) save() {
 		_, cliErr := c.uiApp.restClient.UpdateAlbum(c.albumId, c.albumMeta)
 		if cliErr != nil {
 			c.uiApp.ClientErrorMessage("Unable to update the album", cliErr)
+			return
 		}
 	} else {
 		_, cliErr := c.uiApp.restClient.CreateAlbum(c.albumMeta)
 		if cliErr != nil {
 			c.uiApp.ClientErrorMessage("Unable to create the album", cliErr)
+			return
 		}
 	}
-	c.uiApp.Reload()
-
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *AlbumEditComponent) cancel() {

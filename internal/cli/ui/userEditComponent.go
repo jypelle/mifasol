@@ -118,9 +118,9 @@ func (c *UserEditComponent) save() {
 			return
 		}
 	}
-	c.uiApp.Reload()
 
 	c.close()
+	c.uiApp.Reload()
 }
 
 func (c *UserEditComponent) cancel() {
