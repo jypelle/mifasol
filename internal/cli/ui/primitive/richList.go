@@ -1,10 +1,10 @@
 package primitive
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
-	"gitlab.com/tslocum/cview"
 	"math"
 	"strconv"
 	"strings"
@@ -17,7 +17,7 @@ type richListItem struct {
 
 // RichList displays rows of items, each of which can be selected.
 //
-// See https://gitlab.com/tslocum/cview/wiki/List for an example.
+// See https://code.rocketnine.space/tslocum/cview/wiki/List for an example.
 type RichList struct {
 	*cview.Box
 

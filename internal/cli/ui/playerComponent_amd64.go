@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"fmt"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
@@ -11,7 +12,6 @@ import (
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/restApiV1"
-	"gitlab.com/tslocum/cview"
 	"io"
 	"strconv"
 	"time"

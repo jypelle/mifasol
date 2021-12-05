@@ -1,7 +1,7 @@
 package tool
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"io"
 	"os"
 	"sync"

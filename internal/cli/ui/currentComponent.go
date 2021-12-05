@@ -1,11 +1,11 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
 	"github.com/jypelle/mifasol/internal/cli/ui/primitive"
 	"github.com/jypelle/mifasol/restApiV1"
-	"gitlab.com/tslocum/cview"
 	"math/rand"
 )
 

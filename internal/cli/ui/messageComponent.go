@@ -1,8 +1,8 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
-	"gitlab.com/tslocum/cview"
 )
 
 type MessageComponent struct {

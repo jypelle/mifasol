@@ -1,10 +1,10 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
 	"github.com/jypelle/mifasol/restApiV1"
-	"gitlab.com/tslocum/cview"
 	"time"
 )
 

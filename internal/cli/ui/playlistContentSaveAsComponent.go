@@ -1,8 +1,8 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"github.com/jypelle/mifasol/restApiV1"
-	"gitlab.com/tslocum/cview"
 )
 
 type PlaylistContentSaveAsComponent struct {

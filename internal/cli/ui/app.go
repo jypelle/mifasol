@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/jypelle/mifasol/internal/cli/config"
@@ -8,7 +9,6 @@ import (
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/tslocum/cview"
 	"strconv"
 )
 

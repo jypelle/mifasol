@@ -1,8 +1,8 @@
 package color
 
 import (
+	"code.rocketnine.space/tslocum/cview"
 	"github.com/gdamore/tcell/v2"
-	"gitlab.com/tslocum/cview"
 )
 
 var ColorTitleStr = "#441800"
