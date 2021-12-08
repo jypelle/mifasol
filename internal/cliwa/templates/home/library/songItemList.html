@@ -1,3 +1,4 @@
+{{range $index, $song := .}}
 <div class="item songItem" draggable="true">
     <div class="itemFavorite"><a class="songFavoriteLink" href="#" data-songid="{{.SongId}}">
         {{if .Favorite}}
@@ -43,3 +44,4 @@
         </a>
     </div>
 </div>
+{{end}}

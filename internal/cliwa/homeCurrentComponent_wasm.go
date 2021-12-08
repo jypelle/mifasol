@@ -7,7 +7,6 @@ import (
 	"html"
 	"math/rand"
 	"strconv"
-	"strings"
 	"syscall/js"
 )
 
@@ -170,8 +169,6 @@ func (c *HomeCurrentComponent) RefreshView() {
 	titleSpan.Set("innerHTML", title)
 
 	// Update list
-	var divContent strings.Builder
-
 	type SongItem struct {
 		SongId    string
 		SongIdx   int
@@ -212,9 +209,12 @@ func (c *HomeCurrentComponent) RefreshView() {
 		}
 	}
 
-	divContent.WriteString(c.app.RenderTemplate(songItemList, "home/current/songItemList"))
+	//logrus.Info("HomeCurrentComponent.RefreshView: render")
+	divContent := c.app.RenderTemplate(songItemList, "home/current/songItemList")
+	//logrus.Info("HomeCurrentComponent.RefreshView: inject")
 	listDiv := jst.Id("currentList")
-	listDiv.Set("innerHTML", divContent.String())
+	listDiv.Set("innerHTML", divContent)
+	//logrus.Info("HomeCurrentComponent.RefreshView: end")
 }
 
 func (c *HomeCurrentComponent) AddSongAction(songId restApiV1.SongId) {

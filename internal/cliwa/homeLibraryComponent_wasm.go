@@ -601,9 +601,9 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		libraryList.Set("scrollTop", 0)
 	}
 
-	var divContentPreviousPage strings.Builder
-	var divContentCurrentPage strings.Builder
-	var divContentNextPage strings.Builder
+	var divContentPreviousPage string
+	var divContentCurrentPage string
+	var divContentNextPage string
 
 	// Refresh library list
 	minIdx := LibraryPageSize * (c.libraryState.displayedPage - 1)
@@ -615,105 +615,137 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 		maxIdx = c.libraryState.cachedSize()
 	}
 
-	step1Idx := LibraryPageSize*c.libraryState.displayedPage - minIdx
-	step2Idx := LibraryPageSize*(c.libraryState.displayedPage+1) - minIdx
+	step1Idx := LibraryPageSize * c.libraryState.displayedPage
+	if step1Idx > maxIdx {
+		step1Idx = maxIdx
+	}
+	step2Idx := LibraryPageSize * (c.libraryState.displayedPage + 1)
+	if step2Idx > maxIdx {
+		step2Idx = maxIdx
+	}
 
 	switch c.libraryState.libraryType {
 	case LibraryTypeArtists:
-		for idx, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
-			if idx < step1Idx {
-				c.addArtistItem(&divContentPreviousPage, artist)
-			} else if idx < step2Idx {
-				c.addArtistItem(&divContentCurrentPage, artist)
-			} else {
-				c.addArtistItem(&divContentNextPage, artist)
+		/*
+			for idx, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
+				if idx < step1Idx {
+					c.addArtistItem(&divContentPreviousPage, artist)
+				} else if idx < step2Idx {
+					c.addArtistItem(&divContentCurrentPage, artist)
+				} else {
+					c.addArtistItem(&divContentNextPage, artist)
+				}
 			}
-		}
+		*/
+		divContentPreviousPage = c.renderArtistItemList(c.libraryState.cachedArtists[minIdx:step1Idx])
+		divContentCurrentPage = c.renderArtistItemList(c.libraryState.cachedArtists[step1Idx:step2Idx])
+		divContentNextPage = c.renderArtistItemList(c.libraryState.cachedArtists[step2Idx:maxIdx])
 	case LibraryTypeAlbums:
-		for idx, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
-			if idx < step1Idx {
-				c.addAlbumItem(&divContentPreviousPage, album)
-			} else if idx < step2Idx {
-				c.addAlbumItem(&divContentCurrentPage, album)
-			} else {
-				c.addAlbumItem(&divContentNextPage, album)
+		/*
+			for idx, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
+				if idx < step1Idx {
+					c.addAlbumItem(&divContentPreviousPage, album)
+				} else if idx < step2Idx {
+					c.addAlbumItem(&divContentCurrentPage, album)
+				} else {
+					c.addAlbumItem(&divContentNextPage, album)
+				}
 			}
-		}
+		*/
+		divContentPreviousPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[minIdx:step1Idx])
+		divContentCurrentPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[step1Idx:step2Idx])
+		divContentNextPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[step2Idx:maxIdx])
 	case LibraryTypePlaylists:
-		for idx, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
-			if idx < step1Idx {
-				c.addPlaylistItem(&divContentPreviousPage, playlist)
-			} else if idx < step2Idx {
-				c.addPlaylistItem(&divContentCurrentPage, playlist)
-			} else {
-				c.addPlaylistItem(&divContentNextPage, playlist)
+		/*
+			for idx, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
+				if idx < step1Idx {
+					c.addPlaylistItem(&divContentPreviousPage, playlist)
+				} else if idx < step2Idx {
+					c.addPlaylistItem(&divContentCurrentPage, playlist)
+				} else {
+					c.addPlaylistItem(&divContentNextPage, playlist)
+				}
 			}
-		}
+		*/
+		divContentPreviousPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[minIdx:step1Idx])
+		divContentCurrentPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[step1Idx:step2Idx])
+		divContentNextPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[step2Idx:maxIdx])
 	case LibraryTypeSongs:
-		for idx, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
-			if idx < step1Idx {
-				c.addSongItem(&divContentPreviousPage, song)
-			} else if idx < step2Idx {
-				c.addSongItem(&divContentCurrentPage, song)
-			} else {
-				c.addSongItem(&divContentNextPage, song)
+		/*
+			for idx, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
+				if idx < step1Idx {
+					c.addSongItem(&divContentPreviousPage, song)
+				} else if idx < step2Idx {
+					c.addSongItem(&divContentCurrentPage, song)
+				} else {
+					c.addSongItem(&divContentNextPage, song)
+				}
 			}
-		}
+		*/
+		divContentPreviousPage = c.renderSongItemList(c.libraryState.cachedSongs[minIdx:step1Idx])
+		divContentCurrentPage = c.renderSongItemList(c.libraryState.cachedSongs[step1Idx:step2Idx])
+		divContentNextPage = c.renderSongItemList(c.libraryState.cachedSongs[step2Idx:maxIdx])
 	case LibraryTypeUsers:
-		for idx, user := range c.libraryState.cachedUsers {
-			if idx < step1Idx {
-				c.addUserItem(&divContentPreviousPage, user)
-			} else if idx < step2Idx {
-				c.addUserItem(&divContentCurrentPage, user)
-			} else {
-				c.addUserItem(&divContentNextPage, user)
+		/*
+			for idx, user := range c.libraryState.cachedUsers {
+				if idx < step1Idx {
+					c.addUserItem(&divContentPreviousPage, user)
+				} else if idx < step2Idx {
+					c.addUserItem(&divContentCurrentPage, user)
+				} else {
+					c.addUserItem(&divContentNextPage, user)
+				}
 			}
-		}
+		*/
+		divContentPreviousPage = c.renderUserItemList(c.libraryState.cachedUsers[minIdx:step1Idx])
+		divContentCurrentPage = c.renderUserItemList(c.libraryState.cachedUsers[step1Idx:step2Idx])
+		divContentNextPage = c.renderUserItemList(c.libraryState.cachedUsers[step2Idx:maxIdx])
 	}
 	var newScrollTop int
-	libraryList.Set("innerHTML", divContentPreviousPage.String())
+	libraryList.Set("innerHTML", divContentPreviousPage)
 	if direction == -1 {
 		newScrollTop = libraryList.Get("scrollHeight").Int()
 	}
-	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentCurrentPage.String())
+	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentCurrentPage)
 	if direction == 1 {
 		newScrollTop = libraryList.Get("scrollHeight").Int() - libraryList.Get("clientHeight").Int()
 	}
-	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentNextPage.String())
+	libraryList.Call("insertAdjacentHTML", "beforeEnd", divContentNextPage)
 
 	if direction != 0 {
 		libraryList.Set("scrollTop", newScrollTop)
-		//		logrus.Infof("Set scroll bottom: %d vs currentScrollHeight: %d", newScrollTop + libraryList.Get("clientHeight").Int(), libraryList.Get("scrollHeight").Int())
 	}
 }
 
-func (c *LibraryComponent) addArtistItem(divContent *strings.Builder, artist *restApiV1.Artist) {
-	var artistItem struct {
+func (c *LibraryComponent) renderArtistItemList(artistList []*restApiV1.Artist) string {
+	type ArtistItem struct {
 		ArtistId        string
 		ArtistName      string
 		ArtistSongCount int
 		IsEditable      bool
 	}
 
-	if artist == nil {
-		artistItem.ArtistId = string(restApiV1.UnknownArtistId)
-		artistItem.ArtistName = "(Unknown artist)"
-		artistItem.ArtistSongCount = len(c.app.localDb.UnknownArtistSongs)
-		artistItem.IsEditable = false
-	} else {
-		artistItem.ArtistId = string(artist.Id)
-		artistItem.ArtistName = artist.Name
-		artistItem.ArtistSongCount = len(c.app.localDb.ArtistOrderedSongs[artist.Id])
-		artistItem.IsEditable = c.app.IsConnectedUserAdmin()
+	var artistItemList = make([]ArtistItem, len(artistList))
+
+	for artistIdx, artist := range artistList {
+		if artist == nil {
+			artistItemList[artistIdx].ArtistId = string(restApiV1.UnknownArtistId)
+			artistItemList[artistIdx].ArtistName = "(Unknown artist)"
+			artistItemList[artistIdx].ArtistSongCount = len(c.app.localDb.UnknownArtistSongs)
+			artistItemList[artistIdx].IsEditable = false
+		} else {
+			artistItemList[artistIdx].ArtistId = string(artist.Id)
+			artistItemList[artistIdx].ArtistName = artist.Name
+			artistItemList[artistIdx].ArtistSongCount = len(c.app.localDb.ArtistOrderedSongs[artist.Id])
+			artistItemList[artistIdx].IsEditable = c.app.IsConnectedUserAdmin()
+		}
 	}
 
-	divContent.WriteString(c.app.RenderTemplate(
-		&artistItem, "home/library/artistItem"),
-	)
+	return c.app.RenderTemplate(artistItemList, "home/library/artistItemList")
 }
 
-func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *restApiV1.Album) {
-	var albumItem struct {
+func (c *LibraryComponent) renderAlbumItemList(albumList []*restApiV1.Album) string {
+	type AlbumItem struct {
 		AlbumId        string
 		AlbumName      string
 		AlbumSongCount int
@@ -724,35 +756,37 @@ func (c *LibraryComponent) addAlbumItem(divContent *strings.Builder, album *rest
 		IsEditable bool
 	}
 
-	if album == nil {
-		albumItem.AlbumId = string(restApiV1.UnknownAlbumId)
-		albumItem.AlbumName = "(Unknown album)"
-		albumItem.AlbumSongCount = len(c.app.localDb.UnknownAlbumSongs)
-		albumItem.IsEditable = false
-	} else {
-		albumItem.AlbumId = string(album.Id)
-		albumItem.AlbumName = album.Name
-		albumItem.AlbumSongCount = len(c.app.localDb.AlbumOrderedSongs[album.Id])
-		for _, artistId := range album.ArtistIds {
-			albumItem.Artists = append(albumItem.Artists, struct {
-				ArtistId   string
-				ArtistName string
-			}{
-				ArtistId:   string(artistId),
-				ArtistName: c.app.localDb.Artists[artistId].Name,
-			})
-		}
-		albumItem.IsEditable = c.app.IsConnectedUserAdmin()
-	}
-	divContent.WriteString(c.app.RenderTemplate(&albumItem, "home/library/albumItem"))
+	var albumItemList = make([]AlbumItem, len(albumList))
 
+	for albumIdx, album := range albumList {
+		if album == nil {
+			albumItemList[albumIdx].AlbumId = string(restApiV1.UnknownAlbumId)
+			albumItemList[albumIdx].AlbumName = "(Unknown album)"
+			albumItemList[albumIdx].AlbumSongCount = len(c.app.localDb.UnknownAlbumSongs)
+			albumItemList[albumIdx].IsEditable = false
+		} else {
+			albumItemList[albumIdx].AlbumId = string(album.Id)
+			albumItemList[albumIdx].AlbumName = album.Name
+			albumItemList[albumIdx].AlbumSongCount = len(c.app.localDb.AlbumOrderedSongs[album.Id])
+			for _, artistId := range album.ArtistIds {
+				albumItemList[albumIdx].Artists = append(albumItemList[albumIdx].Artists, struct {
+					ArtistId   string
+					ArtistName string
+				}{
+					ArtistId:   string(artistId),
+					ArtistName: c.app.localDb.Artists[artistId].Name,
+				})
+			}
+			albumItemList[albumIdx].IsEditable = c.app.IsConnectedUserAdmin()
+		}
+	}
+
+	return c.app.RenderTemplate(albumItemList, "home/library/albumItemList")
 }
 
-func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restApiV1.Song) {
+func (c *LibraryComponent) renderSongItemList(songList []*restApiV1.Song) string {
 
-	_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
-
-	songItem := struct {
+	type SongItem struct {
 		SongId    string
 		Favorite  bool
 		SongName  string
@@ -764,40 +798,42 @@ func (c *LibraryComponent) addSongItem(divContent *strings.Builder, song *restAp
 		}
 		ExplicitFg bool
 		IsEditable bool
-	}{
-		SongId:     string(song.Id),
-		Favorite:   favorite,
-		SongName:   song.Name,
-		ExplicitFg: song.ExplicitFg,
-		IsEditable: c.app.IsConnectedUserAdmin(),
 	}
 
-	if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
-		songItem.AlbumName = c.app.localDb.Albums[song.AlbumId].Name
-		songItem.AlbumId = (*string)(&song.AlbumId)
-	}
+	var songItemList = make([]SongItem, len(songList))
 
-	for _, artistId := range song.ArtistIds {
-		if c.libraryState.artistId == nil || (c.libraryState.artistId != nil && artistId != *c.libraryState.artistId) {
-			songItem.Artists = append(songItem.Artists, struct {
-				ArtistId   string
-				ArtistName string
-			}{
-				ArtistId:   string(artistId),
-				ArtistName: c.app.localDb.Artists[artistId].Name,
-			})
+	for songIdx, song := range songList {
+		_, favorite := c.app.localDb.UserFavoriteSongIds[c.app.ConnectedUserId()][song.Id]
+
+		songItemList[songIdx].SongId = string(song.Id)
+		songItemList[songIdx].Favorite = favorite
+		songItemList[songIdx].SongName = song.Name
+		songItemList[songIdx].ExplicitFg = song.ExplicitFg
+		songItemList[songIdx].IsEditable = c.app.IsConnectedUserAdmin()
+
+		if song.AlbumId != restApiV1.UnknownAlbumId && c.libraryState.albumId == nil {
+			songItemList[songIdx].AlbumName = c.app.localDb.Albums[song.AlbumId].Name
+			songItemList[songIdx].AlbumId = (*string)(&song.AlbumId)
+		}
+
+		for _, artistId := range song.ArtistIds {
+			if c.libraryState.artistId == nil || (c.libraryState.artistId != nil && artistId != *c.libraryState.artistId) {
+				songItemList[songIdx].Artists = append(songItemList[songIdx].Artists, struct {
+					ArtistId   string
+					ArtistName string
+				}{
+					ArtistId:   string(artistId),
+					ArtistName: c.app.localDb.Artists[artistId].Name,
+				})
+			}
 		}
 	}
 
-	divContent.WriteString(c.app.RenderTemplate(
-		&songItem, "home/library/songItem"),
-	)
+	return c.app.RenderTemplate(songItemList, "home/library/songItemList")
 }
 
-func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist *restApiV1.Playlist) {
-	_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
-
-	playlistItem := struct {
+func (c *LibraryComponent) renderPlaylistItemList(playlistList []*restApiV1.Playlist) string {
+	type PlaylistItem struct {
 		PlaylistId        string
 		Favorite          bool
 		Name              string
@@ -808,42 +844,51 @@ func (c *LibraryComponent) addPlaylistItem(divContent *strings.Builder, playlist
 		}
 		IsEditable  bool
 		IsDeletable bool
-	}{
-		PlaylistId:        string(playlist.Id),
-		Favorite:          favorite,
-		Name:              playlist.Name,
-		PlaylistSongCount: len(playlist.SongIds),
-		IsEditable:        c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()),
-		IsDeletable:       playlist.Id != restApiV1.IncomingPlaylistId && (c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId())),
 	}
 
-	for _, userId := range playlist.OwnerUserIds {
-		playlistItem.OwnerUsers = append(playlistItem.OwnerUsers, struct {
-			UserId   string
-			UserName string
-		}{
-			UserId:   string(userId),
-			UserName: c.app.localDb.Users[userId].Name,
-		})
+	var playlistItemList = make([]PlaylistItem, len(playlistList))
+
+	for playlistIdx, playlist := range playlistList {
+		_, favorite := c.app.localDb.UserFavoritePlaylistIds[c.app.ConnectedUserId()][playlist.Id]
+
+		playlistItemList[playlistIdx].PlaylistId = string(playlist.Id)
+		playlistItemList[playlistIdx].Favorite = favorite
+		playlistItemList[playlistIdx].Name = playlist.Name
+		playlistItemList[playlistIdx].PlaylistSongCount = len(playlist.SongIds)
+		playlistItemList[playlistIdx].IsEditable = c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId())
+		playlistItemList[playlistIdx].IsDeletable = playlist.Id != restApiV1.IncomingPlaylistId && (c.app.IsConnectedUserAdmin() || c.app.localDb.IsPlaylistOwnedBy(playlist.Id, c.app.ConnectedUserId()))
+
+		for _, userId := range playlist.OwnerUserIds {
+			playlistItemList[playlistIdx].OwnerUsers = append(playlistItemList[playlistIdx].OwnerUsers, struct {
+				UserId   string
+				UserName string
+			}{
+				UserId:   string(userId),
+				UserName: c.app.localDb.Users[userId].Name,
+			})
+		}
+
 	}
 
-	divContent.WriteString(c.app.RenderTemplate(
-		&playlistItem, "home/library/playlistItem"),
-	)
+	return c.app.RenderTemplate(playlistItemList, "home/library/playlistItemList")
 }
 
-func (c *LibraryComponent) addUserItem(divContent *strings.Builder, user *restApiV1.User) {
-	divContent.WriteString(c.app.RenderTemplate(
-		struct {
-			UserId     string
-			Name       string
-			IsEditable bool
-		}{
-			UserId:     string(user.Id),
-			Name:       user.Name,
-			IsEditable: c.app.IsConnectedUserAdmin() || c.app.ConnectedUserId() == user.Id,
-		}, "home/library/userItem"),
-	)
+func (c *LibraryComponent) renderUserItemList(userList []*restApiV1.User) string {
+	type UserItem struct {
+		UserId     string
+		Name       string
+		IsEditable bool
+	}
+
+	var userItemList = make([]UserItem, len(userList))
+
+	for userIdx, user := range userList {
+		userItemList[userIdx].UserId = string(user.Id)
+		userItemList[userIdx].Name = user.Name
+		userItemList[userIdx].IsEditable = c.app.IsConnectedUserAdmin() || c.app.ConnectedUserId() == user.Id
+	}
+
+	return c.app.RenderTemplate(userItemList, "home/library/userItemList")
 }
 
 func (c *LibraryComponent) ShowArtistsAction() {

@@ -1,3 +1,4 @@
+{{range $index, $playlist := .}}
 <div class="item playlistItem" draggable="true">
     <div class="itemFavorite"><a class="playlistFavoriteLink" href="#" data-playlistid="{{.PlaylistId}}">
         {{if .Favorite}}
@@ -36,3 +37,4 @@
         </a>
     </div>
 </div>
+{{end}}
