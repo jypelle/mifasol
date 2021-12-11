@@ -189,6 +189,7 @@ func (c *HomeCurrentComponent) RefreshView() {
 	for songIdx, songId := range c.songIds {
 		song = c.app.localDb.Songs[songId]
 		songItemList[songIdx].SongId = string(song.Id)
+		songItemList[songIdx].SongIdx = songIdx
 		songItemList[songIdx].SongName = song.Name
 		songItemList[songIdx].IsPlaying = songIdx == c.currentSongIdx
 
