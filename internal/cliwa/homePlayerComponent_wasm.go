@@ -26,7 +26,7 @@ func NewHomePlayerComponent(app *App) *HomePlayerComponent {
 	return c
 }
 
-func (c *HomePlayerComponent) Show() {
+func (c *HomePlayerComponent) Render() {
 	playerPlayButton := jst.Id("playerPlayButton")
 	playerNextButton := jst.Id("playerNextButton")
 	playerAudio := jst.Id("playerAudio")

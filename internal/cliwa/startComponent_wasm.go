@@ -20,7 +20,7 @@ func NewStartComponent(app *App) *StartComponent {
 	return c
 }
 
-func (c *StartComponent) Show() {
+func (c *StartComponent) Render() {
 	c.app.restClient = nil
 	c.app.localDb = nil
 
@@ -104,6 +104,6 @@ func (c *StartComponent) goHome() {
 	c.app.localDb = localdb.NewLocalDb(c.app.restClient, c.app.config.Collator())
 
 	c.app.HomeComponent = NewHomeComponent(c.app)
-	c.app.HomeComponent.Show()
+	c.app.HomeComponent.Render()
 
 }

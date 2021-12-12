@@ -30,7 +30,7 @@ func NewHomeSongEditComponent(app *App, songId restApiV1.SongId, songMeta *restA
 	return c
 }
 
-func (c *HomeSongEditComponent) Show() {
+func (c *HomeSongEditComponent) Render() {
 	songItem := struct {
 		SongMeta  *restApiV1.SongMeta
 		AlbumName string

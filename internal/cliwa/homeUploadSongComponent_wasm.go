@@ -25,7 +25,7 @@ func NewHomeUploadSongComponent(app *App) *HomeUploadSongComponent {
 	return c
 }
 
-func (c *HomeUploadSongComponent) Show() {
+func (c *HomeUploadSongComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/uploadSong/index"),

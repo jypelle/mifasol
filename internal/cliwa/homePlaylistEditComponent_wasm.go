@@ -25,7 +25,7 @@ func NewHomePlaylistEditComponent(app *App, playlistId restApiV1.PlaylistId, pla
 	return c
 }
 
-func (c *HomePlaylistEditComponent) Show() {
+func (c *HomePlaylistEditComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.playlistMeta, "home/playlistEdit/index"),

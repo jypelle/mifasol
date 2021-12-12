@@ -22,7 +22,7 @@ func NewHomeArtistEditComponent(app *App, artistId restApiV1.ArtistId, artistMet
 	return c
 }
 
-func (c *HomeArtistEditComponent) Show() {
+func (c *HomeArtistEditComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.artistMeta, "home/artistEdit/index"),

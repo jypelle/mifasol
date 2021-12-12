@@ -22,7 +22,7 @@ func NewHomeAlbumEditComponent(app *App, albumId restApiV1.AlbumId, albumMeta *r
 	return c
 }
 
-func (c *HomeAlbumEditComponent) Show() {
+func (c *HomeAlbumEditComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.albumMeta, "home/albumEdit/index"),

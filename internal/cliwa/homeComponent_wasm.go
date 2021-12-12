@@ -29,14 +29,14 @@ func NewHomeComponent(app *App) *HomeComponent {
 	return c
 }
 
-func (c *HomeComponent) Show() {
+func (c *HomeComponent) Render() {
 	mainComponent := jst.Id("mainComponent")
 	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "home/index"))
 
-	c.HeaderButtonsComponent.Show()
-	c.LibraryComponent.Show()
-	c.CurrentComponent.Show()
-	c.PlayerComponent.Show()
+	c.HeaderButtonsComponent.Render()
+	c.LibraryComponent.Render()
+	c.CurrentComponent.Render()
+	c.PlayerComponent.Render()
 
 	c.Reload()
 
@@ -46,13 +46,13 @@ func (c *HomeComponent) uploadSongsAction() {
 	component := NewHomeUploadSongComponent(c.app)
 
 	c.OpenModal()
-	component.Show()
+	component.Render()
 }
 
 func (c *HomeComponent) logOutAction() {
 	jst.LocalStorage.Set("mifasolUsername", "")
 	jst.LocalStorage.Set("mifasolPassword", "")
-	c.app.StartComponent.Show()
+	c.app.StartComponent.Render()
 }
 
 func (c *HomeComponent) refreshAction() {
@@ -74,7 +74,7 @@ func (c *HomeComponent) Reload() {
 
 	c.HeaderButtonsComponent.RefreshView()
 	c.LibraryComponent.RefreshView()
-	c.CurrentComponent.RefreshView()
+	c.CurrentComponent.RemoveDeletedSongsOrPlaylist()
 
 	c.MessageComponent.Message(strconv.Itoa(len(c.app.localDb.Songs)) + " songs, " + strconv.Itoa(len(c.app.localDb.Artists)) + " artists, " + strconv.Itoa(len(c.app.localDb.Albums)) + " albums, " + strconv.Itoa(len(c.app.localDb.Playlists)) + " playlists ready to be played for " + strconv.Itoa(len(c.app.localDb.Users)) + " users.")
 }

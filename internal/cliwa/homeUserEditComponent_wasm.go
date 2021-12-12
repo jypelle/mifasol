@@ -26,7 +26,7 @@ func NewHomeUserEditComponent(app *App, userId restApiV1.UserId, userMeta *restA
 	return c
 }
 
-func (c *HomeUserEditComponent) Show() {
+func (c *HomeUserEditComponent) Render() {
 	div := jst.Id("homeMainModal")
 
 	userItem := struct {

@@ -73,7 +73,7 @@ func NewHomeLibraryComponent(app *App) *LibraryComponent {
 	return c
 }
 
-func (c *LibraryComponent) Show() {
+func (c *LibraryComponent) Render() {
 	div := jst.Id("libraryComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/library/index"),
@@ -96,7 +96,7 @@ func (c *LibraryComponent) Show() {
 		if c.libraryState.libraryType == LibraryTypeUsers {
 			component := NewHomeUserCreateComponent(c.app)
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		}
 	}))
 
@@ -146,13 +146,13 @@ func (c *LibraryComponent) Show() {
 				component := NewHomeArtistEditComponent(c.app, artistId, &c.app.localDb.Artists[artistId].ArtistMeta)
 
 				c.app.HomeComponent.OpenModal()
-				component.Show()
+				component.Render()
 			}
 		case "artistDeleteLink":
 			artistId := restApiV1.ArtistId(dataset.Get("artistid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, artistId)
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 
 		case "artistAddToPlaylistLink":
 			artistId := dataset.Get("artistid").String()
@@ -166,14 +166,14 @@ func (c *LibraryComponent) Show() {
 				component := NewHomeAlbumEditComponent(c.app, albumId, &c.app.localDb.Albums[albumId].AlbumMeta)
 
 				c.app.HomeComponent.OpenModal()
-				component.Show()
+				component.Render()
 			}
 		case "albumDeleteLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, albumId)
 
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 
 		case "albumAddToPlaylistLink":
 			albumId := restApiV1.AlbumId(dataset.Get("albumid").String())
@@ -185,13 +185,13 @@ func (c *LibraryComponent) Show() {
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
 			component := NewHomePlaylistEditComponent(c.app, playlistId, &c.app.localDb.Playlists[playlistId].PlaylistMeta)
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		case "playlistDeleteLink":
 			playlistId := restApiV1.PlaylistId(dataset.Get("playlistid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, playlistId)
 
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		case "playlistFavoriteLink":
 			playlistId := dataset.Get("playlistid").String()
 			favoritePlaylistId := restApiV1.FavoritePlaylistId{
@@ -232,13 +232,13 @@ func (c *LibraryComponent) Show() {
 			songId := restApiV1.SongId(dataset.Get("songid").String())
 			component := NewHomeSongEditComponent(c.app, songId, &c.app.localDb.Songs[songId].SongMeta)
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		case "songDeleteLink":
 			songId := restApiV1.SongId(dataset.Get("songid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, songId)
 
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		case "songFavoriteLink":
 			songId := dataset.Get("songid").String()
 			favoriteSongId := restApiV1.FavoriteSongId{
@@ -297,14 +297,14 @@ func (c *LibraryComponent) Show() {
 			userId := restApiV1.UserId(dataset.Get("userid").String())
 			component := NewHomeUserEditComponent(c.app, userId, &c.app.localDb.Users[userId].UserMeta)
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 
 		case "userDeleteLink":
 			userId := restApiV1.UserId(dataset.Get("userid").String())
 			component := NewHomeConfirmDeleteComponent(c.app, userId)
 
 			c.app.HomeComponent.OpenModal()
-			component.Show()
+			component.Render()
 		}
 	}))
 
@@ -626,77 +626,22 @@ func (c *LibraryComponent) updateLibraryList(direction int) {
 
 	switch c.libraryState.libraryType {
 	case LibraryTypeArtists:
-		/*
-			for idx, artist := range c.libraryState.cachedArtists[minIdx:maxIdx] {
-				if idx < step1Idx {
-					c.addArtistItem(&divContentPreviousPage, artist)
-				} else if idx < step2Idx {
-					c.addArtistItem(&divContentCurrentPage, artist)
-				} else {
-					c.addArtistItem(&divContentNextPage, artist)
-				}
-			}
-		*/
 		divContentPreviousPage = c.renderArtistItemList(c.libraryState.cachedArtists[minIdx:step1Idx])
 		divContentCurrentPage = c.renderArtistItemList(c.libraryState.cachedArtists[step1Idx:step2Idx])
 		divContentNextPage = c.renderArtistItemList(c.libraryState.cachedArtists[step2Idx:maxIdx])
 	case LibraryTypeAlbums:
-		/*
-			for idx, album := range c.libraryState.cachedAlbums[minIdx:maxIdx] {
-				if idx < step1Idx {
-					c.addAlbumItem(&divContentPreviousPage, album)
-				} else if idx < step2Idx {
-					c.addAlbumItem(&divContentCurrentPage, album)
-				} else {
-					c.addAlbumItem(&divContentNextPage, album)
-				}
-			}
-		*/
 		divContentPreviousPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[minIdx:step1Idx])
 		divContentCurrentPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[step1Idx:step2Idx])
 		divContentNextPage = c.renderAlbumItemList(c.libraryState.cachedAlbums[step2Idx:maxIdx])
 	case LibraryTypePlaylists:
-		/*
-			for idx, playlist := range c.libraryState.cachedPlaylists[minIdx:maxIdx] {
-				if idx < step1Idx {
-					c.addPlaylistItem(&divContentPreviousPage, playlist)
-				} else if idx < step2Idx {
-					c.addPlaylistItem(&divContentCurrentPage, playlist)
-				} else {
-					c.addPlaylistItem(&divContentNextPage, playlist)
-				}
-			}
-		*/
 		divContentPreviousPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[minIdx:step1Idx])
 		divContentCurrentPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[step1Idx:step2Idx])
 		divContentNextPage = c.renderPlaylistItemList(c.libraryState.cachedPlaylists[step2Idx:maxIdx])
 	case LibraryTypeSongs:
-		/*
-			for idx, song := range c.libraryState.cachedSongs[minIdx:maxIdx] {
-				if idx < step1Idx {
-					c.addSongItem(&divContentPreviousPage, song)
-				} else if idx < step2Idx {
-					c.addSongItem(&divContentCurrentPage, song)
-				} else {
-					c.addSongItem(&divContentNextPage, song)
-				}
-			}
-		*/
 		divContentPreviousPage = c.renderSongItemList(c.libraryState.cachedSongs[minIdx:step1Idx])
 		divContentCurrentPage = c.renderSongItemList(c.libraryState.cachedSongs[step1Idx:step2Idx])
 		divContentNextPage = c.renderSongItemList(c.libraryState.cachedSongs[step2Idx:maxIdx])
 	case LibraryTypeUsers:
-		/*
-			for idx, user := range c.libraryState.cachedUsers {
-				if idx < step1Idx {
-					c.addUserItem(&divContentPreviousPage, user)
-				} else if idx < step2Idx {
-					c.addUserItem(&divContentCurrentPage, user)
-				} else {
-					c.addUserItem(&divContentNextPage, user)
-				}
-			}
-		*/
 		divContentPreviousPage = c.renderUserItemList(c.libraryState.cachedUsers[minIdx:step1Idx])
 		divContentCurrentPage = c.renderUserItemList(c.libraryState.cachedUsers[step1Idx:step2Idx])
 		divContentNextPage = c.renderUserItemList(c.libraryState.cachedUsers[step2Idx:maxIdx])

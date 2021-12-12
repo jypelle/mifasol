@@ -16,7 +16,7 @@ func NewHomeHeaderButtonsComponent(app *App) *HomeHeaderButtonsComponent {
 	return c
 }
 
-func (c *HomeHeaderButtonsComponent) Show() {
+func (c *HomeHeaderButtonsComponent) Render() {
 	div := jst.Id("homeHeaderButtonsComponent")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/headerButtons/index"),

@@ -26,7 +26,7 @@ func NewHomePlaylistContentSaveAsComponent(app *App, songIds []restApiV1.SongId)
 	return c
 }
 
-func (c *HomePlaylistContentSaveAsComponent) Show() {
+func (c *HomePlaylistContentSaveAsComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		nil, "home/playlistContentSaveAs/index"),

@@ -78,7 +78,7 @@ func NewHomeConfirmDeleteComponent(
 	return c
 }
 
-func (c *HomeConfirmDeleteComponent) Show() {
+func (c *HomeConfirmDeleteComponent) Render() {
 	div := jst.Id("homeMainModal")
 	div.Set("innerHTML", c.app.RenderTemplate(
 		c.name, "home/confirmDelete/index"),

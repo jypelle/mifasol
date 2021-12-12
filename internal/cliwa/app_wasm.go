@@ -50,7 +50,7 @@ func NewApp(debugMode bool) *App {
 func (a *App) Start() {
 	a.retrieveServerCredentials()
 	a.HideLoader()
-	a.StartComponent.Show()
+	a.StartComponent.Render()
 
 	// Keep wasm app alive with event func loop
 	func() {
