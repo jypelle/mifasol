@@ -106,7 +106,7 @@ func (c *ClientConfig) GetCert() []byte {
 }
 
 func (c *ClientConfig) SetCert(cert []byte) error {
-	err := os.WriteFile(c.GetCompleteConfigFilename(), cert, 0660)
+	err := os.WriteFile(filepath.Join(c.ConfigDir, configCertFilename), cert, 0660)
 	if err != nil {
 		return err
 	}

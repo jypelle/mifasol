@@ -2,7 +2,6 @@ package cliwa
 
 import (
 	"github.com/jypelle/mifasol/internal/cliwa/jst"
-	"github.com/jypelle/mifasol/internal/localdb"
 	"github.com/jypelle/mifasol/restApiV1"
 	"github.com/jypelle/mifasol/restClientV1"
 	"github.com/sirupsen/logrus"
@@ -21,34 +20,6 @@ func NewStartComponent(app *App) *StartComponent {
 }
 
 func (c *StartComponent) Render() {
-	c.app.restClient = nil
-	c.app.localDb = nil
-
-	// Autolog ?
-	username := jst.LocalStorage.Get("mifasolUsername").String()
-	password := jst.LocalStorage.Get("mifasolPassword").String()
-	if username != "" || password != "" {
-		c.app.config.Username = username
-		c.app.config.Password = password
-
-		// Create rest Client
-		var err error
-		c.app.restClient, err = restClientV1.NewRestClient(&c.app.config, true)
-		if err != nil {
-			logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
-		} else {
-			if c.app.ConnectedUserId() == restApiV1.UndefinedUserId {
-				logrus.Errorf("Wrong credentials")
-
-				jst.LocalStorage.Set("mifasolUsername", "")
-				jst.LocalStorage.Set("mifasolPassword", "")
-			} else {
-				c.goHome()
-				return
-			}
-		}
-	}
-
 	// No autolog or autolog failed
 	mainComponent := jst.Id("mainComponent")
 	mainComponent.Set("innerHTML", c.app.RenderTemplate(nil, "start/index"))
@@ -57,10 +28,8 @@ func (c *StartComponent) Render() {
 	jst.Id("mifasolUsername").Call("focus")
 
 	// Set button
-	//js.Global().Set("logInAction", c.app.AddEventFunc(c.logInAction))
 	startForm := jst.Id("startForm")
 	startForm.Call("addEventListener", "submit", c.app.AddEventFuncPreventDefault(c.logInAction))
-
 }
 
 func (c *StartComponent) logInAction() {
@@ -96,14 +65,5 @@ func (c *StartComponent) logInAction() {
 		jst.LocalStorage.Set("mifasolPassword", c.app.config.Password)
 	}
 
-	c.goHome()
-}
-
-func (c *StartComponent) goHome() {
-	//	c.app.restClient = restClient
-	c.app.localDb = localdb.NewLocalDb(c.app.restClient, c.app.config.Collator())
-
-	c.app.HomeComponent = NewHomeComponent(c.app)
-	c.app.HomeComponent.Render()
-
+	c.app.ConnectAction()
 }

@@ -40,8 +40,6 @@ func NewApp(debugMode bool) *App {
 		eventFunc: make(chan func(), 100),
 	}
 
-	app.StartComponent = NewStartComponent(app)
-
 	logrus.Infof("Client created")
 
 	return app
@@ -50,7 +48,34 @@ func NewApp(debugMode bool) *App {
 func (a *App) Start() {
 	a.retrieveServerCredentials()
 	a.HideLoader()
-	a.StartComponent.Render()
+
+	// Autolog ?
+	func() {
+		username := jst.LocalStorage.Get("mifasolUsername").String()
+		password := jst.LocalStorage.Get("mifasolPassword").String()
+		if username != "" || password != "" {
+			a.config.Username = username
+			a.config.Password = password
+
+			// Create rest Client
+			var err error
+			a.restClient, err = restClientV1.NewRestClient(&a.config, true)
+			if err != nil {
+				logrus.Errorf("Unable to instantiate mifasol rest client: %v", err)
+			} else {
+				if a.ConnectedUserId() == restApiV1.UndefinedUserId {
+					logrus.Errorf("Wrong credentials")
+
+					jst.LocalStorage.Set("mifasolUsername", "")
+					jst.LocalStorage.Set("mifasolPassword", "")
+				} else {
+					a.ConnectAction()
+					return
+				}
+			}
+		}
+		a.DisconnectAction()
+	}()
 
 	// Keep wasm app alive with event func loop
 	func() {
@@ -142,7 +167,11 @@ func (a *App) retrieveServerCredentials() {
 }
 
 func (a *App) ConnectedUserId() restApiV1.UserId {
-	return a.restClient.UserId()
+	if a.restClient == nil {
+		return restApiV1.UndefinedUserId
+	} else {
+		return a.restClient.UserId()
+	}
 }
 
 func (a *App) IsConnectedUserAdmin() bool {
@@ -170,4 +199,30 @@ func (c *App) ShowLoader(message string) {
 
 func (c *App) HideLoader() {
 	jst.Document.Get("body").Get("classList").Call("remove", "loading")
+}
+
+func (c *App) ConnectAction() {
+	c.localDb = localdb.NewLocalDb(c.restClient, c.config.Collator())
+	c.HomeComponent = NewHomeComponent(c)
+	c.StartComponent = nil
+	c.Render()
+	c.HomeComponent.Reload()
+}
+
+func (c *App) DisconnectAction() {
+	jst.LocalStorage.Set("mifasolUsername", "")
+	jst.LocalStorage.Set("mifasolPassword", "")
+	c.restClient = nil
+	c.localDb = nil
+	c.HomeComponent = nil
+	c.StartComponent = NewStartComponent(c)
+	c.Render()
+}
+
+func (c *App) Render() {
+	if c.ConnectedUserId() == restApiV1.UndefinedUserId {
+		c.StartComponent.Render()
+	} else {
+		c.HomeComponent.Render()
+	}
 }

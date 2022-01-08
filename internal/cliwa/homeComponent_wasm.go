@@ -37,9 +37,6 @@ func (c *HomeComponent) Render() {
 	c.LibraryComponent.Render()
 	c.CurrentComponent.Render()
 	c.PlayerComponent.Render()
-
-	c.Reload()
-
 }
 
 func (c *HomeComponent) uploadSongsAction() {
@@ -47,12 +44,6 @@ func (c *HomeComponent) uploadSongsAction() {
 
 	c.OpenModal()
 	component.Render()
-}
-
-func (c *HomeComponent) logOutAction() {
-	jst.LocalStorage.Set("mifasolUsername", "")
-	jst.LocalStorage.Set("mifasolPassword", "")
-	c.app.StartComponent.Render()
 }
 
 func (c *HomeComponent) refreshAction() {

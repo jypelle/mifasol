@@ -12,7 +12,6 @@ import (
 	"github.com/jypelle/mifasol/internal/tool"
 	"github.com/jypelle/mifasol/internal/version"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
@@ -30,7 +29,7 @@ type ServerApp struct {
 
 func NewServerApp(configDir string, debugMode bool) *ServerApp {
 
-	logrus.Debugf("Creation of mifasol server %s ...", version.AppVersion.String())
+	logrus.Infof("Creation of mifasol server %s ...", version.AppVersion.String())
 
 	app := &ServerApp{
 		ServerConfig: config.ServerConfig{
@@ -63,7 +62,7 @@ func NewServerApp(configDir string, debugMode bool) *ServerApp {
 	// Open configuration file
 	var draftServerEditableConfig *config.ServerEditableConfig
 
-	rawConfig, err := ioutil.ReadFile(app.ServerConfig.GetCompleteConfigFilename())
+	rawConfig, err := os.ReadFile(app.ServerConfig.GetCompleteConfigFilename())
 	if err == nil {
 		// Interpret configuration file
 		draftServerEditableConfig = &config.ServerEditableConfig{}

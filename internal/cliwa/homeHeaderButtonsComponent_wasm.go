@@ -26,7 +26,7 @@ func (c *HomeHeaderButtonsComponent) Render() {
 	uploadSongsButton := jst.Id("uploadSongsButton")
 	uploadSongsButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.uploadSongsAction))
 	logOutButton := jst.Id("logOutButton")
-	logOutButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.logOutAction))
+	logOutButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.DisconnectAction))
 	refreshButton := jst.Id("refreshButton")
 	refreshButton.Call("addEventListener", "click", c.app.AddEventFunc(c.app.HomeComponent.refreshAction))
 }
