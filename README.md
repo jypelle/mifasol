@@ -62,6 +62,7 @@ You need:
 - Linux
 - Golang >= 1.17
 - ANDROID_NDK_HOME set (to build android console client).
+- GOROOT set
 
 ```
 make release
