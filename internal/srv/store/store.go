@@ -22,6 +22,9 @@ func NewStore(serverConfig *config.ServerConfig) *Store {
 		logrus.Fatalf("Unable to connect to the database: %v", err)
 	}
 
+	// To avoid sqlite_busy errors
+	db.SetMaxOpenConns(1)
+
 	store := &Store{
 		db:           db,
 		serverConfig: serverConfig,
