@@ -1,8 +1,8 @@
 .PHONY: release runcliui buildwa chromewa
 
 release:
-	rm release/*; \
-	rm internal/srv/webSrv/clients/mifasol*; \
+	mkdir -p release; \
+	mkdir -p internal/srv/webSrv/clients; \
 	echo "Build windows amd64 client"; \
 	GOOS=windows GOARCH=amd64 go build -o internal/srv/webSrv/clients/mifasolcli-windows-amd64.exe ./cmd/mifasolcli; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcli-windows-amd64.exe; \
@@ -18,7 +18,7 @@ release:
 	echo "Build webassembly client"; \
 	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolcliwa.wasm ./cmd/mifasolcliwa; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcliwa.wasm; \
-	cp "${GOROOT}/misc/wasm/wasm_exec.js" internal/srv/webSrv/static/js/; \
+	cp "/usr/local/go/lib/wasm/wasm_exec.js" internal/srv/webSrv/static/js/; \
 	echo "Build windows amd64 server"; \
 	GOOS=windows GOARCH=amd64 go build -o release/mifasolsrv-windows-amd64.exe ./cmd/mifasolsrv; \
 	echo "Build linux amd64 server"; \
@@ -34,4 +34,4 @@ runcliui:
 buildcliwa:
 	GOOS=js GOARCH=wasm go build -o internal/srv/webSrv/clients/mifasolcliwa.wasm ./cmd/mifasolcliwa; \
 	gzip -f -9 internal/srv/webSrv/clients/mifasolcliwa.wasm; \
-	cp "${GOROOT}/misc/wasm/wasm_exec.js" internal/srv/webSrv/static/js/;
+	cp "/usr/local/go/lib/wasm/wasm_exec.js" internal/srv/webSrv/static/js/;
