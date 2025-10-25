@@ -1,4 +1,4 @@
-.PHONY: release runcliui buildwa
+.PHONY: release runcliui buildcliwa
 
 release:
 	rm release/*; \

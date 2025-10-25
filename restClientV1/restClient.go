@@ -99,30 +99,42 @@ func NewRestClient(clientConfig RestConfig, webassemblyEnabled bool) (*RestClien
 
 	}
 
-	// Configure client
-	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
-			RootCAs:            rootCAPool,
-		},
+	var httpClient *http.Client
+
+	if webassemblyEnabled {
+		// In WebAssembly (browser), Go's net/http uses the Fetch API. Custom Transports, dialers,
+		// and TLS settings are ignored or can cause failures. Use the default transport and only set Timeout.
+		httpClient = &http.Client{
+			Timeout: time.Second * time.Duration(clientConfig.GetTimeout()),
+		}
+	} else {
+		// Configure client
+		tr := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: false,
+				RootCAs:            rootCAPool,
+			},
+		}
+
+		httpClient = &http.Client{
+			Transport: tr,
+			Timeout:   time.Second * time.Duration(clientConfig.GetTimeout()),
+		}
 	}
 
 	restClient := &RestClient{
-		ClientConfig: clientConfig,
-		httpClient: &http.Client{
-			Transport: tr,
-			Timeout:   time.Second * time.Duration(clientConfig.GetTimeout()),
-		},
+		ClientConfig:       clientConfig,
+		httpClient:         httpClient,
 		webassemblyEnabled: webassemblyEnabled,
 	}
 
