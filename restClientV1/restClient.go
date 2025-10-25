@@ -5,15 +5,16 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/jypelle/mifasol/internal/tool"
-	"github.com/jypelle/mifasol/internal/version"
-	"github.com/jypelle/mifasol/restApiV1"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/jypelle/mifasol/internal/tool"
+	"github.com/jypelle/mifasol/internal/version"
+	"github.com/jypelle/mifasol/restApiV1"
 )
 
 const JsonContentType = "application/json"
@@ -49,7 +50,6 @@ func NewRestClient(clientConfig RestConfig, webassemblyEnabled bool) (*RestClien
 				DialContext: (&net.Dialer{
 					Timeout:   30 * time.Second,
 					KeepAlive: 30 * time.Second,
-					DualStack: true,
 				}).DialContext,
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
@@ -105,7 +105,6 @@ func NewRestClient(clientConfig RestConfig, webassemblyEnabled bool) (*RestClien
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-			DualStack: true,
 		}).DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,

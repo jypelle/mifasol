@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"code.rocketnine.space/tslocum/cview"
+	"codeberg.org/tslocum/cview"
 	"fmt"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"

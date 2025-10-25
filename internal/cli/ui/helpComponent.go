@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"code.rocketnine.space/tslocum/cview"
+	"codeberg.org/tslocum/cview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/jypelle/mifasol/internal/cli/ui/color"
 )

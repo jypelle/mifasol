@@ -60,7 +60,7 @@ Drop the dedicated `mifasolsrv` binary on your server and you are done.
 You need:
 
 - Linux
-- Golang >= 1.17
+- Golang >= 1.25.2
 - ANDROID_NDK_HOME set (to build android console client).
 - GOROOT set
 
@@ -171,7 +171,7 @@ Mifasol server embeds clients, so you just have to download the dedicated `mifas
 
 #### From sources
 
-You need golang >= 1.17 and
+You need golang >= 1.25.2 and
 - `libasound2-dev` on linux
 - `mingw-w64` on windows
 - `AudioToolbox.framework` on mac

@@ -1,6 +1,6 @@
 package ui
 
-import "code.rocketnine.space/tslocum/cview"
+import "codeberg.org/tslocum/cview"
 
 type MfModal struct {
 	*cview.Modal

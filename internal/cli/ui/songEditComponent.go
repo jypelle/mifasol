@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"code.rocketnine.space/tslocum/cview"
+	"codeberg.org/tslocum/cview"
 	"github.com/jypelle/mifasol/restApiV1"
 	"strconv"
 )
