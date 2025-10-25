@@ -2,7 +2,7 @@ package store
 
 import (
 	"bytes"
-	"github.com/bogem/id3v2"
+	"github.com/bogem/id3v2/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/jypelle/mifasol/internal/srv/entity"
 	"github.com/jypelle/mifasol/restApiV1"

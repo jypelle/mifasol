@@ -4,11 +4,11 @@ go 1.25.2
 
 require (
 	codeberg.org/tslocum/cview v1.6.0
-	github.com/bogem/id3v2 v1.2.1-0.20200829074214-de2d74e8049e
+	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/faiface/beep v1.1.0
 	github.com/gdamore/tcell/v2 v2.9.0
-	github.com/go-flac/flacvorbis v0.1.0
-	github.com/go-flac/go-flac v0.3.1
+	github.com/go-flac/flacvorbis v0.2.0
+	github.com/go-flac/go-flac v1.0.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
